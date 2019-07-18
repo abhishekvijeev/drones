@@ -1,0 +1,10 @@
+
+# Last Modified: Mon May 20 16:52:45 2019
+
+profile createdir /home/abhishek/coding/c/createdir {
+
+  /home/abhishek/coding/c/createdir mr,
+  /home/abhishek/coding/c/** wr,
+  /lib/x86_64-linux-gnu/ld-*.so mr,
+
+}

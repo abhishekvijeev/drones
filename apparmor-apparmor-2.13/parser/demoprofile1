@@ -1,0 +1,28 @@
+# Last Modified: Wed May 22 10:42:56 2019
+
+/home/abhishek/ros2_ws/ros2_ws/build/demo_nodes_cpp/talker {
+
+  /home/*/ros2_ws/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_generator_c.so mr,
+  /home/*/ros2_ws/ros2_ws/build/libyaml_vendor/libyaml_install/lib/libyaml.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rcl/librcl.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rcl_interfaces/librcl_interfaces__rosidl_generator_c.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rcl_interfaces/librcl_interfaces__rosidl_typesupport_c.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rcl_interfaces/librcl_interfaces__rosidl_typesupport_cpp.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rcl_logging_noop/librcl_logging_noop.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rcl_yaml_param_parser/librcl_yaml_param_parser.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rclcpp/librclcpp.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rcutils/librcutils.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rmw/librmw.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rmw_implementation/librmw_implementation.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rosgraph_msgs/librosgraph_msgs__rosidl_typesupport_cpp.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rosidl_generator_c/librosidl_generator_c.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rosidl_typesupport_c/librosidl_typesupport_c.so mr,
+  /home/*/ros2_ws/ros2_ws/build/rosidl_typesupport_cpp/librosidl_typesupport_cpp.so mr,
+  /home/*/ros2_ws/ros2_ws/build/std_msgs/libstd_msgs__rosidl_typesupport_cpp.so mr,
+  /home/abhishek/ros2_ws/ros2_ws/build/demo_nodes_cpp/talker mr,
+  /lib/x86_64-linux-gnu/ld-*.so mr,
+ /home/abhishek/ros2_ws/ros2_ws/src/ros2/rmw_implementation/rmw_implementation/** rmw,
+/home/abhishek/ros2_ws/ros2_ws/src/ros2/rcl/** rmw,
+/home/abhishek/ros2_ws/ros2_ws/** rmw, 
+deny network,
+}

@@ -1,0 +1,4 @@
+g++ -c testing-lex.c
+
+g++  -g -O2 -pipe  -Wall -Wsign-compare -Wmissing-field-initializers -Wformat-security -Wunused-parameter -std=gnu++0x -D_GNU_SOURCE  -DPACKAGE=\"apparmor-parser\" -DLOCALEDIR=\"/usr/share/locale\" -DSUBDOMAIN_CONFDIR=\"/etc/apparmor\" -I../libraries/libapparmor/include -o testing-lex parser_common.o parser_include.o parser_interface.o parser_lex.o testing-lex.o parser_misc.o parser_merge.o parser_symtab.o parser_yacc.o parser_regex.o parser_variable.o parser_policy.o parser_alias.o common_optarg.o lib.o network.o  mount.o  dbus.o  profile.o  rule.o  signal.o  ptrace.o  af_rule.o  af_unix.o policy_cache.o  \
+        libapparmor_re/libapparmor_re.a -static-libgcc -static-libstdc++ -L.  -L../libraries/libapparmor/src/.libs -Wl,-Bstatic -lapparmor -Wl,-Bdynamic -lpthread
