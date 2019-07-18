@@ -1709,7 +1709,7 @@ __initcall(apparmor_nf_ip_init);
 static int __init apparmor_init(void)
 {
 	int error;
-
+	printk (KERN_INFO "from testing2 branch\n");
 	aa_secids_init();
 
 	error = aa_setup_dfa_engine();
