@@ -1708,6 +1708,7 @@ __initcall(apparmor_nf_ip_init);
 
 static int __init apparmor_init(void)
 {
+	printk (KERN_INFO "from testing1 branch\n");
 	int error;
 
 	aa_secids_init();
