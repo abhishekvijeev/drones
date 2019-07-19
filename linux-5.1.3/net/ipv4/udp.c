@@ -1189,6 +1189,12 @@ back_from_confirm:
 		goto out;
 	}
 
+	#ifdef CONFIG_NETWORK_SECMARK
+	printk(KERN_INFO "udp_sendmsg: current=%s, current_pid=%d\n", current->comm, current->pid);
+	skb->secmark = current->pid;
+	printk(KERN_INFO "udp_sendmsg: skb->secmark set to %d\n", skb->secmark);
+	#endif
+
 	lock_sock(sk);
 	if (unlikely(up->pending)) {
 		/* The socket is already corked while preparing it. */
@@ -2276,6 +2282,10 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 	ulen = ntohs(uh->len);
 	saddr = ip_hdr(skb)->saddr;
 	daddr = ip_hdr(skb)->daddr;
+
+	#ifdef CONFIG_NETWORK_SECMARK
+	printk(KERN_INFO "__udp4_lib_rcv: current=%s, current_pid=%d, skb->secmark set to %d\n", current->comm, current->pid, skb->secmark);
+	#endif
 
 	if (ulen > skb->len)
 		goto short_packet;
