@@ -652,7 +652,7 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 	struct aa_data *data;
 	int i, error = -EPROTO;
 	kernel_cap_t tmpcap;
-	u32 tmp;
+	u32 tmp, allow_cnt, deny_cnt;
 
 	*ns_name = NULL;
 
