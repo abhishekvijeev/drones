@@ -17,6 +17,24 @@
 
 #include <linux/types.h>
 
+
+typedef s64 tag_t;
+
+struct flag_struct
+{
+    int flag;
+};
+
+#define TASKCTXIO 'r'
+
+#define SET_FLAG _IO(TASKCTXIO, 0)
+#define CLEAR_FLAG _IO(TASKCTXIO, 1)
+#define SET_KERNEL_FLAG _IO(TASKCTXIO, 2)
+#define CLEAR_KERNEL_FLAG _IO(TASKCTXIO, 3)
+
+
+
+
 /*
  * Class of mediation types in the AppArmor policy db
  */
