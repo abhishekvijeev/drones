@@ -1029,13 +1029,14 @@ static int apparmor_socket_shutdown(struct socket *sock, int how)
  */
 static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
-	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	// struct aa_sk_ctx *ctx = SK_CTX(sk);
 
-	if (!skb->secmark)
-		return 0;
+	// if (!skb->secmark)
+	// 	return 0;
 
-	return apparmor_secmark_check(ctx->label, OP_RECVMSG, AA_MAY_RECEIVE,
-				      skb->secmark, sk);
+	// return apparmor_secmark_check(ctx->label, OP_RECVMSG, AA_MAY_RECEIVE,
+	// 			      skb->secmark, sk);
+	return 0;
 }
 #endif
 
@@ -1136,13 +1137,14 @@ static void apparmor_sock_graft(struct sock *sk, struct socket *parent)
 static int apparmor_inet_conn_request(struct sock *sk, struct sk_buff *skb,
 				      struct request_sock *req)
 {
-	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	// struct aa_sk_ctx *ctx = SK_CTX(sk);
 
-	if (!skb->secmark)
-		return 0;
+	// if (!skb->secmark)
+	// 	return 0;
 
-	return apparmor_secmark_check(ctx->label, OP_CONNECT, AA_MAY_CONNECT,
-				      skb->secmark, sk);
+	// return apparmor_secmark_check(ctx->label, OP_CONNECT, AA_MAY_CONNECT,
+	// 			      skb->secmark, sk);
+	return 0;
 }
 #endif
 
@@ -1618,22 +1620,23 @@ static unsigned int apparmor_ip_postroute(void *priv,
 					  struct sk_buff *skb,
 					  const struct nf_hook_state *state)
 {
-	struct aa_sk_ctx *ctx;
-	struct sock *sk;
+	// struct aa_sk_ctx *ctx;
+	// struct sock *sk;
 
-	if (!skb->secmark)
-		return NF_ACCEPT;
+	// if (!skb->secmark)
+	// 	return NF_ACCEPT;
 
-	sk = skb_to_full_sk(skb);
-	if (sk == NULL)
-		return NF_ACCEPT;
+	// sk = skb_to_full_sk(skb);
+	// if (sk == NULL)
+	// 	return NF_ACCEPT;
 
-	ctx = SK_CTX(sk);
-	if (!apparmor_secmark_check(ctx->label, OP_SENDMSG, AA_MAY_SEND,
-				    skb->secmark, sk))
-		return NF_ACCEPT;
+	// ctx = SK_CTX(sk);
+	// if (!apparmor_secmark_check(ctx->label, OP_SENDMSG, AA_MAY_SEND,
+	// 			    skb->secmark, sk))
+	// 	return NF_ACCEPT;
 
-	return NF_DROP_ERR(-ECONNREFUSED);
+	// return NF_DROP_ERR(-ECONNREFUSED);
+	return NF_ACCEPT;
 
 }
 
