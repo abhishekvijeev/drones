@@ -18,6 +18,7 @@
 #include <asm/div64.h>
 #include <uapi/linux/kernel.h>
 
+extern int global_kernel_debug_flag;
 #define STACK_MAGIC	0xdeadbeef
 
 /**

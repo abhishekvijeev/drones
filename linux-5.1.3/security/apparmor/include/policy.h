@@ -146,6 +146,14 @@ struct aa_profile {
 	const char *disconnected;
 	int size;
 
+	/*
+	 * Custom fields
+	 */
+	struct DomainMetaData *current_domain;
+	struct ListOfDomains *allow_net_domains;
+	struct ListOfDomains *deny_net_domains;
+
+
 	struct aa_policydb policy;
 	struct aa_file_rules file;
 	struct aa_caps caps;

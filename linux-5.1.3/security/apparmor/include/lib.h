@@ -48,6 +48,8 @@
 
 /* Flag indicating whether initialization completed */
 extern int apparmor_initialized;
+extern int apparmor_ioctl_debug;
+
 
 /* fn's in lib */
 const char *skipn_spaces(const char *str, size_t n);

@@ -46,6 +46,8 @@
 
 /* Flag indicating whether initialization completed */
 int apparmor_initialized;
+//defined extern in apparmor/include/lib.h
+int apparmor_ioctl_debug;
 
 DEFINE_PER_CPU(struct aa_buffers, aa_buffers);
 
@@ -1709,7 +1711,7 @@ __initcall(apparmor_nf_ip_init);
 static int __init apparmor_init(void)
 {
 	int error;
-
+	apparmor_ioctl_debug = 0;
 	aa_secids_init();
 
 	error = aa_setup_dfa_engine();
@@ -1775,3 +1777,93 @@ DEFINE_LSM(apparmor) = {
 	.blobs = &apparmor_blob_sizes,
 	.init = apparmor_init,
 };
+
+
+
+// Custome code: starts
+long apparmor_debug_flag_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
+{
+	// printk_ratelimited(KERN_INFO "debug_flag: Received ioctl() from process %d\n", current -> pid);
+	switch(cmd)
+	{
+		case SET_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: set\n");
+			apparmor_ioctl_debug = 1;
+			break;
+		
+		case CLEAR_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: clear\n");
+			apparmor_ioctl_debug = 0;
+			break;
+		
+		case SET_KERNEL_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: set\n");
+			global_kernel_debug_flag = 1;
+			break;
+		case CLEAR_KERNEL_FLAG:
+
+			// printk_ratelimited(KERN_INFO "CLEAR_KERNEL_FLAG: set\n");
+			global_kernel_debug_flag = 0;
+			break;
+		
+	}
+
+	return 0;
+}
+
+int apparmor_debug_flag_open(struct inode *i, struct file *f)
+{
+	printk_ratelimited(KERN_INFO "debug_flag: Opening device by process %ld\n", (long)(current -> pid));
+    return 0;
+}
+
+int apparmor_debug_flag_close(struct inode *i, struct file *f)
+{
+	printk_ratelimited(KERN_INFO "debug_flag: Closing device by process %ld\n", (long)(current -> pid));
+    return 0;
+}
+
+/*
+ * Map the file operation function pointers to the custom implementations
+ */
+static struct file_operations apparmor_debug_flag_fops = {
+
+	.unlocked_ioctl = apparmor_debug_flag_ioctl,
+	.open = apparmor_debug_flag_open,
+	.release = apparmor_debug_flag_close,
+};
+
+
+/*
+ * Set device parameters
+ */
+static struct miscdevice apparmor_debug_flag_device_ops = {
+
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "debug_flag",
+	.fops = &apparmor_debug_flag_fops,
+};
+
+int __init apparmor_debug_flag_init(void)
+{
+	int ret;
+    // printk_ratelimited(KERN_INFO "Registering debug_flag device\n"); 
+    ret = misc_register(&apparmor_debug_flag_device_ops);
+
+	if(ret < 0)
+	{
+		printk_ratelimited(KERN_INFO "debug_flag device registration failed with %d\n", ret);
+	}
+	else
+	{
+		printk_ratelimited(KERN_INFO "debug_flag device successfully registered\n");
+	}
+    return ret;
+}
+
+device_initcall(apparmor_debug_flag_init);
+
+// Custome code: end
