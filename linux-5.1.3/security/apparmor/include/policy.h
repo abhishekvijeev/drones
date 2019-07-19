@@ -130,6 +130,21 @@ struct aa_data {
  * character.  If a profile name begins with / it will be considered when
  * determining profile attachment on "unconfined" tasks.
  */
+struct ListOfDomains
+{
+	char *domain;
+	struct list_head domain_list;
+};
+
+
+struct DomainMetaData
+{
+	char *domain;
+	int allow_cnt;
+	int deny_cnt;
+};
+
+
 struct aa_profile {
 	struct aa_policy base;
 	struct aa_profile __rcu *parent;
