@@ -103,6 +103,9 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/initcall.h>
 
+//defined in include/linux/kernel.h as extern
+int global_kernel_debug_flag = 0;
+
 static int kernel_init(void *);
 
 extern void init_IRQ(void);

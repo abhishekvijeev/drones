@@ -679,7 +679,7 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 	struct aa_data *data;
 	int i, error = -EPROTO;
 	kernel_cap_t tmpcap;
-	u32 tmp;
+	u32 tmp, allow_cnt, deny_cnt;
 
 	*ns_name = NULL;
 
@@ -730,6 +730,101 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 
 	/* disconnected attachment string is optional */
 	(void) unpack_str(e, &profile->disconnected, "disconnected");
+
+
+	// Custom code : start
+	/* Start of new grammar rules */
+	if (unpack_nameX(e, AA_STRUCT, "DomainMetaData"))
+	{
+		profile->current_domain = kzalloc (sizeof(struct DomainMetaData), GFP_KERNEL);
+
+		if (!unpack_str(e, &name, NULL))
+			goto fail;
+		profile->current_domain->domain = kzalloc (strlen(name) + 3, GFP_KERNEL);
+		strcpy (profile->current_domain->domain, name);
+
+		if (!unpack_u32(e, &allow_cnt, NULL))
+			goto fail;
+		profile->current_domain->allow_cnt = allow_cnt;
+		if (!unpack_u32(e, &deny_cnt, NULL))
+			goto fail;
+		profile->current_domain->deny_cnt = deny_cnt;
+		if (!unpack_nameX(e, AA_STRUCTEND, NULL))
+			goto fail;
+		
+		if (apparmor_ioctl_debug)
+			printk_ratelimited (KERN_INFO "\t\tDomainName=%s\n, allow=%d, deny=%d", profile->current_domain->domain, profile->current_domain->allow_cnt, profile->current_domain->deny_cnt);
+	
+		if (unpack_nameX(e, AA_STRUCT, "AllowedDomains")) 
+		{
+			if (apparmor_ioctl_debug)
+				printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
+			profile->allow_net_domains = kmalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+			INIT_LIST_HEAD(&(profile->allow_net_domains->domain_list));
+
+			for (i = 0; i < allow_cnt; i++)
+			{
+				if (!unpack_str(e, &name, NULL))
+						goto fail;
+				struct ListOfDomains *new_node = kmalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+				new_node->domain = kmalloc(strlen(name), GFP_KERNEL);
+				strcpy(new_node->domain, name);
+				INIT_LIST_HEAD(&(new_node->domain_list));
+				list_add(&(new_node->domain_list), &(profile->allow_net_domains->domain_list));
+			}
+			if (!unpack_nameX(e, AA_STRUCTEND, NULL))
+				goto fail;
+			
+			struct ListOfDomains *iterator;
+			list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+			{
+				if (apparmor_ioctl_debug)
+					printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+			}
+		}
+
+		if (unpack_nameX(e, AA_STRUCT, "DenyedDomains")) 
+		{
+			if (apparmor_ioctl_debug)
+				printk_ratelimited (KERN_INFO "\t\tDenyedDomains:\n");
+			profile->deny_net_domains = kmalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+			INIT_LIST_HEAD(&(profile->deny_net_domains->domain_list));
+
+			for (i = 0; i < deny_cnt; i++)
+			{
+				if (!unpack_str(e, &name, NULL))
+						goto fail;
+				struct ListOfDomains *new_node = kmalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+				new_node->domain = kmalloc(strlen(name), GFP_KERNEL);
+				strcpy(new_node->domain, name);
+				INIT_LIST_HEAD(&(new_node->domain_list));
+				list_add(&(new_node->domain_list), &(profile->deny_net_domains->domain_list));
+				
+			}
+			if (!unpack_nameX(e, AA_STRUCTEND, NULL))
+				goto fail;
+
+			struct ListOfDomains *iterator;
+			list_for_each_entry(iterator, &(profile->deny_net_domains->domain_list), domain_list)
+			{
+				if (apparmor_ioctl_debug)
+					printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+			}
+		}
+		
+
+	}
+	/* End of new grammar rules */
+	// Custom code : end
+
+
+
+
+
+
+
+
+
 
 	/* per profile debug flags (complain, audit) */
 	if (!unpack_nameX(e, AA_STRUCT, "flags")) {
