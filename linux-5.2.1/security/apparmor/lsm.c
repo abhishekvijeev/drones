@@ -944,6 +944,10 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			label->pid = current->pid;
 			aa_put_label(ctx->label);
 		}
+		if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
+			printk (KERN_INFO "sock_sendmsg_nosec: current process = %s, current pid = %d\n", 
+							current->comm, current->pid);
+
 	}
 
 	return aa_sock_msg_perm(OP_SENDMSG, AA_MAY_SEND, sock, msg, size);
