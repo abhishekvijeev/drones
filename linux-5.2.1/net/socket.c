@@ -643,6 +643,14 @@ INDIRECT_CALLABLE_DECLARE(int inet_sendmsg(struct socket *, struct msghdr *,
 					   size_t));
 static inline int sock_sendmsg_nosec(struct socket *sock, struct msghdr *msg)
 {
+	if (global_kernel_debug_flag)
+	{
+		sock->sk->sock_parent_pid = current->pid;
+		printk (KERN_INFO "sock_sendmsg_nosec: current process = %s, current pid = %d\n", 
+							current->comm, current->pid);
+	
+	}
+
 	int ret = INDIRECT_CALL_INET4(sock->ops->sendmsg, inet_sendmsg, sock,
 				      msg, msg_data_left(msg));
 	BUG_ON(ret == -EIOCBQUEUED);
