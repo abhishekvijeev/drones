@@ -944,10 +944,10 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 static int apparmor_socket_recvmsg(struct socket *sock,
 				   struct msghdr *msg, int size, int flags)
 {
-	if (global_kernel_debug_flag && sock->sock_parent_pid)
+	if (global_kernel_debug_flag && sock->sk->sock_parent_pid)
 	{
 		printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, current pid = %d, sent from pid = %d\n", 
-							current->comm, current->pid, sock->sock_parent_pid);
+							current->comm, current->pid, sock->sk->sock_parent_pid);
 	}
 	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
 }
