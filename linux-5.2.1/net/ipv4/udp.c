@@ -896,6 +896,13 @@ csum_partial:
 		uh->check = CSUM_MANGLED_0;
 
 send:
+
+	#ifdef CONFIG_NETWORK_SECMARK
+	printk(KERN_INFO "udp_send_skb: current=%s, current_pid=%d\n", current->comm, current->pid);
+	skb->secmark = current->pid;
+	printk(KERN_INFO "udp_sendmsg: skb->secmark set to %d\n", skb->secmark);
+	#endif
+	
 	err = ip_send_skb(sock_net(sk), skb);
 	if (err) {
 		if (err == -ENOBUFS && !inet->recverr) {
