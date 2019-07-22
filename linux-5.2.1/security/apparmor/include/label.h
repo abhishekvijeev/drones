@@ -130,6 +130,7 @@ struct aa_label {
 	__counted char *hname;
 	long flags;
 	u32 secid;
+	__u32 pid;
 	int size;
 	struct aa_profile *vec[];
 };
