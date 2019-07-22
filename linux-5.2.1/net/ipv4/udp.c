@@ -1183,7 +1183,15 @@ back_from_confirm:
 				  &cork, msg->msg_flags);
 		err = PTR_ERR(skb);
 		if (!IS_ERR_OR_NULL(skb))
+		{
+			struct aa_label *label;
+			struct aa_sk_ctx *ctx = SK_CTX(sk);
+			label = aa_get_label(ctx->label);
+			skb->secmark = label->pid;
+			aa_put_label(ctx->label);
+			
 			err = udp_send_skb(skb, fl4, &cork);
+		}
 		goto out;
 	}
 
