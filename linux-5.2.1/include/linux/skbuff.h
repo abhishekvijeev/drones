@@ -852,7 +852,6 @@ struct sk_buff {
 #endif
 #ifdef CONFIG_NETWORK_SECMARK
 	__u32		secmark;
-	__u32		skbuff_parent_pid;
 #endif
 
 	union {

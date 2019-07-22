@@ -924,7 +924,7 @@ int udp_push_pending_frames(struct sock *sk)
 	if (!skb)
 		goto out;
 	if (global_kernel_debug_flag && sk->sock_parent_pid)
-		skb->skbuff_parent_pid = sk->sock_parent_pid;
+		skb->secmark = sk->sock_parent_pid;
 	err = udp_send_skb(skb, fl4, &inet->cork.base);
 
 out:
@@ -1184,7 +1184,7 @@ back_from_confirm:
 				  &cork, msg->msg_flags);
 		
 		if (global_kernel_debug_flag && sk->sock_parent_pid)
-			skb->skbuff_parent_pid = sk->sock_parent_pid;
+			skb->secmark = sk->sock_parent_pid;
 
 		err = PTR_ERR(skb);
 		if (!IS_ERR_OR_NULL(skb))
@@ -2312,8 +2312,8 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 	sk = __udp4_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
 	if (sk)
 	{
-		if (global_kernel_debug_flag && skb->skbuff_parent_pid)
-			sk->sock_parent_pid = skb->skbuff_parent_pid;
+		if (global_kernel_debug_flag && skb->secmark)
+			sk->sock_parent_pid = skb->secmark;
 		return udp_unicast_rcv_skb(sk, skb, uh);
 	}
 
