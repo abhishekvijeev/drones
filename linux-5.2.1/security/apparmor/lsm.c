@@ -933,6 +933,23 @@ static int aa_sock_msg_perm(const char *op, u32 request, struct socket *sock,
 static int apparmor_socket_sendmsg(struct socket *sock,
 				   struct msghdr *msg, int size)
 {
+	if (sock->sk) 
+	{
+		struct aa_label *label;
+		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
+		label = aa_get_label(ctx->label);
+		if(label)
+		{
+			label->pid = current->pid;
+		}
+		aa_put_label(ctx->label);
+	}
+	if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
+	{
+		printk (KERN_INFO "apparmor_socket_sendmsg: current process = %s, current pid = %d\n", 
+						current->comm, current->pid);
+	}
+
 	return aa_sock_msg_perm(OP_SENDMSG, AA_MAY_SEND, sock, msg, size);
 }
 
