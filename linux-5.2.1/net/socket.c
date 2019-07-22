@@ -646,7 +646,8 @@ static inline int sock_sendmsg_nosec(struct socket *sock, struct msghdr *msg)
 	if (global_kernel_debug_flag)
 	{
 		sock->sk->sock_parent_pid = current->pid;
-		printk (KERN_INFO "sock_sendmsg_nosec: current process = %s, current pid = %d\n", 
+		if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
+			printk (KERN_INFO "sock_sendmsg_nosec: current process = %s, current pid = %d\n", 
 							current->comm, current->pid);
 	
 	}
