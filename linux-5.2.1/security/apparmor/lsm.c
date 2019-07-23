@@ -963,12 +963,23 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	if (sock->sk) 
 	{
 		struct aa_label *label;
+		__u32 sender_pid;
 		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 		label = aa_get_label(ctx->label);
+		sender_pid = label->pid;
 		if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
+		{
 			printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, current pid = %d, sent from pid = %d\n", 
-							current->comm, current->pid, label->pid);
+						current->comm, current->pid, label->pid);
+			struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+			if (sender)
+				printk (KERN_INFO "sender process name = %s, pid is %d\n", sender->comm, sender->pid);
+			else
+				printk (KERN_INFO "Error in getting task_struct of pid= %d\n", sender_pid);
+			
+		}
 		aa_put_label(ctx->label);
+		
 	}
 	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
 }
