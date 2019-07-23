@@ -981,7 +981,7 @@ static int apparmor_getlabel_domain (struct aa_profile *profile, char **name)
 	if (profile->current_domain)
 	{
 		*name = profile->current_domain->domain;
-		printk (KERN_INFO "apparmor_getlabel_domain: domain is %s\n", name);
+		
 	}
 	return 0;
 }
@@ -1034,15 +1034,37 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 					bool allow = false;
 					fn_for_each (sender_ctx->nnp, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
 					if (allow)
-						printk (KERN_INFO "apparmor_socket_recvmsg: Match is true\n");
+						printk (KERN_INFO "apparmor_socket_recvmsg: Match is true with nnp\n");
 					else 
-						printk (KERN_INFO "apparmor_socket_recvmsg: Match is false\n");
+						printk (KERN_INFO "apparmor_socket_recvmsg: Match is false with nnp\n");
 					
 				}
+				else if (sender_ctx->onexec)
+				{
+					bool allow = false;
+					fn_for_each (sender_ctx->onexec, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
+					if (allow)
+						printk (KERN_INFO "apparmor_socket_recvmsg: Match is true with onexec\n");
+					else 
+						printk (KERN_INFO "apparmor_socket_recvmsg: Match is false with onexec\n");
+					
+				}
+				else if (sender_ctx->previous)
+				{
+					bool allow = false;
+					fn_for_each (sender_ctx->previous, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
+					if (allow)
+						printk (KERN_INFO "apparmor_socket_recvmsg: Match is true with previous\n");
+					else 
+						printk (KERN_INFO "apparmor_socket_recvmsg: Match is false with previous\n");
+				}
+				else 
+					printk (KERN_INFO "apparmor_socket_recvmsg: None of aa_task_ctx worked\n");
+
 				printk (KERN_INFO "sender process name = %s, pid is %d\n", sender->comm, sender->pid);
 			}
-			// else
-			// 	printk (KERN_INFO "Error in getting task_struct of pid= %d\n", sender_pid);
+			else
+				printk (KERN_INFO "Error in getting task_struct of pid= %d\n", sender_pid);
 
 			//test code to iterate aa_profile list inside aa_label and print domain
 			// struct aa_profile *profile;
