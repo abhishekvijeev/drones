@@ -113,6 +113,22 @@
 #include <net/addrconf.h>
 #include <net/udp_tunnel.h>
 
+#include "../../security/apparmor/include/apparmor.h"
+#include "../../security/apparmor/include/apparmorfs.h"
+#include "../../security/apparmor/include/audit.h"
+#include "../../security/apparmor/include/capability.h"
+#include "../../security/apparmor/include/cred.h"
+#include "../../security/apparmor/include/file.h"
+#include "../../security/apparmor/include/ipc.h"
+#include "../../security/apparmor/include/net.h"
+#include "../../security/apparmor/include/path.h"
+#include "../../security/apparmor/include/label.h"
+#include "../../security/apparmor/include/policy.h"
+#include "../../security/apparmor/include/policy_ns.h"
+#include "../../security/apparmor/include/procattr.h"
+#include "../../security/apparmor/include/mount.h"
+#include "../../security/apparmor/include/secid.h"
+
 struct udp_table udp_table __read_mostly;
 EXPORT_SYMBOL(udp_table);
 
@@ -924,6 +940,12 @@ int udp_push_pending_frames(struct sock *sk)
 	if (!skb)
 		goto out;
 
+	struct aa_label *label;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	label = aa_get_label(ctx->label);
+	skb->secmark = label->pid;
+	aa_put_label(ctx->label);
+
 	err = udp_send_skb(skb, fl4, &inet->cork.base);
 
 out:
@@ -1189,7 +1211,7 @@ back_from_confirm:
 			label = aa_get_label(ctx->label);
 			skb->secmark = label->pid;
 			aa_put_label(ctx->label);
-			
+
 			err = udp_send_skb(skb, fl4, &cork);
 		}
 		goto out;
