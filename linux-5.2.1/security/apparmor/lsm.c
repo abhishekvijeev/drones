@@ -956,6 +956,22 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 	return aa_sock_msg_perm(OP_SENDMSG, AA_MAY_SEND, sock, msg, size);
 }
 
+
+static void print_all_domain(struct aa_profile *profile)
+{
+	if (apparmor_debug_flag_close)
+	{
+		if (profile->current_domain)
+		{
+			printk (KERN_INFO "print_all_domain: current domain is %s set for process %s with pid %d\n", profile->current_domain->domain, current->comm, current->pid);
+		}
+		else
+		{
+			printk (KERN_INFO "print_all_domain: current domain is NOT set for process %s with pid %d\n", current->comm, current->pid);
+		}
+	}
+	
+}
 /**
  * apparmor_socket_recvmsg - check perms before receiving a message
  */
@@ -973,11 +989,27 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		{
 			printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, current pid = %d, sent from pid = %d\n", 
 						current->comm, current->pid, label->pid);
-			struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-			if (sender)
-				printk (KERN_INFO "sender process name = %s, pid is %d\n", sender->comm, sender->pid);
-			else
-				printk (KERN_INFO "Error in getting task_struct of pid= %d\n", sender_pid);
+			
+			
+			// struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+			// if (sender)
+			// {
+			// 	// struct aa_task_ctx *sender_ctx = task_ctx(task);
+			// 	// if (sender_ctx->nnp)
+			// 	// {
+			// 	// 	struct aa_profile *profile;
+			// 	// 	bool allow;
+			// 	// 	char *recv_domain;
+
+			// 	// 	fn_for_each (sender_ctx->nnp, profile, check_for_flow(profile, recv_domain, &allow));
+			// 	// }
+			// 	printk (KERN_INFO "sender process name = %s, pid is %d\n", sender->comm, sender->pid);
+			// }
+			// else
+			// 	printk (KERN_INFO "Error in getting task_struct of pid= %d\n", sender_pid);
+
+
+			fn_for_each (label, profile, print_all_domain(profile));
 			
 		}
 		aa_put_label(ctx->label);
