@@ -1011,9 +1011,11 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 {
 	if (sock->sk) 
 	{
-		struct aa_label *label;
+		struct aa_label *label, *cl;
 		struct aa_profile *profile;
-					
+				
+		cl = __begin_current_label_crit_section();
+				
 		__u32 sender_pid;
 		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 		label = aa_get_label(ctx->label);
@@ -1031,39 +1033,6 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 			if (sender)
 			{
-				// struct aa_task_ctx *sender_ctx = task_ctx(sender);
-				// if (sender_ctx->nnp && recv_domain)
-				// {
-				// 	bool allow = false;
-				// 	fn_for_each (sender_ctx->nnp, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
-				// 	if (allow)
-				// 		printk (KERN_INFO "apparmor_socket_recvmsg: Match is true with nnp\n");
-				// 	else 
-				// 		printk (KERN_INFO "apparmor_socket_recvmsg: Match is false with nnp\n");
-					
-				// }
-				// else if (sender_ctx->onexec && recv_domain)
-				// {
-				// 	bool allow = false;
-				// 	fn_for_each (sender_ctx->onexec, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
-				// 	if (allow)
-				// 		printk (KERN_INFO "apparmor_socket_recvmsg: Match is true with onexec\n");
-				// 	else 
-				// 		printk (KERN_INFO "apparmor_socket_recvmsg: Match is false with onexec\n");
-					
-				// }
-				// else if (sender_ctx->previous && recv_domain)
-				// {
-				// 	bool allow = false;
-				// 	fn_for_each (sender_ctx->previous, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
-				// 	if (allow)
-				// 		printk (KERN_INFO "apparmor_socket_recvmsg: Match is true with previous\n");
-				// 	else 
-				// 		printk (KERN_INFO "apparmor_socket_recvmsg: Match is false with previous\n");
-				// }
-				// else 
-				// 	printk (KERN_INFO "apparmor_socket_recvmsg: None of aa_task_ctx worked\n");
-
 				struct aa_label *sender_label = aa_get_task_label(sender);
 				if(sender_label && recv_domain)
 				{
@@ -1074,6 +1043,8 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 					else 
 						printk (KERN_INFO "apparmor_socket_recvmsg: Match is false\n");
 				}
+				aa_put_label(sender_label);
+				
 
 				printk (KERN_INFO "sender process name = %s, pid is %d\n", sender->comm, sender->pid);
 			}
@@ -1086,6 +1057,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			
 		}
 		aa_put_label(ctx->label);
+		__end_current_label_crit_section(cl);
 		
 	}
 	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
