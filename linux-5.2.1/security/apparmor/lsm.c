@@ -957,7 +957,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 }
 
 
-static void print_all_domain(struct aa_profile *profile)
+static int print_all_domain(struct aa_profile *profile)
 {
 	if (apparmor_ioctl_debug)
 	{
@@ -970,6 +970,7 @@ static void print_all_domain(struct aa_profile *profile)
 			printk (KERN_INFO "print_all_domain: current domain is NOT set for process %s with pid %d\n", current->comm, current->pid);
 		}
 	}
+	return 0;
 	
 }
 /**
