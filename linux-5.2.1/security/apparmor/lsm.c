@@ -1011,20 +1011,21 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 {
 	if (sock->sk) 
 	{
-		struct aa_label *label, *cl;
-		struct aa_profile *profile;
-		
-		cl = __begin_current_label_crit_section();
-		bool allow = false;		
-		__u32 sender_pid;
-		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
-		label = aa_get_label(ctx->label);
-		char *recv_domain;
-		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
-		
-		sender_pid = label->pid;
 		if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
 		{
+			struct aa_label *label, *cl;
+			struct aa_profile *profile;
+			
+			cl = __begin_current_label_crit_section();
+			bool allow = false;		
+			__u32 sender_pid;
+			struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
+			label = aa_get_label(ctx->label);
+			char *recv_domain;
+			fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
+			
+			sender_pid = label->pid;
+			
 			printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, current pid = %d, sent from pid = %d\n", 
 						current->comm, current->pid, label->pid);
 			if (recv_domain)
@@ -1055,13 +1056,14 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			// struct aa_profile *profile;
 			// fn_for_each (label, profile, print_all_domain(profile));
 			
-		}
-		aa_put_label(ctx->label);
-		__end_current_label_crit_section(cl);
-		if (!allow)
-			return 1;
+			aa_put_label(ctx->label);
+			__end_current_label_crit_section(cl);
+			if (!allow)
+				return 1;
+		}//end if of talker, listener check
 		
-	}
+		
+	}//end if (sock->sk) 
 	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
 }
 
