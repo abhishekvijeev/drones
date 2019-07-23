@@ -1006,6 +1006,8 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	if (sock->sk) 
 	{
 		struct aa_label *label;
+		struct aa_profile *profile;
+					
 		__u32 sender_pid;
 		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 		label = aa_get_label(ctx->label);
@@ -1025,7 +1027,6 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				struct aa_task_ctx *sender_ctx = task_ctx(task);
 				if (sender_ctx->nnp)
 				{
-					struct aa_profile *profile;
 					bool allow = false;
 					fn_for_each (sender_ctx->nnp, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
 					if (allow)
