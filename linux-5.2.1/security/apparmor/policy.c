@@ -219,6 +219,33 @@ void aa_free_profile(struct aa_profile *profile)
 	aa_put_ns(profile->ns);
 	kzfree(profile->rename);
 	
+
+	// Custom code: Start
+	if (profile->allow_net_domains)
+	{
+		struct ListOfDomains *iterator, *tmp;
+		iterator = list_first_entry(&(profile->allow_net_domains->domain_list), typeof(*iterator), domain_list);
+		while( (&iterator->domain_list) != &(profile->allow_net_domains->domain_list))
+		{
+			tmp = iterator;
+			iterator = list_next_entry (iterator, domain_list);
+			kzfree (tmp->domain);
+			kzfree (tmp);
+		}
+		if (apparmor_ioctl_debug)
+			printk (KERN_INFO "aa_free_profile: allow list cleared\n");
+	}
+	if (profile->current_domain)
+	{
+		kzfree (profile->current_domain->domain);
+		kzfree (profile->current_domain);
+		if (apparmor_ioctl_debug)
+			printk (KERN_INFO "aa_free_profile: current domain cleared\n");
+	}
+	// Custom code: End
+
+
+
 	aa_free_file_rules(&profile->file);
 	aa_free_cap_rules(&profile->caps);
 	aa_free_rlimit_rules(&profile->rlimits);

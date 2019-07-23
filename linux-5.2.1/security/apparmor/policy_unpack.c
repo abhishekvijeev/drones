@@ -779,22 +779,22 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 			if (!unpack_nameX(e, AA_STRUCTEND, NULL))
 				goto fail;
 			
-			struct ListOfDomains *iterator, *pos;
+			struct ListOfDomains *iterator;
 			list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
 			{
 				if (apparmor_ioctl_debug)
 					printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
 			}
-			if (apparmor_ioctl_debug)
-				printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
-			iterator = list_first_entry(&(profile->allow_net_domains->domain_list), typeof(*iterator), domain_list);
-			while( (&iterator->domain_list) != &(profile->allow_net_domains->domain_list))
-			{
-				if (apparmor_ioctl_debug)
-					printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+			// if (apparmor_ioctl_debug)
+			// 	printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
+			// iterator = list_first_entry(&(profile->allow_net_domains->domain_list), typeof(*iterator), domain_list);
+			// while( (&iterator->domain_list) != &(profile->allow_net_domains->domain_list))
+			// {
+			// 	if (apparmor_ioctl_debug)
+			// 		printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
 				
-				iterator = list_next_entry (iterator, domain_list);
-			}
+			// 	iterator = list_next_entry (iterator, domain_list);
+			// }
 
 		}		
 
