@@ -988,13 +988,16 @@ static int apparmor_getlabel_domain (struct aa_profile *profile, char **name)
 static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_domain, bool *allow)
 {
 	struct ListOfDomains *iterator;
-	list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+	if (profile->allow_net_domains)
 	{
-		printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
-		if (strcmp(iterator->domain, checking_domain) == 0)
+		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
 		{
-			allow = true;
-			break;
+			printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
+			if (strcmp(iterator->domain, checking_domain) == 0)
+			{
+				allow = true;
+				break;
+			}
 		}
 	}
 	return 0;
@@ -1029,7 +1032,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			if (sender)
 			{
 				struct aa_task_ctx *sender_ctx = task_ctx(sender);
-				if (sender_ctx->nnp)
+				if (sender_ctx->nnp && recv_domain)
 				{
 					bool allow = false;
 					fn_for_each (sender_ctx->nnp, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
@@ -1039,7 +1042,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 						printk (KERN_INFO "apparmor_socket_recvmsg: Match is false with nnp\n");
 					
 				}
-				else if (sender_ctx->onexec)
+				else if (sender_ctx->onexec && recv_domain)
 				{
 					bool allow = false;
 					fn_for_each (sender_ctx->onexec, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
@@ -1049,7 +1052,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 						printk (KERN_INFO "apparmor_socket_recvmsg: Match is false with onexec\n");
 					
 				}
-				else if (sender_ctx->previous)
+				else if (sender_ctx->previous && recv_domain)
 				{
 					bool allow = false;
 					fn_for_each (sender_ctx->previous, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
