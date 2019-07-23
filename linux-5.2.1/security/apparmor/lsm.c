@@ -39,6 +39,7 @@
 #include "include/procattr.h"
 #include "include/mount.h"
 #include "include/secid.h"
+#include <string.h>
 
 /* Flag indicating whether initialization completed */
 int apparmor_initialized;
@@ -973,6 +974,28 @@ static int print_all_domain(struct aa_profile *profile)
 	return 0;
 	
 }
+
+static int apparmor_getlabel_domain (struct aa_profile *profile, char **name)
+{
+	if (profile->current_domain)
+		*name = profile->current_domain;
+	return 0;
+}
+static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_domain, bool *allow)
+{
+	struct ListOfDomains *iterator;
+	list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+	{
+		printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
+		if (strcmp(iterator->domain, checking_domain) == 0)
+		{
+			allow = true;
+			break;
+		}
+	}
+	return 0;
+}
+
 /**
  * apparmor_socket_recvmsg - check perms before receiving a message
  */
@@ -985,6 +1008,9 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		__u32 sender_pid;
 		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 		label = aa_get_label(ctx->label);
+		char *recv_domain;
+		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
+		
 		sender_pid = label->pid;
 		if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
 		{
@@ -992,25 +1018,29 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 						current->comm, current->pid, label->pid);
 			
 			
-			// struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-			// if (sender)
-			// {
-			// 	// struct aa_task_ctx *sender_ctx = task_ctx(task);
-			// 	// if (sender_ctx->nnp)
-			// 	// {
-			// 	// 	struct aa_profile *profile;
-			// 	// 	bool allow;
-			// 	// 	char *recv_domain;
-
-			// 	// 	fn_for_each (sender_ctx->nnp, profile, check_for_flow(profile, recv_domain, &allow));
-			// 	// }
-			// 	printk (KERN_INFO "sender process name = %s, pid is %d\n", sender->comm, sender->pid);
-			// }
+			struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+			if (sender)
+			{
+				struct aa_task_ctx *sender_ctx = task_ctx(task);
+				if (sender_ctx->nnp)
+				{
+					struct aa_profile *profile;
+					bool allow = false;
+					fn_for_each (sender_ctx->nnp, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
+					if (allow)
+						printk (KERN_INFO "apparmor_socket_recvmsg: Match is true\n");
+					else 
+						printk (KERN_INFO "apparmor_socket_recvmsg: Match is false\n");
+					
+				}
+				printk (KERN_INFO "sender process name = %s, pid is %d\n", sender->comm, sender->pid);
+			}
 			// else
 			// 	printk (KERN_INFO "Error in getting task_struct of pid= %d\n", sender_pid);
 
-			struct aa_profile *profile;
-			fn_for_each (label, profile, print_all_domain(profile));
+			//test code to iterate aa_profile list inside aa_label and print domain
+			// struct aa_profile *profile;
+			// fn_for_each (label, profile, print_all_domain(profile));
 			
 		}
 		aa_put_label(ctx->label);
