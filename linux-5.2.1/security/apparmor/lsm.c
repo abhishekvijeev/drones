@@ -959,7 +959,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 
 static void print_all_domain(struct aa_profile *profile)
 {
-	if (apparmor_debug_flag_close)
+	if (apparmor_ioctl_debug)
 	{
 		if (profile->current_domain)
 		{
@@ -1008,7 +1008,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			// else
 			// 	printk (KERN_INFO "Error in getting task_struct of pid= %d\n", sender_pid);
 
-
+			struct aa_profile *profile;
 			fn_for_each (label, profile, print_all_domain(profile));
 			
 		}
