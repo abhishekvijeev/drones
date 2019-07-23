@@ -976,10 +976,13 @@ static int print_all_domain(struct aa_profile *profile)
 	
 }
 
-static int apparmor_getlabel_domain (struct aa_profile *profile, char **name)
+static int apparmor_getlabel_domain (struct aa_profile *profile, char *name)
 {
 	if (profile->current_domain)
-		*name = profile->current_domain;
+	{
+		name = profile->current_domain;
+		printk (KERN_INFO "apparmor_getlabel_domain: domain is %s\n", name);
+	}
 	return 0;
 }
 static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_domain, bool *allow)
@@ -1012,19 +1015,20 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 		label = aa_get_label(ctx->label);
 		char *recv_domain;
-		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
+		fn_for_each (label, profile, apparmor_getlabel_domain(profile, recv_domain));
 		
 		sender_pid = label->pid;
 		if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
 		{
 			printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, current pid = %d, sent from pid = %d\n", 
 						current->comm, current->pid, label->pid);
-			
+			if (recv_domain)
+				printk (KERN_INFO "apparmor_socket_recvmsg: current process domain is %s\n", recv_domain);	
 			
 			struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 			if (sender)
 			{
-				struct aa_task_ctx *sender_ctx = task_ctx(task);
+				struct aa_task_ctx *sender_ctx = task_ctx(sender);
 				if (sender_ctx->nnp)
 				{
 					bool allow = false;
