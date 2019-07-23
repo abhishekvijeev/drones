@@ -1058,8 +1058,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			
 			aa_put_label(ctx->label);
 			__end_current_label_crit_section(cl);
-			if (!allow)
-				return 1;
+			
 		}//end if of talker, listener check
 		
 		

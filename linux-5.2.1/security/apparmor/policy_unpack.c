@@ -679,7 +679,7 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 	struct aa_data *data;
 	int i, error = -EPROTO;
 	kernel_cap_t tmpcap;
-	u32 tmp, allow_cnt, deny_cnt;
+	u32 tmp;
 
 	*ns_name = NULL;
 
@@ -739,18 +739,22 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 	if (unpack_nameX(e, AA_STRUCT, "DomainMetaData"))
 	{
 		profile->current_domain = kzalloc (sizeof(struct DomainMetaData), GFP_KERNEL);
-
+		if (!profile->current_domain)
+			goto fail;
 		if (!unpack_str(e, &name, NULL))
 			goto fail;
 		profile->current_domain->domain = kzalloc (strlen(name) + 3, GFP_KERNEL);
+		if (!profile->current_domain->domain)
+			goto fail;
+		
 		strcpy (profile->current_domain->domain, name);
 
-		if (!unpack_u32(e, &allow_cnt, NULL))
+		if (!unpack_u32(e, &(profile->current_domain->allow_cnt), NULL))
 			goto fail;
-		profile->current_domain->allow_cnt = allow_cnt;
-		if (!unpack_u32(e, &deny_cnt, NULL))
+		// profile->current_domain->allow_cnt = allow_cnt;
+		if (!unpack_u32(e, &(profile->current_domain->deny_cnt), NULL))
 			goto fail;
-		profile->current_domain->deny_cnt = deny_cnt;
+		// profile->current_domain->deny_cnt = deny_cnt;
 		if (!unpack_nameX(e, AA_STRUCTEND, NULL))
 			goto fail;
 		
@@ -763,15 +767,21 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 		{
 			if (apparmor_ioctl_debug)
 				printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
-			profile->allow_net_domains = kmalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+			profile->allow_net_domains = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+			if (!profile->allow_net_domains)
+				goto fail;
 			INIT_LIST_HEAD(&(profile->allow_net_domains->domain_list));
 
-			for (i = 0; i < allow_cnt; i++)
+			for (i = 0; i < profile->current_domain->allow_cnt; i++)
 			{
 				if (!unpack_str(e, &name, NULL))
 						goto fail;
-				struct ListOfDomains *new_node = kmalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
-				new_node->domain = kmalloc(strlen(name), GFP_KERNEL);
+				struct ListOfDomains *new_node = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+				if (!new_node)
+					goto fail;
+				new_node->domain = kzalloc(strlen(name), GFP_KERNEL);
+				if (!new_node->domain)
+					goto fail;
 				strcpy(new_node->domain, name);
 				INIT_LIST_HEAD(&(new_node->domain_list));
 				list_add(&(new_node->domain_list), &(profile->allow_net_domains->domain_list));
