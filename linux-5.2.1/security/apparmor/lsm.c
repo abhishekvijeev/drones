@@ -995,7 +995,7 @@ static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_d
 			printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
 			if (strcmp(iterator->domain, checking_domain) == 0)
 			{
-				allow = true;
+				*allow = true;
 				break;
 			}
 		}
