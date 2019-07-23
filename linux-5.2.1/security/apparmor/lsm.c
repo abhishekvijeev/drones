@@ -1013,9 +1013,9 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	{
 		struct aa_label *label, *cl;
 		struct aa_profile *profile;
-				
+		
 		cl = __begin_current_label_crit_section();
-				
+		bool allow = false;		
 		__u32 sender_pid;
 		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 		label = aa_get_label(ctx->label);
@@ -1036,7 +1036,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				struct aa_label *sender_label = aa_get_task_label(sender);
 				if(sender_label && recv_domain)
 				{
-					bool allow = false;
+					
 					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
 					if (allow)
 						printk (KERN_INFO "apparmor_socket_recvmsg: Match is true \n");
@@ -1058,6 +1058,8 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		}
 		aa_put_label(ctx->label);
 		__end_current_label_crit_section(cl);
+		if (!allow)
+			return 1;
 		
 	}
 	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
