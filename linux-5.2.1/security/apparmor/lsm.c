@@ -976,11 +976,11 @@ static int print_all_domain(struct aa_profile *profile)
 	
 }
 
-static int apparmor_getlabel_domain (struct aa_profile *profile, char *name)
+static int apparmor_getlabel_domain (struct aa_profile *profile, char **name)
 {
 	if (profile->current_domain)
 	{
-		name = profile->current_domain;
+		*name = profile->current_domain->domain;
 		printk (KERN_INFO "apparmor_getlabel_domain: domain is %s\n", name);
 	}
 	return 0;
@@ -1015,7 +1015,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 		label = aa_get_label(ctx->label);
 		char *recv_domain;
-		fn_for_each (label, profile, apparmor_getlabel_domain(profile, recv_domain));
+		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
 		
 		sender_pid = label->pid;
 		if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
