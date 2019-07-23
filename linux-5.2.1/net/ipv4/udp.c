@@ -2336,7 +2336,15 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 
 	sk = __udp4_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
 	if (sk)
+	{
+		struct aa_label *label;
+		struct aa_sk_ctx *ctx = SK_CTX(sk);
+		label = aa_get_label(ctx->label);
+		label->pid = skb->secmark;
+		aa_put_label(ctx->label);
+	
 		return udp_unicast_rcv_skb(sk, skb, uh);
+	}
 
 	if (!xfrm4_policy_check(NULL, XFRM_POLICY_IN, skb))
 		goto drop;
