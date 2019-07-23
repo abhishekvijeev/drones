@@ -23,6 +23,7 @@
 #include <linux/netfilter_ipv6.h>
 #include <net/sock.h>
 #include <uapi/linux/mount.h>
+#include <linux/string.h>
 
 #include "include/apparmor.h"
 #include "include/apparmorfs.h"
@@ -39,7 +40,7 @@
 #include "include/procattr.h"
 #include "include/mount.h"
 #include "include/secid.h"
-#include <string.h>
+
 
 /* Flag indicating whether initialization completed */
 int apparmor_initialized;
