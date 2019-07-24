@@ -25,6 +25,7 @@
 #include <uapi/linux/mount.h>
 #include <linux/string.h>
 
+
 #include "include/apparmor.h"
 #include "include/apparmorfs.h"
 #include "include/audit.h"
@@ -947,11 +948,19 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 		{
 			label->pid = current->pid;
 		}
+		
+		
 		if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
 		{
 			printk (KERN_INFO "apparmor_socket_sendmsg: current process = %s, current pid = %d\n", 
 							current->comm, current->pid);
+			DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
+			if (usin)
+			{
+				printk (KERN_INFO "msg sent to %pi4, %d\n", usin->sin_addr.s_addr, usin->sin_port);
+			}
 		}
+		
 		aa_put_label(ctx->label);	
 		__end_current_label_crit_section(cl);
 	}
