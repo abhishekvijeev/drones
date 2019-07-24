@@ -939,7 +939,8 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 {
 	if (sock->sk) 
 	{
-		struct aa_label *label;
+		struct aa_label *label, *cl;
+		cl = __begin_current_label_crit_section();
 		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 		label = aa_get_label(ctx->label);
 		if(label)
@@ -951,8 +952,14 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			printk (KERN_INFO "apparmor_socket_sendmsg: current process = %s, current pid = %d\n", 
 							current->comm, current->pid);
 		}
-		aa_put_label(ctx->label);
+		aa_put_label(ctx->label);	
+		__end_current_label_crit_section(cl);
 	}
+	else if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
+	{
+		printk (KERN_INFO "apparmor_socket_recvmsg: sock not available for process %s\n", current->comm);
+	}
+
 	
 
 	return aa_sock_msg_perm(OP_SENDMSG, AA_MAY_SEND, sock, msg, size);
@@ -1011,32 +1018,35 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 {
 	if (sock->sk) 
 	{
-		struct aa_label *label, *cl;
-		struct aa_profile *profile;
-		
-		cl = __begin_current_label_crit_section();
-		__u32 sender_pid;
-		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
-		label = aa_get_label(ctx->label);
-		sender_pid = label->pid;
-		struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-		if (apparmor_ioctl_debug)
+		if (strcmp(current->comm, "talker") == 0 || strcmp(current->comm, "listener") == 0)
 		{
-			if (sender)
+			struct aa_label *label, *cl;
+			struct aa_profile *profile;
+			
+			cl = __begin_current_label_crit_section();
+			__u32 sender_pid;
+			struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
+			label = aa_get_label(ctx->label);
+			sender_pid = label->pid;
+			struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+			if (apparmor_ioctl_debug)
 			{
-				printk (KERN_INFO "apparmor_socket_recvmsg: sender process %s with pid %d, receiver process %s with pid %d\n", 
-									sender->comm, sender->pid, current->comm, current->pid);
+				if (sender)
+				{
+					printk (KERN_INFO "apparmor_socket_recvmsg: sender process %s with pid %d, receiver process %s with pid %d\n", 
+										sender->comm, sender->pid, current->comm, current->pid);
+				}
+				else
+				{
+					printk (KERN_INFO "apparmor_socket_recvmsg: Unable to get sender task struct with pid %d, receiver process %s with pid %d\n", 
+										sender_pid, current->comm, current->pid);
+				}
 			}
-			else
-			{
-				printk (KERN_INFO "apparmor_socket_recvmsg: Unable to get sender task struct with pid %d, receiver process %s with pid %d\n", 
-									sender_pid, current->comm, current->pid);
-			}
+			
+			
+			aa_put_label(ctx->label);	
+			__end_current_label_crit_section(cl);
 		}
-		
-		
-		aa_put_label(ctx->label);	
-		__end_current_label_crit_section(cl);
 
 		// if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
 		// {
@@ -1090,6 +1100,10 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		
 		
 	}//end if (sock->sk) 
+	else if (strcmp(current->comm, "talker") == 0 || strcmp(current->comm, "listener") == 0)
+	{
+		printk (KERN_INFO "apparmor_socket_recvmsg: sock not available for process %s\n", current->comm);
+	}
 	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
 }
 
