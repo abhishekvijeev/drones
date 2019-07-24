@@ -1011,55 +1011,82 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 {
 	if (sock->sk) 
 	{
-		if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
+		struct aa_label *label, *cl;
+		struct aa_profile *profile;
+		
+		cl = __begin_current_label_crit_section();
+		__u32 sender_pid;
+		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
+		label = aa_get_label(ctx->label);
+		sender_pid = label->pid;
+		struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+		if (apparmor_ioctl_debug)
 		{
-			struct aa_label *label, *cl;
-			struct aa_profile *profile;
-			
-			cl = __begin_current_label_crit_section();
-			bool allow = false;		
-			__u32 sender_pid;
-			struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
-			label = aa_get_label(ctx->label);
-			char *recv_domain;
-			fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
-			
-			sender_pid = label->pid;
-			
-			printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, current pid = %d, sent from pid = %d\n", 
-						current->comm, current->pid, label->pid);
-			if (recv_domain)
-				printk (KERN_INFO "apparmor_socket_recvmsg: current process domain is %s\n", recv_domain);	
-			
-			struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 			if (sender)
 			{
-				struct aa_label *sender_label = aa_get_task_label(sender);
-				if(sender_label && recv_domain)
-				{
-					
-					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
-					if (allow)
-						printk (KERN_INFO "apparmor_socket_recvmsg: Match is true \n");
-					else 
-						printk (KERN_INFO "apparmor_socket_recvmsg: Match is false\n");
-				}
-				aa_put_label(sender_label);
-				
-
-				printk (KERN_INFO "sender process name = %s, pid is %d\n", sender->comm, sender->pid);
+				printk (KERN_INFO "apparmor_socket_recvmsg: sender process %s with pid %d, receiver process %s with pid %d\n", 
+									sender->comm, sender->pid, current->comm, current->pid);
 			}
 			else
-				printk (KERN_INFO "Error in getting task_struct of pid= %d\n", sender_pid);
+			{
+				printk (KERN_INFO "apparmor_socket_recvmsg: Unable to get sender task struct with pid %d, receiver process %s with pid %d\n", 
+									sender_pid, current->comm, current->pid);
+			}
+		}
+		
+		
+		aa_put_label(ctx->label);	
+		__end_current_label_crit_section(cl);
 
-			//test code to iterate aa_profile list inside aa_label and print domain
-			// struct aa_profile *profile;
-			// fn_for_each (label, profile, print_all_domain(profile));
+		// if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
+		// {
+		// 	struct aa_label *label, *cl;
+		// 	struct aa_profile *profile;
 			
-			aa_put_label(ctx->label);
-			__end_current_label_crit_section(cl);
+		// 	cl = __begin_current_label_crit_section();
+		// 	bool allow = false;		
+		// 	__u32 sender_pid;
+		// 	struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
+		// 	label = aa_get_label(ctx->label);
+		// 	char *recv_domain;
+		// 	fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
 			
-		}//end if of talker, listener check
+		// 	sender_pid = label->pid;
+			
+		// 	printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
+		// 				current->comm, current->pid, label->pid);
+		// 	if (recv_domain)
+		// 		printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", recv_domain);	
+			
+		// 	struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+		// 	if (sender)
+		// 	{
+		// 		struct aa_label *sender_label = aa_get_task_label(sender);
+		// 		if(sender_label && recv_domain)
+		// 		{
+					
+		// 			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
+		// 			if (allow)
+		// 				printk (KERN_INFO "apparmor_socket_recvmsg3: Match is true \n");
+		// 			else 
+		// 				printk (KERN_INFO "apparmor_socket_recvmsg3: Match is false\n");
+		// 		}
+		// 		aa_put_label(sender_label);
+				
+
+		// 		printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
+		// 	}
+		// 	else
+		// 		printk (KERN_INFO "4 Error in getting task_struct of pid= %d\n", sender_pid);
+
+		// 	//test code to iterate aa_profile list inside aa_label and print domain
+		// 	// struct aa_profile *profile;
+		// 	// fn_for_each (label, profile, print_all_domain(profile));
+			
+		// 	aa_put_label(ctx->label);
+		// 	__end_current_label_crit_section(cl);
+			
+		// }//end if of talker, listener check
 		
 		
 	}//end if (sock->sk) 
