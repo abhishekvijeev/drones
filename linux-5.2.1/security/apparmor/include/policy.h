@@ -139,7 +139,6 @@ struct DomainMetaData
 {
 	char *domain;
 	int allow_cnt;
-	int deny_cnt;
 };
 //Custom code: end
 

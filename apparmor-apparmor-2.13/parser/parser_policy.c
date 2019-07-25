@@ -368,10 +368,9 @@ int post_process_policy_list(ProfileList &list, int debug_only);
 int post_process_profile(Profile *profile, int debug_only)
 {
 	if (profile->current_domain != NULL)
-		printf ("current domain not null, value is %s, len(domain_name) = %d, allow=%d, deny=%d\n", profile->current_domain->domain, 
+		printf ("current domain not null, value is %s, len(domain_name) = %d, allow=%d\n", profile->current_domain->domain, 
 																									strlen(profile->current_domain->domain),
-																			 						profile->current_domain->allow_cnt,
-																			 						profile->current_domain->deny_cnt);
+																			 						profile->current_domain->allow_cnt);
 	else
 		printf ("current domain NULL\n");
 	
@@ -386,16 +385,16 @@ int post_process_profile(Profile *profile, int debug_only)
 		}
 	}
 
-	if (profile->deny_net_domains != NULL)
-	{
-		printf ("denyed net domains:\n");
-		struct ListOfDomains *tmp = profile->deny_net_domains;
-		while (tmp != NULL)
-		{
-			printf ("%s\n", tmp->domain);
-			tmp = tmp->next;
-		}
-	}
+	// if (profile->deny_net_domains != NULL)
+	// {
+	// 	printf ("denyed net domains:\n");
+	// 	struct ListOfDomains *tmp = profile->deny_net_domains;
+	// 	while (tmp != NULL)
+	// 	{
+	// 		printf ("%s\n", tmp->domain);
+	// 		tmp = tmp->next;
+	// 	}
+	// }
 	
 	int error = 0;
 

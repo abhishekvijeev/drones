@@ -738,12 +738,10 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 	/* Start of new grammar rules */
 	if (unpack_nameX(e, AA_STRUCT, "DomainMetaData"))
 	{
-		profile->current_domain = kzalloc (sizeof(struct DomainMetaData), GFP_KERNEL);
-		if (!profile->current_domain)
-			goto fail;
 		if (!unpack_str(e, &name, NULL))
 			goto fail;
-		profile->current_domain->domain = kzalloc (strlen(name) + 3, GFP_KERNEL);
+		kzfree (profile->current_domain->domain);
+		profile->current_domain->domain = kzalloc (strlen(name), GFP_KERNEL);
 		if (!profile->current_domain->domain)
 			goto fail;
 		
@@ -752,9 +750,6 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 		if (!unpack_u32(e, &(profile->current_domain->allow_cnt), NULL))
 			goto fail;
 		// profile->current_domain->allow_cnt = allow_cnt;
-		if (!unpack_u32(e, &(profile->current_domain->deny_cnt), NULL))
-			goto fail;
-		// profile->current_domain->deny_cnt = deny_cnt;
 		if (!unpack_nameX(e, AA_STRUCTEND, NULL))
 			goto fail;
 		
@@ -767,11 +762,7 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 		{
 			if (apparmor_ioctl_debug)
 				printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
-			profile->allow_net_domains = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
-			if (!profile->allow_net_domains)
-				goto fail;
-			INIT_LIST_HEAD(&(profile->allow_net_domains->domain_list));
-
+			
 			for (i = 0; i < profile->current_domain->allow_cnt; i++)
 			{
 				if (!unpack_str(e, &name, NULL))
@@ -789,11 +780,14 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 			if (!unpack_nameX(e, AA_STRUCTEND, NULL))
 				goto fail;
 			
-			struct ListOfDomains *iterator;
-			list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+			if (profile->current_domain->allow_cnt > 0)
 			{
-				if (apparmor_ioctl_debug)
-					printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+				struct ListOfDomains *iterator;
+				list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+				{
+					if (apparmor_ioctl_debug)
+						printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+				}
 			}
 			// if (apparmor_ioctl_debug)
 			// 	printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");

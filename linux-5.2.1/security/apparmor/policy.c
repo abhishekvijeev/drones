@@ -221,26 +221,36 @@ void aa_free_profile(struct aa_profile *profile)
 	
 
 	// Custom code: Start
-	if (profile->allow_net_domains)
-	{
+	
+	if (if (profile->allow_net_domains)
+	{	
 		struct ListOfDomains *iterator, *tmp;
-		iterator = list_first_entry(&(profile->allow_net_domains->domain_list), typeof(*iterator), domain_list);
-		while( (&iterator->domain_list) != &(profile->allow_net_domains->domain_list))
+		if (profile->current_domain && profile->current_domain->allow_cnt > 0)
 		{
-			tmp = iterator;
-			iterator = list_next_entry (iterator, domain_list);
-			kzfree (tmp->domain);
-			kzfree (tmp);
+			iterator = list_first_entry(&(profile->allow_net_domains->domain_list), typeof(*iterator), domain_list);
+			while( (&iterator->domain_list) != &(profile->allow_net_domains->domain_list))
+			{
+				tmp = iterator;
+				iterator = list_next_entry (iterator, domain_list);
+				if (tmp->domain)
+					kzfree (tmp->domain);
+				kzfree (tmp);
+			}
 		}
-		if (apparmor_ioctl_debug)
-			printk (KERN_INFO "aa_free_profile: allow list cleared\n");
+		else
+		{
+			if (profile->allow_net_domains->domain)
+				kzfree (profile->allow_net_domains->domain);
+			kzfree (profile->allow_net_domains);
+		
+		}
 	}
+
 	if (profile->current_domain)
 	{
-		kzfree (profile->current_domain->domain);
+		if (profile->current_domain->domain)
+			kzfree (profile->current_domain->domain);
 		kzfree (profile->current_domain);
-		if (apparmor_ioctl_debug)
-			printk (KERN_INFO "aa_free_profile: current domain cleared\n");
 	}
 	// Custom code: End
 
@@ -290,6 +300,33 @@ struct aa_profile *aa_alloc_profile(const char *hname, struct aa_proxy *proxy,
 			  gfp);
 	if (!profile)
 		return NULL;
+
+	// Custom Code: Start
+	struct DomainMetaData *newDomainMetaData = kzalloc (sizeof(struct DomainMetaData), GFP_KERNEL);
+	if (!newDomainMetaData)
+		goto fail;
+	else
+	{
+		newDomainMetaData->allow_cnt = 0;
+		char *domain = kzalloc (sizeof(char), GFP_KERNEL);
+		*domain = '*';
+		newDomainMetaData->domain = domain;
+	}
+	profile->current_domain = newDomainMetaData;
+
+	struct ListOfDomains *newListOfDomain = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+	if (!newListOfDomain)
+		goto fail;
+	else
+	{
+		char *domain = kzalloc (sizeof(char), GFP_KERNEL);
+		*domain = '*';
+		newListOfDomain->domain = domain;
+		INIT_LIST_HEAD(&(newListOfDomain->domain_list));
+	}
+	profile->allow_net_domains = newListOfDomain;
+	// Custom Code: End
+
 
 	if (!aa_policy_init(&profile->base, NULL, hname, gfp))
 		goto fail;
