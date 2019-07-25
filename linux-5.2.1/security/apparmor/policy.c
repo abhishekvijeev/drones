@@ -222,7 +222,7 @@ void aa_free_profile(struct aa_profile *profile)
 
 	// Custom code: Start
 	
-	if (if (profile->allow_net_domains)
+	if (profile->allow_net_domains)
 	{	
 		struct ListOfDomains *iterator, *tmp;
 		if (profile->current_domain && profile->current_domain->allow_cnt > 0)
