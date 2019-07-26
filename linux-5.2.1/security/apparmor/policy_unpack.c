@@ -761,7 +761,7 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 
 
 		if (apparmor_ioctl_debug)
-			printk_ratelimited (KERN_INFO "\t\tDomainName=%s\n, allow=%d, deny=%d", profile->current_domain->domain, profile->current_domain->allow_cnt, profile->current_domain->deny_cnt);
+			printk_ratelimited (KERN_INFO "\t\tDomainName=%s\n, allow=%d, deny=%d", profile->label.current_domain->domain, profile->label.current_domain->allow_cnt, profile->label.current_domain->deny_cnt);
 	
 		if (unpack_nameX(e, AA_STRUCT, "AllowedDomains")) 
 		{

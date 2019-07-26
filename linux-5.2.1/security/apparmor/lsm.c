@@ -979,9 +979,9 @@ static int print_all_domain(struct aa_profile *profile)
 {
 	if (apparmor_ioctl_debug)
 	{
-		if (profile->current_domain)
+		if (profile->label.current_domain)
 		{
-			printk (KERN_INFO "print_all_domain: current domain is %s set for process %s with pid %d\n", profile->current_domain->domain, current->comm, current->pid);
+			printk (KERN_INFO "print_all_domain: current domain is %s set for process %s with pid %d\n", profile->label.current_domain->domain, current->comm, current->pid);
 		}
 		else
 		{
@@ -994,9 +994,9 @@ static int print_all_domain(struct aa_profile *profile)
 
 static int apparmor_getlabel_domain (struct aa_profile *profile, char **name)
 {
-	if (profile->current_domain)
+	if (profile->label.current_domain)
 	{
-		*name = profile->current_domain->domain;
+		*name = profile->label.current_domain->domain;
 		
 	}
 	return 0;
@@ -1004,9 +1004,9 @@ static int apparmor_getlabel_domain (struct aa_profile *profile, char **name)
 static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_domain, bool *allow)
 {
 	struct ListOfDomains *iterator;
-	if (profile->allow_net_domains)
+	if (profile->label.allow_net_domains)
 	{
-		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+		list_for_each_entry(iterator, &(profile->label.allow_net_domains->domain_list), domain_list)
 		{
 			printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
 			if (strcmp(iterator->domain, checking_domain) == 0)
