@@ -221,11 +221,11 @@ void aa_free_profile(struct aa_profile *profile)
 	
 
 	// Custom code: Start
-	if (profile->allow_net_domains)
+	if (profile->label.allow_net_domains)
 	{
 		struct ListOfDomains *iterator, *tmp;
-		iterator = list_first_entry(&(profile->allow_net_domains->domain_list), typeof(*iterator), domain_list);
-		while( (&iterator->domain_list) != &(profile->allow_net_domains->domain_list))
+		iterator = list_first_entry(&(profile->label.allow_net_domains->domain_list), typeof(*iterator), domain_list);
+		while( (&iterator->domain_list) != &(profile->label.allow_net_domains->domain_list))
 		{
 			tmp = iterator;
 			iterator = list_next_entry (iterator, domain_list);
@@ -235,10 +235,10 @@ void aa_free_profile(struct aa_profile *profile)
 		if (apparmor_ioctl_debug)
 			printk (KERN_INFO "aa_free_profile: allow list cleared\n");
 	}
-	if (profile->current_domain)
+	if (profile->label.current_domain)
 	{
-		kzfree (profile->current_domain->domain);
-		kzfree (profile->current_domain);
+		kzfree (profile->label.current_domain->domain);
+		kzfree (profile->label.current_domain);
 		if (apparmor_ioctl_debug)
 			printk (KERN_INFO "aa_free_profile: current domain cleared\n");
 	}

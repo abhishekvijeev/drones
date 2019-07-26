@@ -127,21 +127,7 @@ struct aa_data {
  * determining profile attachment on "unconfined" tasks.
  */
 
-//Custom code: start
-struct ListOfDomains
-{
-	char *domain;
-	struct list_head domain_list;
-};
 
-
-struct DomainMetaData
-{
-	char *domain;
-	int allow_cnt;
-	int deny_cnt;
-};
-//Custom code: end
 
 
 struct aa_profile {
@@ -159,12 +145,6 @@ struct aa_profile {
 	u32 path_flags;
 	const char *disconnected;
 	int size;
-
-	/*
-	 * Custom fields
-	 */
-	struct DomainMetaData *current_domain;
-	struct ListOfDomains *allow_net_domains;
 	
 
 	struct aa_policydb policy;

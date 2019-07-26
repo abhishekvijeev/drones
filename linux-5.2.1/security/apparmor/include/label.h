@@ -111,6 +111,22 @@ struct label_it {
 	int i, j;
 };
 
+//Custom code: start
+struct ListOfDomains
+{
+	char *domain;
+	struct list_head domain_list;
+};
+
+
+struct DomainMetaData
+{
+	char *domain;
+	int allow_cnt;
+	int deny_cnt;
+};
+//Custom code: end
+
 /* struct aa_label - lazy labeling struct
  * @count: ref count of active users
  * @node: rbtree position
@@ -126,6 +142,13 @@ struct aa_label {
 	struct kref count;
 	struct rb_node node;
 	struct rcu_head rcu;
+
+	/*
+	 * Custom fields
+	 */
+	struct DomainMetaData *current_domain;
+	struct ListOfDomains *allow_net_domains;
+
 	struct aa_proxy *proxy;
 	__counted char *hname;
 	long flags;

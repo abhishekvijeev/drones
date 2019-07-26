@@ -738,21 +738,21 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 	/* Start of new grammar rules */
 	if (unpack_nameX(e, AA_STRUCT, "DomainMetaData"))
 	{
-		profile->current_domain = kzalloc (sizeof(struct DomainMetaData), GFP_KERNEL);
-		if (!profile->current_domain)
+		profile->label.current_domain = kzalloc (sizeof(struct DomainMetaData), GFP_KERNEL);
+		if (!profile->label.current_domain)
 			goto fail;
 		if (!unpack_str(e, &name, NULL))
 			goto fail;
-		profile->current_domain->domain = kzalloc (strlen(name) + 3, GFP_KERNEL);
-		if (!profile->current_domain->domain)
+		profile->label.current_domain->domain = kzalloc (strlen(name) + 3, GFP_KERNEL);
+		if (!profile->label.current_domain->domain)
 			goto fail;
 		
-		strcpy (profile->current_domain->domain, name);
+		strcpy (profile->label.current_domain->domain, name);
 
-		if (!unpack_u32(e, &(profile->current_domain->allow_cnt), NULL))
+		if (!unpack_u32(e, &(profile->label.current_domain->allow_cnt), NULL))
 			goto fail;
 		// profile->current_domain->allow_cnt = allow_cnt;
-		if (!unpack_u32(e, &(profile->current_domain->deny_cnt), NULL))
+		if (!unpack_u32(e, &(profile->label.current_domain->deny_cnt), NULL))
 			goto fail;
 		// profile->current_domain->deny_cnt = deny_cnt;
 		if (!unpack_nameX(e, AA_STRUCTEND, NULL))
@@ -767,12 +767,12 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 		{
 			if (apparmor_ioctl_debug)
 				printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
-			profile->allow_net_domains = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
-			if (!profile->allow_net_domains)
+			profile->label.allow_net_domains = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+			if (!profile->label.allow_net_domains)
 				goto fail;
-			INIT_LIST_HEAD(&(profile->allow_net_domains->domain_list));
+			INIT_LIST_HEAD(&(profile->label.allow_net_domains->domain_list));
 
-			for (i = 0; i < profile->current_domain->allow_cnt; i++)
+			for (i = 0; i < profile->label.current_domain->allow_cnt; i++)
 			{
 				if (!unpack_str(e, &name, NULL))
 						goto fail;
@@ -784,13 +784,13 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 					goto fail;
 				strcpy(new_node->domain, name);
 				INIT_LIST_HEAD(&(new_node->domain_list));
-				list_add(&(new_node->domain_list), &(profile->allow_net_domains->domain_list));
+				list_add(&(new_node->domain_list), &(profile->label.allow_net_domains->domain_list));
 			}
 			if (!unpack_nameX(e, AA_STRUCTEND, NULL))
 				goto fail;
 			
 			struct ListOfDomains *iterator;
-			list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+			list_for_each_entry(iterator, &(profile->label.allow_net_domains->domain_list), domain_list)
 			{
 				if (apparmor_ioctl_debug)
 					printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
