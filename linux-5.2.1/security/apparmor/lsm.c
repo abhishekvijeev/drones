@@ -954,11 +954,11 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 		{
 			printk (KERN_INFO "apparmor_socket_sendmsg: current process = %s, current pid = %d\n", 
 							current->comm, current->pid);
-			DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
-			if (usin)
-			{
-				printk (KERN_INFO "msg sent to %pi4, %d\n", usin->sin_addr.s_addr, usin->sin_port);
-			}
+			// DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
+			// if (usin)
+			// {
+			// 	printk (KERN_INFO "msg sent to %pi4, %d\n", usin->sin_addr.s_addr, usin->sin_port);
+			// }
 		}
 		
 		aa_put_label(ctx->label);	
