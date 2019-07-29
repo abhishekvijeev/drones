@@ -220,29 +220,28 @@ void aa_free_profile(struct aa_profile *profile)
 	kzfree(profile->rename);
 	
 
-	// Custom code: Start
-	if (profile->allow_net_domains)
+	// Custom code begin
+
+	if(profile->clabel)
 	{
-		struct ListOfDomains *iterator, *tmp;
-		iterator = list_first_entry(&(profile->allow_net_domains->domain_list), typeof(*iterator), domain_list);
-		while( (&iterator->domain_list) != &(profile->allow_net_domains->domain_list))
+		kzfree(profile->clabel->label_name);
+		if(profile->clabel->allow_list)
 		{
-			tmp = iterator;
-			iterator = list_next_entry (iterator, domain_list);
-			kzfree (tmp->domain);
-			kzfree (tmp);
+			struct data_list *iterator, *tmp;
+			iterator = list_first_entry(&(profile->clabel->allow_list->lh), typeof(*iterator), lh);
+			while( (&iterator->lh) != &(profile->clabel->allow_list->lh))
+			{
+				tmp = iterator;
+				iterator = list_next_entry (iterator, lh);
+				kzfree (tmp->data);
+				kzfree (tmp);
+			}
 		}
-		if (apparmor_ioctl_debug)
-			printk (KERN_INFO "aa_free_profile: allow list cleared\n");
+		kzfree(profile->clabel->allow_list);
+		kzfree(profile->clabel);
 	}
-	if (profile->current_domain)
-	{
-		kzfree (profile->current_domain->domain);
-		kzfree (profile->current_domain);
-		if (apparmor_ioctl_debug)
-			printk (KERN_INFO "aa_free_profile: current domain cleared\n");
-	}
-	// Custom code: End
+
+	// Custom code end
 
 
 
