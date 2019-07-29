@@ -403,63 +403,29 @@ void sd_serialize_profile(std::ostringstream &buf, Profile *profile,
 		}
 	}
 
-	if (profile->current_domain != NULL)
+
+	// Custom code begin
+	if (profile->label != NULL)
 	{
-		sd_write_struct(buf, "DomainMetaData");
-		sd_write_string(buf, profile->current_domain->domain, NULL);
-		sd_write_uint32(buf,  profile->current_domain->allow_cnt);
-		sd_write_uint32(buf,  profile->current_domain->deny_cnt);
+		sd_write_struct(buf, "custom_label");
+		sd_write_string(buf, profile->label->label_name, NULL);
+		sd_write_uint32(buf,  profile->label->allow_cnt);
+
+		if (profile->label->allow_cnt > 0)
+		{
+			sd_write_struct(buf, "list_node");
+			struct list_node *tmp = profile->label->allow_list;
+			while (tmp != NULL)
+			{
+				sd_write_string(buf, tmp->data, NULL);
+				tmp = tmp->next;
+			}
+			sd_write_structend(buf);
+		}
+
 		sd_write_structend(buf);
-		if (profile->current_domain->allow_cnt > 0)
-		{
-			sd_write_struct(buf, "AllowedDomains");
-			struct ListOfDomains *tmp = profile->allow_net_domains;
-			while (tmp != NULL)
-			{
-				sd_write_string(buf, tmp->domain, NULL);
-				tmp = tmp->next;
-			}
-			sd_write_structend(buf);
-		}
-
-
-		if (profile->current_domain->deny_cnt > 0)
-		{
-			sd_write_struct(buf, "DenyedDomains");
-			struct ListOfDomains *tmp = profile->deny_net_domains;
-			while (tmp != NULL)
-			{
-				sd_write_string(buf, tmp->domain, NULL);
-				tmp = tmp->next;
-			}
-			sd_write_structend(buf);
-		}
 	}
-	// else
-	// {
-	// 	char *tmp = "Null/Empty";
-	// 	sd_write_struct(buf, "DomainMetaData");
-	// 	sd_write_string(buf, tmp, NULL);
-	// 	sd_write_uint32(buf,  0);
-	// 	sd_write_uint32(buf,  0);
-	// 	sd_write_structend(buf);
-		
-	// }
-	
-	
-	// else
-	// {
-	// 	sd_write_struct(buf, "AllowedDomains");
-	// 	sd_write_structend(buf);
-	// }
-	
-	
-	// else
-	// {
-	// 	sd_write_struct(buf, "DenyedDomains");
-	// 	sd_write_structend(buf);
-	// }
-
+	// Custom code end
 
 
 

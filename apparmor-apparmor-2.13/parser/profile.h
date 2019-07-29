@@ -110,19 +110,20 @@ struct dfa_stuff {
 	dfa_stuff(void): rules(NULL), dfa(NULL), size(0) { }
 };
 
-struct ListOfDomains
+// Custom code begin
+struct list_node
 {
-	char *domain;
-	struct ListOfDomains *next;
-};
+	char *data;
+	struct list_node *next;
+}
 
-
-struct DomainMetaData
+struct custom_label
 {
-	char *domain;
+	char *label_name;
 	int allow_cnt;
-	int deny_cnt;
-};
+	struct list_node *allow_list;
+}
+// Custom code end
 
 class Profile {
 public:
@@ -178,9 +179,10 @@ public:
 	//inside parser_regex -> process_profile_policydb
 	struct dfa_stuff policy;
 	
-	struct DomainMetaData *current_domain;
-	struct ListOfDomains *allow_net_domains;
-	struct ListOfDomains *deny_net_domains;
+	// Custom code begin
+	struct custom_label *label;
+	// Custom code end
+	
 
 	Profile(void)
 	{

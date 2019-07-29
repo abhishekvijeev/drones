@@ -90,6 +90,21 @@ struct aa_data {
 	struct rhash_head head;
 };
 
+// Custom code begin
+struct data_list
+{
+	char *data;
+	struct list_head lh;
+}
+
+struct custom_label
+{
+	char *label_name;
+	int allow_cnt;
+	struct data_list *allow_list;
+}
+// Custom code end
+
 
 /* struct aa_profile - basic confinement data
  * @base - base components of the profile (name, refcount, lists, lock ...)
@@ -127,23 +142,6 @@ struct aa_data {
  * determining profile attachment on "unconfined" tasks.
  */
 
-//Custom code: start
-struct ListOfDomains
-{
-	char *domain;
-	struct list_head domain_list;
-};
-
-
-struct DomainMetaData
-{
-	char *domain;
-	int allow_cnt;
-	int deny_cnt;
-};
-//Custom code: end
-
-
 struct aa_profile {
 	struct aa_policy base;
 	struct aa_profile __rcu *parent;
@@ -160,11 +158,9 @@ struct aa_profile {
 	const char *disconnected;
 	int size;
 
-	/*
-	 * Custom fields
-	 */
-	struct DomainMetaData *current_domain;
-	struct ListOfDomains *allow_net_domains;
+	// Custom code begin
+	struct custom_label *label;
+	// Custom code end
 	
 
 	struct aa_policydb policy;
