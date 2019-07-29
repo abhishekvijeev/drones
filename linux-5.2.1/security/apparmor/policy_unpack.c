@@ -738,29 +738,29 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 
 	if (unpack_nameX(e, AA_STRUCT, "custom_label"))
 	{
-		profile->label = kzalloc (sizeof(struct custom_label), GFP_KERNEL);
-		if (!profile->label)
+		profile->clabel = kzalloc (sizeof(struct custom_label), GFP_KERNEL);
+		if (!profile->clabel)
 			goto fail;
 		if (!unpack_str(e, &name, NULL))
 			goto fail;
-		profile->label->label_name = kzalloc (strlen(name), GFP_KERNEL);
-		if (!profile->label->label_name)
+		profile->clabel->label_name = kzalloc (strlen(name), GFP_KERNEL);
+		if (!profile->clabel->label_name)
 			goto fail;
 		
-		strcpy (profile->label->label_name, name);
+		strcpy (profile->clabel->label_name, name);
 
-		if (!unpack_u32(e, &(profile->label->allow_cnt), NULL))
+		if (!unpack_u32(e, &(profile->clabel->allow_cnt), NULL))
 			goto fail;
 
 			
 		if (unpack_nameX(e, AA_STRUCT, "list_node")) 
 		{
-			profile->label->allow_list = kzalloc(sizeof(struct data_list), GFP_KERNEL);
-			if (!profile->label->allow_list)
+			profile->clabel->allow_list = kzalloc(sizeof(struct data_list), GFP_KERNEL);
+			if (!profile->clabel->allow_list)
 				goto fail;
-			INIT_LIST_HEAD(&(profile->label->allow_list->lh));
+			INIT_LIST_HEAD(&(profile->clabel->allow_list->lh));
 
-			for (i = 0; i < profile->label->allow_cnt; i++)
+			for (i = 0; i < profile->clabel->allow_cnt; i++)
 			{
 				if (!unpack_str(e, &name, NULL))
 						goto fail;
@@ -772,7 +772,7 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 					goto fail;
 				strcpy(new_node->data, name);
 				INIT_LIST_HEAD(&(new_node->lh));
-				list_add(&(new_node->lh), &(profile->label->allow_list->lh));
+				list_add(&(new_node->lh), &(profile->clabel->allow_list->lh));
 			}
 			if (!unpack_nameX(e, AA_STRUCTEND, NULL))
 				goto fail;
@@ -780,7 +780,7 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 		if (!unpack_nameX(e, AA_STRUCTEND, NULL))
 			goto fail;		
 	}
-	
+
 	// Custom code end
 
 

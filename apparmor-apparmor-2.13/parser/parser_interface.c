@@ -405,16 +405,16 @@ void sd_serialize_profile(std::ostringstream &buf, Profile *profile,
 
 
 	// Custom code begin
-	if (profile->label != NULL)
+	if (profile->clabel != NULL)
 	{
 		sd_write_struct(buf, "custom_label");
-		sd_write_string(buf, profile->label->label_name, NULL);
-		sd_write_uint32(buf,  profile->label->allow_cnt);
+		sd_write_string(buf, profile->clabel->label_name, NULL);
+		sd_write_uint32(buf,  profile->clabel->allow_cnt);
 
-		if (profile->label->allow_cnt > 0)
+		if (profile->clabel->allow_cnt > 0)
 		{
 			sd_write_struct(buf, "list_node");
-			struct list_node *tmp = profile->label->allow_list;
+			struct list_node *tmp = profile->clabel->allow_list;
 			while (tmp != NULL)
 			{
 				sd_write_string(buf, tmp->data, NULL);

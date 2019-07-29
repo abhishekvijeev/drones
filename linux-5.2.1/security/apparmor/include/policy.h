@@ -95,14 +95,14 @@ struct data_list
 {
 	char *data;
 	struct list_head lh;
-}
+};
 
 struct custom_label
 {
 	char *label_name;
 	int allow_cnt;
 	struct data_list *allow_list;
-}
+};
 // Custom code end
 
 
@@ -159,7 +159,7 @@ struct aa_profile {
 	int size;
 
 	// Custom code begin
-	struct custom_label *label;
+	struct custom_label *clabel;
 	// Custom code end
 	
 

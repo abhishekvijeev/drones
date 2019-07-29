@@ -180,7 +180,7 @@ public:
 	struct dfa_stuff policy;
 	
 	// Custom code begin
-	struct custom_label *label;
+	struct custom_label *clabel;
 	// Custom code end
 	
 
