@@ -236,8 +236,8 @@ void aa_free_profile(struct aa_profile *profile)
 				kzfree (tmp->data);
 				kzfree (tmp);
 			}
+			kzfree(profile->clabel->allow_list);
 		}
-		kzfree(profile->clabel->allow_list);
 		kzfree(profile->clabel);
 	}
 

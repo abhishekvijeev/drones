@@ -413,8 +413,8 @@ void sd_serialize_profile(std::ostringstream &buf, Profile *profile,
 
 		if (profile->clabel->allow_cnt > 0)
 		{
-			sd_write_struct(buf, "list_node");
-			struct list_node *tmp = profile->clabel->allow_list;
+			sd_write_struct(buf, "data_list");
+			struct data_list *tmp = profile->clabel->allow_list;
 			while (tmp != NULL)
 			{
 				sd_write_string(buf, tmp->data, NULL);

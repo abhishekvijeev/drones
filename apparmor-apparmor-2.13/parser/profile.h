@@ -111,17 +111,17 @@ struct dfa_stuff {
 };
 
 // Custom code begin
-struct list_node
+struct data_list
 {
 	char *data;
-	struct list_node *next;
+	struct data_list *next;
 }
 
 struct custom_label
 {
 	char *label_name;
 	int allow_cnt;
-	struct list_node *allow_list;
+	struct data_list *allow_list;
 }
 // Custom code end
 
