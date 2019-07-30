@@ -772,7 +772,7 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 				struct ListOfDomains *new_node = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
 				if (!new_node)
 					goto fail;
-				if(!unpack_strdup(e, &profile->current_domain->domain, NULL))
+				if(!unpack_strdup(e, &new_node->domain, NULL))
 					goto fail;
 
 				INIT_LIST_HEAD(&(new_node->domain_list));
