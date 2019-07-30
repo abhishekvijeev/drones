@@ -741,7 +741,7 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 		profile->current_domain = kzalloc (sizeof(struct DomainMetaData), GFP_KERNEL);
 		if (!profile->current_domain)
 			goto fail;
-		if(!unpack_strdup(e, &profile->profile->current_domain->domain, NULL))
+		if(!unpack_strdup(e, &profile->current_domain->domain, NULL))
 			goto fail;
 
 		if (!unpack_u32(e, &(profile->current_domain->allow_cnt), NULL))
@@ -772,9 +772,9 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 				struct ListOfDomains *new_node = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
 				if (!new_node)
 					goto fail;
-				if(!unpack_strdup(e, &profile->profile->current_domain->domain, NULL))
+				if(!unpack_strdup(e, &profile->current_domain->domain, NULL))
 					goto fail;
-					
+
 				INIT_LIST_HEAD(&(new_node->domain_list));
 				list_add(&(new_node->domain_list), &(profile->allow_net_domains->domain_list));
 			}
