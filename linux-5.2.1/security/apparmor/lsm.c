@@ -1671,8 +1671,11 @@ static unsigned int custom_ipv4_output(void *priv,
 		ctx = SK_CTX(sk);
 		sk_label = aa_get_label(ctx->label);
 		secid = sk_label->secid;
+		printk(KERN_INFO "Retrieved secid %d from socket with label %s\n", secid, sk_label->hname);
 		skb->secmark = secid;
+		printk(KERN_INFO "Attached secid %d to packet, from socket with label %s\n", skb->secmark, sk_label->hname);
 		aa_put_label(ctx->label);
+		
 	}
 	else
 	{
