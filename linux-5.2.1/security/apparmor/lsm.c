@@ -1031,9 +1031,20 @@ static int apparmor_socket_shutdown(struct socket *sock, int how)
 static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
 	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	struct aa_label *send_sk_label;
+	struct aa_label *recv_sk_label;
+	int send_secid;
 
 	if (!skb->secmark)
 		return 0;
+
+	send_secid = skb->secmark;
+	send_sk_label = aa_secid_to_label(send_secid);
+	recv_sk_label = aa_get_label(ctx->label);
+
+	printk(KERN_INFO "apparmor_socket_sock_rcv_skb: sender_label: %s, recv_label: %s\n", send_sk_label->hname, recv_sk_label->hname);
+
+	aa_put_label(ctx->label);
 
 	return apparmor_secmark_check(ctx->label, OP_RECVMSG, AA_MAY_RECEIVE,
 				      skb->secmark, sk);
@@ -1684,13 +1695,6 @@ static unsigned int custom_ipv4_output(void *priv,
 	return NF_ACCEPT;
 }
 
-static unsigned int custom_ipv4_input(void *priv,
-					 struct sk_buff *skb,
-					 const struct nf_hook_state *state)
-{
-
-}
-
 static const struct nf_hook_ops apparmor_nf_ops[] = {
 	{
 		.hook =         apparmor_ipv4_postroute,
@@ -1710,12 +1714,6 @@ static const struct nf_hook_ops apparmor_nf_ops[] = {
 		.hook =		custom_ipv4_output,
 		.pf =		NFPROTO_IPV4,
 		.hooknum =	NF_INET_LOCAL_OUT,
-		.priority =	NF_IP_PRI_FIRST,
-	},
-	{
-		.hook =		custom_ipv4_input,
-		.pf =		NFPROTO_IPV4,
-		.hooknum =	NF_INET_LOCAL_IN,
 		.priority =	NF_IP_PRI_FIRST,
 	},
 };
