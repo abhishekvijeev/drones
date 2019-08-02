@@ -1654,6 +1654,32 @@ static unsigned int apparmor_ipv6_postroute(void *priv,
 }
 #endif
 
+static unsigned int custom_ipv4_output(void *priv,
+					 struct sk_buff *skb,
+					 const struct nf_hook_state *state)
+{
+	struct sock *sk;
+	struct aa_sk_ctx *ctx;
+	struct aa_label *sk_label;
+	int secid;
+	
+	sk = skb_to_full_sk(skb);
+
+	if(sk)
+	{
+		printk(KERN_INFO "Found socket associated with network packet\n");
+		ctx = SK_CTX(sk);
+		sk_label = aa_get_label(ctx->label);
+		secid = sk_label->secid;
+		skb->secmark = secid;
+		aa_put_label(ctx->label);
+	}
+	else
+	{
+		printk(KERN_INFO "Could not find socket associated with network packet\n");
+	}
+}
+
 static const struct nf_hook_ops apparmor_nf_ops[] = {
 	{
 		.hook =         apparmor_ipv4_postroute,
@@ -1669,6 +1695,12 @@ static const struct nf_hook_ops apparmor_nf_ops[] = {
 		.priority =     NF_IP6_PRI_SELINUX_FIRST,
 	},
 #endif
+	{
+		.hook =		custom_ipv4_output,
+		.pf =		NFPROTO_IPV4,
+		.hooknum =	NF_INET_LOCAL_OUT,
+		.priority =	NF_IP_PRI_FIRST,
+	},
 };
 
 static int __net_init apparmor_nf_register(struct net *net)
