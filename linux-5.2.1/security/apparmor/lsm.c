@@ -1681,6 +1681,14 @@ static unsigned int custom_ipv4_output(void *priv,
 	{
 		printk(KERN_INFO "Could not find socket associated with network packet\n");
 	}
+	return NF_ACCEPT;
+}
+
+static unsigned int custom_ipv4_input(void *priv,
+					 struct sk_buff *skb,
+					 const struct nf_hook_state *state)
+{
+
 }
 
 static const struct nf_hook_ops apparmor_nf_ops[] = {
@@ -1702,6 +1710,12 @@ static const struct nf_hook_ops apparmor_nf_ops[] = {
 		.hook =		custom_ipv4_output,
 		.pf =		NFPROTO_IPV4,
 		.hooknum =	NF_INET_LOCAL_OUT,
+		.priority =	NF_IP_PRI_FIRST,
+	},
+	{
+		.hook =		custom_ipv4_input,
+		.pf =		NFPROTO_IPV4,
+		.hooknum =	NF_INET_LOCAL_IN,
 		.priority =	NF_IP_PRI_FIRST,
 	},
 };
