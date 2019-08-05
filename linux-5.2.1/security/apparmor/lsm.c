@@ -1220,48 +1220,30 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	{
 		printk(KERN_INFO "apparmor_socket_sock_rcv_skb: sender process: %s, sk_label: %s\n", sender_task->comm, sk_label->hname);
 
-		// 1. Check if packet destination is DDS multicast address
-		if(ntohs(ip->daddr) == 61439)
+		// Check if packet originated from another process on the same machine
+		if((ip->saddr & 0x000000FF) == (ip->daddr & 0x000000FF))
 		{
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: DDS Multicast allowed %pi4\n", &(ip->daddr));
-			return 0;
+			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost to localhost allowed\n");
+			same_machine = 1;
 		}
 
-		// 2. Check if protocol is IGMP
-		else if(ip->protocol == IPPROTO_IGMP)
+		read_lock(&dev_base_lock);
+		dev = first_net_device(&init_net);
+		while (dev) 
 		{
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: IGMP protocol allowed\n");
-			return 0;
-		}
-
-		// 3. Check if packet originated from another process on the same machine
-		else
-		{
-			if((ip->saddr & 0x000000FF) == (ip->daddr & 0x000000FF))
+			dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
+			if(dev_addr == ip->saddr)
 			{
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost to localhost allowed\n");
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals dev IP addr %pi4\n", &(ip->daddr), &dev_addr);
+				read_unlock(&dev_base_lock);
 				same_machine = 1;
+				break;
 			}
-
-			read_lock(&dev_base_lock);
-			dev = first_net_device(&init_net);
-			while (dev) 
-			{
-				dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
-				if(dev_addr == ip->saddr)
-				{
-					printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals dev IP addr %pi4\n", &(ip->daddr), &dev_addr);
-					read_unlock(&dev_base_lock);
-					same_machine = 1;
-					break;
-				}
-				dev = next_net_device(dev);
-			}
-			read_unlock(&dev_base_lock);
-
+			dev = next_net_device(dev);
 		}
+		read_unlock(&dev_base_lock);
 		
-		// 4. If message was from same machine, check label rules, else perform source domain declassification
+		// If message was from same machine, check label rules, else perform source domain declassification
 		if(same_machine)
 		{
 			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Checking label flow from task %s to socket label %s\n", sender_task->comm, sk_label->hname);
@@ -1272,6 +1254,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		{
 			// Add code to check whether receiving socket can receive a message from SRC IP Address -> source domain 
 			// declassification
+			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4\n", &ip->saddr, &ip->daddr);
 		}
     }
 	else
