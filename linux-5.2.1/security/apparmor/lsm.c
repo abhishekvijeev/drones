@@ -1237,7 +1237,6 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 				if(dev_addr == ip->saddr)
 				{
 					printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals dev IP addr %pi4\n", &(ip->daddr), &dev_addr);
-					read_unlock(&dev_base_lock);
 					same_machine = 1;
 					break;
 				}
