@@ -1197,9 +1197,31 @@ static int apparmor_socket_shutdown(struct socket *sock, int how)
 static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
 	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	struct aa_label *sk_label;
+	struct task_struct *sender;
+	int sender_pid;
 
 	if (!skb->secmark)
 		return 0;
+
+	sender_pid = skb->secmark;
+	sk_label = aa_get_label(ctx->label);
+	sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+
+	if(sender)
+	{
+		printk(KERN_INFO "apparmor_socket_sock_rcv_skb: sender process: %s, sk_label: %s\n", sender->comm, sk_label->hname);
+
+	}
+	else
+	{
+		printk(KERN_INFO "apparmor_socket_sock_rcv_skb: unable to obtain sender task struct, sk_label: %s\n", sk_label->hname);
+	}
+
+	aa_put_label(ctx->label);
+	
+
+
 
 	return apparmor_secmark_check(ctx->label, OP_RECVMSG, AA_MAY_RECEIVE,
 				      skb->secmark, sk);
