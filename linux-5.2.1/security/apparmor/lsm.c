@@ -1216,7 +1216,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	sk_label = aa_get_label(ctx->label);
 	ip = ip_hdr(skb);
 
-	if(sender_task)
+	if(apparmor_ioctl_debug && sender_task)
 	{
 		printk(KERN_INFO "apparmor_socket_sock_rcv_skb: sender process: %s, sk_label: %s\n", sender_task->comm, sk_label->hname);
 
