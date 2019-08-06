@@ -1192,6 +1192,8 @@ static int apparmor_socket_shutdown(struct socket *sock, int how)
 
 static int packet_origin_localhost(u32 src_ip_addr)
 {
+	struct net_device *dev;
+	u32 dev_addr;
 	if((src_ip_addr & 0x000000FF) == 127)
 	{
 		// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost: src_ip = %pi4\n", &src_ip_addr);
@@ -1231,8 +1233,6 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	struct aa_label *sk_label;
 	struct task_struct *sender_task;
 	const struct iphdr *ip;
-	struct net_device *dev;
-	u32 dev_addr;
 	int sender_pid;
 	int same_machine = 0;
 
