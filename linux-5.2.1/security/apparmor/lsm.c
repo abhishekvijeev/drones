@@ -1239,7 +1239,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	ip = ip_hdr(skb);	
 
 	// Check if packet originated from another process on the same machine
-	if(ip->protocol == IPPROTO_UDP)
+	if(sk->sk_family == AF_INET && ip->protocol == IPPROTO_UDP)
 	{
 		sk_label = aa_get_label(ctx->label);
 		if(packet_origin_localhost(ip->saddr))
@@ -1264,7 +1264,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		else
 		{
 			// UDP Packet from some other machine - check whether receiving socket has permissions to receive this packet
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: %d, sk_label: %s\n", &ip->saddr, &ip->daddr, ntohs(ip->protocol), sk_label->hname);
+			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: %u, sk_label: %s\n", &ip->saddr, &ip->daddr, ip->protocol, sk_label->hname);
 		}
 		aa_put_label(ctx->label);
 	}
