@@ -1235,12 +1235,11 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	// If message was from same machine, check label rules, else perform source domain declassification
 	if(same_machine)
 	{
+		sk_label = aa_get_label(ctx->label);
 		if(skb->secmark)
 		{
 			sender_pid = skb->secmark;
 			sender_task = pid_task(find_vpid(sender_pid), PIDTYPE_PID);	
-
-			sk_label = aa_get_label(ctx->label);
 
 			if(sender_task)
 			{
@@ -1250,7 +1249,6 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 			{
 				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: unable to obtain sender task struct, sk_label: %s\n", sk_label->hname);
 			}
-			aa_put_label(ctx->label);
 			
 			// Add code to check label flow
 		}
@@ -1258,6 +1256,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		{
 			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: secmark not set for packet from %pi4 to socket %s\n", &ip->saddr, sk_label->hname);
 		}
+		aa_put_label(ctx->label);
 		
 	}
 	else
@@ -1269,7 +1268,6 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 
 	if (!skb->secmark)
 	{
-
 		return 0;
 	}
 
