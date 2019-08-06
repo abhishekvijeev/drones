@@ -1189,6 +1189,34 @@ static int apparmor_socket_shutdown(struct socket *sock, int how)
 }
 
 #ifdef CONFIG_NETWORK_SECMARK
+
+static int packet_origin_localhost(u32 src_ip_addr)
+{
+	if((src_ip_addr & 0x000000FF) == 127)
+	{
+		// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost: src_ip = %pi4\n", &src_ip_addr);
+		return 1;
+	}
+
+	read_lock(&dev_base_lock);
+	dev = first_net_device(&init_net);
+	while (dev) 
+	{
+		dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
+		if(dev_addr == src_ip_addr)
+		{
+			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals device IP addr %pi4\n", &src_ip_addr, &dev_addr);
+			read_unlock(&dev_base_lock);
+			return 1;
+		}
+		dev = next_net_device(dev);
+	}
+	read_unlock(&dev_base_lock);
+
+	return 0;
+	
+}
+
 /**
  * apparmor_socket_sock_recv_skb - check perms before associating skb to sk
  *
@@ -1211,78 +1239,36 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	ip = ip_hdr(skb);	
 
 	// Check if packet originated from another process on the same machine
-	if((ip->saddr & 0x000000FF) == 127)
-	{
-		printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost: src_ip = %pi4\n", &ip->saddr);
-		same_machine = 1;
-	}
-
-	read_lock(&dev_base_lock);
-	dev = first_net_device(&init_net);
-	while (dev) 
-	{
-		dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
-		if(dev_addr == ip->saddr)
-		{
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals device IP addr %pi4\n", &(ip->saddr), &dev_addr);
-			same_machine = 1;
-			break;
-		}
-		dev = next_net_device(dev);
-	}
-	read_unlock(&dev_base_lock);
-
-	// If message was from same machine, check label rules, else perform source domain declassification
-	if(same_machine)
+	if(ip->protocol == IPPROTO_UDP)
 	{
 		sk_label = aa_get_label(ctx->label);
-		if(skb->secmark)
+		if(packet_origin_localhost(ip->saddr))
 		{
+			if(!skb->secmark)
+			{
+				// raise exception because UDP packets originating on the same machine must have secmark set
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: secmark not set on packet from localhost: %pi4\n", &ip->saddr);
+			}
 			sender_pid = skb->secmark;
 			sender_task = pid_task(find_vpid(sender_pid), PIDTYPE_PID);	
 
 			if(sender_task)
 			{
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Checking label flow from task %s to socket label %s\n", sender_task->comm, sk_label->hname);
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost - checking label flow from task %s to socket label %s\n", sender_task->comm, sk_label->hname);
 			}
 			else
 			{
 				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: unable to obtain sender task struct, sk_label: %s\n", sk_label->hname);
 			}
-			
-			// Add code to check label flow
 		}
 		else
 		{
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: secmark not set for packet from %pi4 to socket %s, protocol %d\n", &ip->saddr, sk_label->hname, ip->protocol);
+			// UDP Packet from some other machine - check whether receiving socket has permissions to receive this packet
+			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: %d, sk_label: %s\n", &ip->saddr, &ip->daddr, ntohs(ip->protocol), sk_label->hname);
 		}
 		aa_put_label(ctx->label);
-		
 	}
-	else
-	{
-		// Add code to check whether receiving socket can receive a message from SRC IP Address -> source domain 
-		// declassification
-		sk_label = aa_get_label(ctx->label);
-		if(ip->protocol == IPPROTO_TCP)
-		{
-			const struct tcphdr *tcp;
-			tcp = tcp_hdr(skb);
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: TCP, src port: %d, dest_port: %d, sk_label: %s\n", &ip->saddr, &ip->daddr, ntohs(tcp->source), ntohs(tcp->dest), sk_label->hname);
 
-		}
-		else if(ip->protocol == IPPROTO_UDP)
-		{
-			const struct udphdr *udp;
-			udp = udp_hdr(skb);
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: UDP, src port: %d, dest_port: %d, sk_label: %s\n", &ip->saddr, &ip->daddr, ntohs(udp->source), ntohs(udp->dest), sk_label->hname);
-		}
-		else
-		{
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: %d, sk_label: %s\n", &ip->saddr, &ip->daddr, ip->protocol, sk_label->hname);
-		}
-		aa_put_label(ctx->label);
-	}
 
 	if (!skb->secmark)
 	{
