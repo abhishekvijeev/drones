@@ -1205,7 +1205,7 @@ static int packet_origin_localhost(u32 src_ip_addr)
 	while (dev) 
 	{
 		dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
-		if((dev_addr & 0x000000FF) == (src_ip_addr & 0x000000FF))
+		if(dev_addr == src_ip_addr)
 		{
 			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals device IP addr %pi4\n", &src_ip_addr, &dev_addr);
 			read_unlock(&dev_base_lock);
@@ -1262,7 +1262,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		}
 		else
 		{
-			// UDP Packet from some other machine - check whether receiving socket has permissions to receive this packet
+			// UDP Packet from some other machine - probably want to check whether receiving socket has permissions to receive this packet
 			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: %u, sk_label: %s\n", &ip->saddr, &ip->daddr, ip->protocol, sk_label->hname);
 		}
 		aa_put_label(ctx->label);
