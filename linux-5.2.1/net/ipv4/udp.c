@@ -941,11 +941,11 @@ int udp_push_pending_frames(struct sock *sk)
 		goto out;
 
 	// Custom code
-	// struct aa_label *label;
-	// struct aa_sk_ctx *ctx = SK_CTX(sk);
-	// label = aa_get_label(ctx->label);
-	// skb->secmark = label->pid;
-	// aa_put_label(ctx->label);
+	struct aa_label *label;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	label = aa_get_label(ctx->label);
+	skb->secmark = label->pid;
+	aa_put_label(ctx->label);
 
 	err = udp_send_skb(skb, fl4, &inet->cork.base);
 
@@ -1208,11 +1208,11 @@ back_from_confirm:
 		if (!IS_ERR_OR_NULL(skb))
 		{
 			//Custom Code
-			// struct aa_label *label;
-			// struct aa_sk_ctx *ctx = SK_CTX(sk);
-			// label = aa_get_label(ctx->label);
-			// skb->secmark = label->pid;
-			// aa_put_label(ctx->label);
+			struct aa_label *label;
+			struct aa_sk_ctx *ctx = SK_CTX(sk);
+			label = aa_get_label(ctx->label);
+			skb->secmark = label->pid;
+			aa_put_label(ctx->label);
 
 			err = udp_send_skb(skb, fl4, &cork);
 		}
@@ -2340,11 +2340,11 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 	if (sk)
 	{
 		// Custom code
-		// struct aa_label *label;
-		// struct aa_sk_ctx *ctx = SK_CTX(sk);
-		// label = aa_get_label(ctx->label);
-		// label->pid = skb->secmark;
-		// aa_put_label(ctx->label);
+		struct aa_label *label;
+		struct aa_sk_ctx *ctx = SK_CTX(sk);
+		label = aa_get_label(ctx->label);
+		label->pid = skb->secmark;
+		aa_put_label(ctx->label);
 	
 		return udp_unicast_rcv_skb(sk, skb, uh);
 	}
