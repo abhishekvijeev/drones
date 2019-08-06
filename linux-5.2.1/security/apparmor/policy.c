@@ -237,13 +237,12 @@ void aa_free_profile(struct aa_profile *profile)
 				kzfree (tmp);
 			}
 		}
-		else
-		{
-			if (profile->allow_net_domains->domain)
-				kzfree (profile->allow_net_domains->domain);
-			kzfree (profile->allow_net_domains);
 		
-		}
+		if (profile->allow_net_domains->domain)
+			kzfree (profile->allow_net_domains->domain);
+		kzfree (profile->allow_net_domains);
+	
+	
 	}
 
 	if (profile->current_domain)
@@ -305,25 +304,14 @@ struct aa_profile *aa_alloc_profile(const char *hname, struct aa_proxy *proxy,
 	struct DomainMetaData *newDomainMetaData = kzalloc (sizeof(struct DomainMetaData), GFP_KERNEL);
 	if (!newDomainMetaData)
 		goto fail;
-	else
-	{
-		newDomainMetaData->allow_cnt = 0;
-		char *domain = kzalloc (sizeof(char), GFP_KERNEL);
-		*domain = '*';
-		newDomainMetaData->domain = domain;
-	}
+	newDomainMetaData->allow_cnt = 0;
 	profile->current_domain = newDomainMetaData;
 
 	struct ListOfDomains *newListOfDomain = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
 	if (!newListOfDomain)
 		goto fail;
-	else
-	{
-		char *domain = kzalloc (sizeof(char), GFP_KERNEL);
-		*domain = '*';
-		newListOfDomain->domain = domain;
-		INIT_LIST_HEAD(&(newListOfDomain->domain_list));
-	}
+	
+	INIT_LIST_HEAD(&(newListOfDomain->domain_list));
 	profile->allow_net_domains = newListOfDomain;
 	// Custom Code: End
 

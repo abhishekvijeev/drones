@@ -738,15 +738,9 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 	/* Start of new grammar rules */
 	if (unpack_nameX(e, AA_STRUCT, "DomainMetaData"))
 	{
-		if (!unpack_str(e, &name, NULL))
-			goto fail;
-		kzfree (profile->current_domain->domain);
-		profile->current_domain->domain = kzalloc (strlen(name), GFP_KERNEL);
-		if (!profile->current_domain->domain)
+		if (!unpack_strdup(e, &(profile->current_domain->domain), NULL))
 			goto fail;
 		
-		strcpy (profile->current_domain->domain, name);
-
 		if (!unpack_u32(e, &(profile->current_domain->allow_cnt), NULL))
 			goto fail;
 		// profile->current_domain->allow_cnt = allow_cnt;
@@ -765,21 +759,19 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 			
 			for (i = 0; i < profile->current_domain->allow_cnt; i++)
 			{
-				if (!unpack_str(e, &name, NULL))
-						goto fail;
 				struct ListOfDomains *new_node = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
 				if (!new_node)
 					goto fail;
-				new_node->domain = kzalloc(strlen(name), GFP_KERNEL);
-				if (!new_node->domain)
+				
+				if (!unpack_strdup(e, &(new_node->domain), NULL))
 					goto fail;
-				strcpy(new_node->domain, name);
 				INIT_LIST_HEAD(&(new_node->domain_list));
 				list_add(&(new_node->domain_list), &(profile->allow_net_domains->domain_list));
 			}
 			if (!unpack_nameX(e, AA_STRUCTEND, NULL))
 				goto fail;
 			
+			//print all allowed domains
 			if (profile->current_domain->allow_cnt > 0)
 			{
 				struct ListOfDomains *iterator;
