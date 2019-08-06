@@ -229,7 +229,8 @@ void aa_free_profile(struct aa_profile *profile)
 		{
 			tmp = iterator;
 			iterator = list_next_entry (iterator, domain_list);
-			kzfree (tmp->domain);
+			if (tmp->domain)
+				kzfree (tmp->domain);
 			kzfree (tmp);
 		}
 		if (apparmor_ioctl_debug)
@@ -237,7 +238,8 @@ void aa_free_profile(struct aa_profile *profile)
 	}
 	if (profile->current_domain)
 	{
-		kzfree (profile->current_domain->domain);
+		if (profile->current_domain->domain)
+			kzfree (profile->current_domain->domain);
 		kzfree (profile->current_domain);
 		if (apparmor_ioctl_debug)
 			printk (KERN_INFO "aa_free_profile: current domain cleared\n");
