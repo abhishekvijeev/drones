@@ -86,6 +86,7 @@ void add_local_entry(Profile *prof);
 %}
 
 %token TOK_ID
+%token TOK_IP
 %token TOK_CONDID
 %token TOK_CONDLISTID
 %token TOK_CARET
@@ -155,6 +156,7 @@ void add_local_entry(Profile *prof);
 %token TOK_ABI
 %token TOK_DOMAIN_NAME
 %token TOK_NET_DOMAIN
+%token TOK_ALLOWIP
 
  /* rlimits */
 %token TOK_RLIMIT
@@ -194,6 +196,7 @@ void add_local_entry(Profile *prof);
 
 %union {
 	char *id;
+	char *ip;
 	char *flag_id;
 	char *mode;
 	struct aa_network_entry *network_entry;
@@ -221,12 +224,14 @@ void add_local_entry(Profile *prof);
 	struct prefixes prefix;
 	struct DomainMetaData *domain_meta_data;
 	struct ListOfDomains *list_of_domains;
+	struct ListOfIPAddrs *list_of_allowed_ip_addrs;
 
 }
 
 %type <id> 	TOK_ID
 %type <id>	TOK_CONDID
 %type <id>	TOK_CONDLISTID
+%type <ip> 	TOK_IP
 %type <mode> 	TOK_MODE
 %type <fmode>   file_mode
 %type <prof>	profile_base
@@ -293,6 +298,7 @@ void add_local_entry(Profile *prof);
 
 %type <domain_meta_data> set_domain_rule
 %type <list_of_domains> net_domain_rule
+%type <list_of_allowed_ip_addrs> allow_ip_rule
 
 
 
@@ -1328,6 +1334,20 @@ rules: rules opt_prefix net_domain_rule
 		$$ = $1;
 	}
 
+rules: rules allow_ip_rule
+	{
+		if($1->allowed_ip_addrs == NULL)
+		{
+			$1->allowed_ip_addrs = $2;
+		}
+		else
+		{
+			$2->next = $1->allowed_ip_addrs;
+			$1->allowed_ip_addrs = $2;
+		}
+		
+	}
+
 net_domain_rule: TOK_NET_DOMAIN TOK_ID TOK_END_OF_RULE
 	{
 		struct ListOfDomains *new_entry;
@@ -1335,6 +1355,20 @@ net_domain_rule: TOK_NET_DOMAIN TOK_ID TOK_END_OF_RULE
 		if (!new_entry)
 			yyerror(_("Memory allocation error."));
 		new_entry->domain = $2;
+		new_entry->next = NULL;
+		$$ = new_entry;
+	}
+
+allow_ip_rule: TOK_ALLOWIP TOK_IP TOK_END_OF_RULE
+	{
+		struct ListOfIPAddrs *new_entry;
+		new_entry = (struct ListOfIPAddrs *) calloc(1, sizeof(struct ListOfIPAddrs));
+		if (!new_entry)
+			yyerror(_("Memory allocation error."));
+		if(inet_aton($2, &(new_entry->addr)) == 0)
+		{
+			yyerror(_("`%s' is not a valid ip address."), $2);
+		}
 		new_entry->next = NULL;
 		$$ = new_entry;
 	}

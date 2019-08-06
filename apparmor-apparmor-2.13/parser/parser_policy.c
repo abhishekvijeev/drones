@@ -396,6 +396,17 @@ int post_process_profile(Profile *profile, int debug_only)
 			tmp = tmp->next;
 		}
 	}
+
+	if(profile->allowed_ip_addrs != NULL)
+	{
+		printf("Allowed IP addresses:\n");
+		struct ListOfIPAddrs *tmp = profile->allowed_ip_addrs;
+		while(tmp != NULL)
+		{
+			printf("%s\n", inet_ntoa(tmp->addr));
+			tmp = tmp->next;
+		}
+	}
 	
 	int error = 0;
 

@@ -91,6 +91,11 @@ struct aa_network_entry {
 	struct aa_network_entry *next;
 };
 
+struct ListOfIPAddrs {
+	struct in_addr addr;
+	struct ListOfIPAddrs *next;
+};
+
 int parse_net_mode(const char *str_mode, int *mode, int fail);
 extern struct aa_network_entry *new_network_ent(unsigned int family,
 						unsigned int type,

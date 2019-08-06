@@ -181,6 +181,7 @@ public:
 	struct DomainMetaData *current_domain;
 	struct ListOfDomains *allow_net_domains;
 	struct ListOfDomains *deny_net_domains;
+	struct ListOfIPAddrs *allowed_ip_addrs;
 
 	Profile(void)
 	{
