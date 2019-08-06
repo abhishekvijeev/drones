@@ -1211,9 +1211,9 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	ip = ip_hdr(skb);	
 
 	// Check if packet originated from another process on the same machine
-	if(((ip->saddr & 0x000000FF) == (ip->daddr & 0x000000FF)) || ((ip->saddr & 0x000000FF) == 127))
+	if((ip->saddr & 0x000000FF) == 127)
 	{
-		printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost\n");
+		printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost: src_ip = %pi4\n", &ip->saddr);
 		same_machine = 1;
 	}
 
@@ -1224,7 +1224,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
 		if(dev_addr == ip->saddr)
 		{
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals dev IP addr %pi4\n", &(ip->saddr), &dev_addr);
+			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals device IP addr %pi4\n", &(ip->saddr), &dev_addr);
 			same_machine = 1;
 			break;
 		}
@@ -1254,7 +1254,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		}
 		else
 		{
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: secmark not set for packet from %pi4 to socket %s\n", &ip->saddr, sk_label->hname);
+			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: secmark not set for packet from %pi4 to socket %s, protocol %d\n", &ip->saddr, sk_label->hname, ip->protocol);
 		}
 		aa_put_label(ctx->label);
 		
