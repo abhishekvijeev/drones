@@ -1216,53 +1216,50 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	sk_label = aa_get_label(ctx->label);
 	ip = ip_hdr(skb);
 
-	// if(apparmor_ioctl_debug)
-	// {
-		if(sender_task)
+	if(sender_task)
+	{
+		printk(KERN_INFO "apparmor_socket_sock_rcv_skb: sender process: %s, sk_label: %s\n", sender_task->comm, sk_label->hname);
+
+		// Check if packet originated from another process on the same machine
+		if(((ip->saddr & 0x000000FF) == (ip->daddr & 0x000000FF)) || ((ip->saddr & 0x000000FF) == 127))
 		{
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: sender process: %s, sk_label: %s\n", sender_task->comm, sk_label->hname);
+			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost\n");
+			same_machine = 1;
+		}
 
-			// Check if packet originated from another process on the same machine
-			if(((ip->saddr & 0x000000FF) == (ip->daddr & 0x000000FF)) || ((ip->saddr & 0x000000FF) == 127))
+		read_lock(&dev_base_lock);
+		dev = first_net_device(&init_net);
+		while (dev) 
+		{
+			dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
+			if(dev_addr == ip->saddr)
 			{
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost\n");
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals dev IP addr %pi4\n", &(ip->saddr), &dev_addr);
 				same_machine = 1;
+				break;
 			}
-
-			read_lock(&dev_base_lock);
-			dev = first_net_device(&init_net);
-			while (dev) 
-			{
-				dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
-				if(dev_addr == ip->saddr)
-				{
-					printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals dev IP addr %pi4\n", &(ip->saddr), &dev_addr);
-					same_machine = 1;
-					break;
-				}
-				dev = next_net_device(dev);
-			}
-			read_unlock(&dev_base_lock);
+			dev = next_net_device(dev);
+		}
+		read_unlock(&dev_base_lock);
+		
+		// If message was from same machine, check label rules, else perform source domain declassification
+		if(same_machine)
+		{
+			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Checking label flow from task %s to socket label %s\n", sender_task->comm, sk_label->hname);
 			
-			// If message was from same machine, check label rules, else perform source domain declassification
-			if(same_machine)
-			{
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Checking label flow from task %s to socket label %s\n", sender_task->comm, sk_label->hname);
-				
-				// Add code to check label flow
-			}
-			else
-			{
-				// Add code to check whether receiving socket can receive a message from SRC IP Address -> source domain 
-				// declassification
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4\n", &ip->saddr, &ip->daddr);
-			}
+			// Add code to check label flow
 		}
 		else
 		{
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: unable to obtain sender task struct, sk_label: %s\n", sk_label->hname);
+			// Add code to check whether receiving socket can receive a message from SRC IP Address -> source domain 
+			// declassification
+			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4\n", &ip->saddr, &ip->daddr);
 		}
-	// }
+	}
+	else
+	{
+		printk(KERN_INFO "apparmor_socket_sock_rcv_skb: unable to obtain sender task struct, sk_label: %s\n", sk_label->hname);
+	}
 
 	aa_put_label(ctx->label);
 
