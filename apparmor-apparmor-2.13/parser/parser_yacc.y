@@ -1252,7 +1252,9 @@ rules: rules set_domain_rule
 		{
 			$1->current_domain->domain = $2->domain;
 			$1->current_domain->allow_cnt += $2->allow_cnt;
+			/*
 			$1->current_domain->deny_cnt += $2->deny_cnt;
+			*/
 		}
 		
 		$$ = $1;
@@ -1267,7 +1269,9 @@ set_domain_rule: TOK_DOMAIN_NAME TOK_ID TOK_END_OF_RULE
 			yyerror(_("Memory allocation error."));
 		new_entry->domain = $2;
 		new_entry->allow_cnt = 0;
+		/*
 		new_entry->deny_cnt = 0;
+		*/
 		$$ = new_entry;
 	}
 
@@ -1290,12 +1294,16 @@ rules: rules opt_prefix net_domain_rule
 					yyerror(_("Memory allocation error."));
 				new_entry->domain = NULL;
 				new_entry->allow_cnt = 0;
+				/*
 				new_entry->deny_cnt = 1;
+				*/
 				$1->current_domain = new_entry;
 			}
 			else
 			{
+				/*
 				$1->current_domain->deny_cnt += 1;
+				*/
 			}
 			
 		}
@@ -1317,7 +1325,9 @@ rules: rules opt_prefix net_domain_rule
 					yyerror(_("Memory allocation error."));
 				new_entry->domain = NULL;
 				new_entry->allow_cnt = 1;
+				/*
 				new_entry->deny_cnt = 0;
+				*/
 				$1->current_domain = new_entry;
 			}
 			else
