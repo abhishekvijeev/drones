@@ -1263,7 +1263,25 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	{
 		// Add code to check whether receiving socket can receive a message from SRC IP Address -> source domain 
 		// declassification
-		printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4\n", &ip->saddr, &ip->daddr);
+		sk_label = aa_get_label(ctx->label);
+		if(ip->protocol == IPPROTO_TCP)
+		{
+			const struct tcphdr *tcp;
+			tcp = tcp_hdr(skb);
+			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: TCP, src port: %d, dest_port: %d, sk_label: %s\n", &ip->saddr, &ip->daddr, ntohs(tcp->source), ntohs(tcp->dest), sk_label->hname);
+
+		}
+		else if(ip->protocol == IPPROTO_UDP)
+		{
+			const struct udphdr *udp;
+			udp = udp_hdr(skb);
+			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: UDP, src port: %d, dest_port: %d, sk_label: %s\n", &ip->saddr, &ip->daddr, ntohs(udp->source), ntohs(udp->dest), sk_label->hname);
+		}
+		else
+		{
+			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: %d, sk_label: %s\n", &ip->saddr, &ip->daddr, ip->protocol, sk_label->hname);
+		}
+		aa_put_label(ctx->label);
 	}
 
 	if (!skb->secmark)
