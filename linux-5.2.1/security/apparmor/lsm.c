@@ -1223,9 +1223,9 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: sender process: %s, sk_label: %s\n", sender_task->comm, sk_label->hname);
 
 			// Check if packet originated from another process on the same machine
-			if((ip->saddr & 0x000000FF) == (ip->daddr & 0x000000FF))
+			if(((ip->saddr & 0x000000FF) == (ip->daddr & 0x000000FF)) || ((ip->saddr & 0x000000FF) == 127))
 			{
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost to localhost allowed\n");
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost\n");
 				same_machine = 1;
 			}
 
@@ -1236,7 +1236,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 				dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
 				if(dev_addr == ip->saddr)
 				{
-					printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals dev IP addr %pi4\n", &(ip->daddr), &dev_addr);
+					printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals dev IP addr %pi4\n", &(ip->saddr), &dev_addr);
 					same_machine = 1;
 					break;
 				}
