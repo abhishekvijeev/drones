@@ -1205,7 +1205,7 @@ static int packet_origin_localhost(u32 src_ip_addr)
 	while (dev) 
 	{
 		dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
-		if(dev_addr == src_ip_addr)
+		if((dev_addr & 0x000000FF) == (src_ip_addr & 0x000000FF))
 		{
 			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals device IP addr %pi4\n", &src_ip_addr, &dev_addr);
 			read_unlock(&dev_base_lock);
@@ -1234,7 +1234,6 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	struct task_struct *sender_task;
 	const struct iphdr *ip;
 	int sender_pid;
-	int same_machine = 0;
 
 	ip = ip_hdr(skb);	
 
@@ -1254,11 +1253,11 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 
 			if(sender_task)
 			{
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost - checking label flow from task %s to socket label %s\n", sender_task->comm, sk_label->hname);
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost %pi4 to %pi4 - checking label flow from task %s to socket label %s\n", &ip->saddr, &ip->daddr, sender_task->comm, sk_label->hname);
 			}
 			else
 			{
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: unable to obtain sender task struct, sk_label: %s\n", sk_label->hname);
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: unable to obtain sender task struct for packet from %pi4 to %pi4, sk_label: %s\n", &ip->saddr, &ip->daddr, sk_label->hname);
 			}
 		}
 		else
