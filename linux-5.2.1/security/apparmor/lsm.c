@@ -24,6 +24,9 @@
 #include <net/sock.h>
 #include <uapi/linux/mount.h>
 #include <linux/string.h>
+#include <linux/rwlock.h>
+#include <uapi/linux/rtnetlink.h>
+#include <linux/inetdevice.h>
 
 
 #include "include/apparmor.h"
@@ -1081,15 +1084,15 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 			}
 			else if(send_sk_label)
 			{
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from %pi4 to %pi4, sender_label: %s, recv_label not set\n", &ip->saddr &ip->daddr, send_sk_label->hname);
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from %pi4 to %pi4, sender_label: %s, recv_label not set\n", &ip->saddr, &ip->daddr, send_sk_label->hname);
 			}
 			else if(recv_sk_label)
 			{
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from %pi4 to %pi4, sender_label not set, recv_label: %s\n", &ip->saddr &ip->daddr, recv_sk_label->hname);
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from %pi4 to %pi4, sender_label not set, recv_label: %s\n", &ip->saddr, &ip->daddr, recv_sk_label->hname);
 			}
 			else
 			{
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from %pi4 to %pi4, sender_label and recv_label not set\n", &ip->saddr &ip->daddr);
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from %pi4 to %pi4, sender_label and recv_label not set\n", &ip->saddr, &ip->daddr);
 			}
 			aa_put_label(ctx->label);
 		}
