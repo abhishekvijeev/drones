@@ -1035,9 +1035,6 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	struct aa_label *recv_sk_label;
 	int send_secid;
 
-	if (!skb->secmark)
-		return 0;
-
 	send_secid = skb->secmark;
 	send_sk_label = aa_secid_to_label(send_secid);
 	recv_sk_label = aa_get_label(ctx->label);
@@ -1045,6 +1042,9 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	printk(KERN_INFO "apparmor_socket_sock_rcv_skb: sender_label: %s, recv_label: %s\n", send_sk_label->hname, recv_sk_label->hname);
 
 	aa_put_label(ctx->label);
+
+	if (!skb->secmark)
+		return 0;
 
 	return apparmor_secmark_check(ctx->label, OP_RECVMSG, AA_MAY_RECEIVE,
 				      skb->secmark, sk);
@@ -1665,6 +1665,35 @@ static unsigned int apparmor_ipv6_postroute(void *priv,
 }
 #endif
 
+static int localhost_address(u32 ip_addr)
+{
+	struct net_device *dev;
+	u32 dev_addr;
+	if((ip_addr & 0x000000FF) == 127)
+	{
+		// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost: ip = %pi4\n", &_ip_addr);
+		return 1;
+	}
+
+	read_lock(&dev_base_lock);
+	dev = first_net_device(&init_net);
+	while (dev) 
+	{
+		dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
+		if(dev_addr == ip_addr)
+		{
+			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals device IP addr %pi4\n", &ip_addr, &dev_addr);
+			read_unlock(&dev_base_lock);
+			return 1;
+		}
+		dev = next_net_device(dev);
+	}
+	read_unlock(&dev_base_lock);
+
+	return 0;
+	
+}
+
 static unsigned int custom_ipv4_output(void *priv,
 					 struct sk_buff *skb,
 					 const struct nf_hook_state *state)
@@ -1673,25 +1702,33 @@ static unsigned int custom_ipv4_output(void *priv,
 	struct aa_sk_ctx *ctx;
 	struct aa_label *sk_label;
 	int secid;
+	struct iphdr *ip;
 	
 	sk = skb_to_full_sk(skb);
+	ip = ip_hdr(skb);
 
-	if(sk)
+	if(localhost_address(ip->daddr))
 	{
-		printk(KERN_INFO "Found socket associated with network packet\n");
-		ctx = SK_CTX(sk);
-		sk_label = aa_get_label(ctx->label);
-		secid = sk_label->secid;
-		printk(KERN_INFO "Retrieved secid %d from socket with label %s\n", secid, sk_label->hname);
-		skb->secmark = secid;
-		printk(KERN_INFO "Attached secid %d to packet, from socket with label %s\n", skb->secmark, sk_label->hname);
-		aa_put_label(ctx->label);
-		
+		if(sk)
+		{
+			if(sk->sk_family == AF_INET && ip->protocol == IPPROTO_UDP)
+			{
+				// printk(KERN_INFO "Found socket associated with network packet\n");
+				ctx = SK_CTX(sk);
+				sk_label = aa_get_label(ctx->label);
+				secid = sk_label->secid;
+				// printk(KERN_INFO "Retrieved secid %d from socket with label %s\n", secid, sk_label->hname);
+				skb->secmark = secid;
+				printk(KERN_INFO "Attached secid %d to packet from %pi4 to %pi4, sk_label %s\n", skb->secmark, &ip->saddr, &ip->daddr, sk_label->hname);
+				aa_put_label(ctx->label);
+			}	
+		}
+		else
+		{
+			printk(KERN_INFO "Could not find socket associated with network packet from %pi4 to %pi4\n", &ip->saddr, &ip->daddr);
+		}
 	}
-	else
-	{
-		printk(KERN_INFO "Could not find socket associated with network packet\n");
-	}
+	
 	return NF_ACCEPT;
 }
 
