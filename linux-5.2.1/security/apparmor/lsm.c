@@ -1019,6 +1019,35 @@ static int apparmor_socket_shutdown(struct socket *sock, int how)
 	return aa_sock_perm(OP_SHUTDOWN, AA_MAY_SHUTDOWN, sock);
 }
 
+static int localhost_address(u32 ip_addr)
+{
+	struct net_device *dev;
+	u32 dev_addr;
+	if((ip_addr & 0x000000FF) == 127)
+	{
+		// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost: ip = %pi4\n", &_ip_addr);
+		return 1;
+	}
+
+	read_lock(&dev_base_lock);
+	dev = first_net_device(&init_net);
+	while (dev) 
+	{
+		dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
+		if(dev_addr == ip_addr)
+		{
+			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals device IP addr %pi4\n", &ip_addr, &dev_addr);
+			read_unlock(&dev_base_lock);
+			return 1;
+		}
+		dev = next_net_device(dev);
+	}
+	read_unlock(&dev_base_lock);
+
+	return 0;
+	
+}
+
 #ifdef CONFIG_NETWORK_SECMARK
 /**
  * apparmor_socket_sock_recv_skb - check perms before associating skb to sk
@@ -1034,14 +1063,37 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	struct aa_label *send_sk_label;
 	struct aa_label *recv_sk_label;
 	int send_secid;
+	struct iphdr *ip;
 
-	send_secid = skb->secmark;
-	send_sk_label = aa_secid_to_label(send_secid);
-	recv_sk_label = aa_get_label(ctx->label);
+	ip = ip_hdr(skb);
 
-	printk(KERN_INFO "apparmor_socket_sock_rcv_skb: sender_label: %s, recv_label: %s\n", send_sk_label->hname, recv_sk_label->hname);
+	if(ip->protocol == IPPROTO_UDP)
+	{
+		if(localhost_address(ip->saddr))
+		{
+			send_secid = skb->secmark;
+			send_sk_label = aa_secid_to_label(send_secid);
+			recv_sk_label = aa_get_label(ctx->label);
 
-	aa_put_label(ctx->label);
+			if(send_sk_label && recv_sk_label)
+			{
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from %pi4 to %pi4, sender_label: %s, recv_label: %s\n", &ip->saddr, &ip->daddr, send_sk_label->hname, recv_sk_label->hname);
+			}
+			else if(send_sk_label)
+			{
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from %pi4 to %pi4, sender_label: %s, recv_label not set\n", &ip->saddr &ip->daddr, send_sk_label->hname);
+			}
+			else if(recv_sk_label)
+			{
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from %pi4 to %pi4, sender_label not set, recv_label: %s\n", &ip->saddr &ip->daddr, recv_sk_label->hname);
+			}
+			else
+			{
+				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from %pi4 to %pi4, sender_label and recv_label not set\n", &ip->saddr &ip->daddr);
+			}
+			aa_put_label(ctx->label);
+		}
+	}
 
 	if (!skb->secmark)
 		return 0;
@@ -1664,35 +1716,6 @@ static unsigned int apparmor_ipv6_postroute(void *priv,
 	return apparmor_ip_postroute(priv, skb, state);
 }
 #endif
-
-static int localhost_address(u32 ip_addr)
-{
-	struct net_device *dev;
-	u32 dev_addr;
-	if((ip_addr & 0x000000FF) == 127)
-	{
-		// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost: ip = %pi4\n", &_ip_addr);
-		return 1;
-	}
-
-	read_lock(&dev_base_lock);
-	dev = first_net_device(&init_net);
-	while (dev) 
-	{
-		dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
-		if(dev_addr == ip_addr)
-		{
-			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals device IP addr %pi4\n", &ip_addr, &dev_addr);
-			read_unlock(&dev_base_lock);
-			return 1;
-		}
-		dev = next_net_device(dev);
-	}
-	read_unlock(&dev_base_lock);
-
-	return 0;
-	
-}
 
 static unsigned int custom_ipv4_output(void *priv,
 					 struct sk_buff *skb,
