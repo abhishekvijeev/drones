@@ -1297,6 +1297,7 @@ rules: rules opt_prefix net_domain_rule
 				new_entry->domain = NULL;
 				new_entry->allow_cnt = 0;
 				new_entry->deny_cnt = 1;
+				new_entry->ip_allow_cnt = 0;
 				$1->current_domain = new_entry;
 			}
 			else
@@ -1324,6 +1325,7 @@ rules: rules opt_prefix net_domain_rule
 				new_entry->domain = NULL;
 				new_entry->allow_cnt = 1;
 				new_entry->deny_cnt = 0;
+				new_entry->ip_allow_cnt = 0;
 				$1->current_domain = new_entry;
 			}
 			else
@@ -1344,6 +1346,22 @@ rules: rules allow_ip_rule
 		{
 			$2->next = $1->allowed_ip_addrs;
 			$1->allowed_ip_addrs = $2;
+		}
+		if ($1->current_domain == NULL)
+		{
+			struct DomainMetaData *new_entry;
+			new_entry = (struct DomainMetaData *) calloc(1, sizeof(struct DomainMetaData));
+			if (!new_entry)
+				yyerror(_("Memory allocation error."));
+			new_entry->domain = NULL;
+			new_entry->allow_cnt = 0;
+			new_entry->deny_cnt = 0;
+			new_entry->ip_allow_cnt = 1;
+			$1->current_domain = new_entry;
+		}
+		else
+		{
+			$1->current_domain->ip_allow_cnt += 1;
 		}
 		
 	}

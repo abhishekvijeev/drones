@@ -368,10 +368,7 @@ int post_process_policy_list(ProfileList &list, int debug_only);
 int post_process_profile(Profile *profile, int debug_only)
 {
 	if (profile->current_domain != NULL)
-		printf ("current domain not null, value is %s, len(domain_name) = %d, allow=%d, deny=%d\n", profile->current_domain->domain, 
-																									strlen(profile->current_domain->domain),
-																			 						profile->current_domain->allow_cnt,
-																			 						profile->current_domain->deny_cnt);
+		printf ("current domain not null, value is %s, len(domain_name) = %d, allow=%d, deny=%d, ip_allow_cnt=%d\n", profile->current_domain->domain, strlen(profile->current_domain->domain), profile->current_domain->allow_cnt, profile->current_domain->deny_cnt, profile->current_domain->ip_allow_cnt);
 	else
 		printf ("current domain NULL\n");
 	
