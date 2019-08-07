@@ -817,7 +817,7 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 				struct ListOfIPAddrs *new_node = kzalloc(sizeof(struct ListOfIPAddrs), GFP_KERNEL);
 				if (!new_node)
 					goto fail;
-				if(!unpack_u32(e, &new_node->ip_allow_cnt, NULL))
+				if(!unpack_u32(e, &new_node->ip_addr, NULL))
 					goto fail;
 
 				INIT_LIST_HEAD(&(new_node->ip_addr_list));

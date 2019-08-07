@@ -409,7 +409,7 @@ void sd_serialize_profile(std::ostringstream &buf, Profile *profile,
 		sd_write_string(buf, profile->current_domain->domain, NULL);
 		sd_write_uint32(buf,  profile->current_domain->allow_cnt);
 		sd_write_uint32(buf,  profile->current_domain->deny_cnt);
-		sd_write_unit32(buf, profile->current_domain->ip_allow_cnt);
+		sd_write_uint32(buf, profile->current_domain->ip_allow_cnt);
 		sd_write_structend(buf);
 		if (profile->current_domain->allow_cnt > 0)
 		{
@@ -436,7 +436,7 @@ void sd_serialize_profile(std::ostringstream &buf, Profile *profile,
 			sd_write_structend(buf);
 		}
 
-		if(profile->ip_allow_cnt > 0)
+		if(profile->current_domain->ip_allow_cnt > 0)
 		{
 			sd_write_struct(buf, "AllowedIPAddrs");
 			struct ListOfIPAddrs *tmp = profile->allowed_ip_addrs;
