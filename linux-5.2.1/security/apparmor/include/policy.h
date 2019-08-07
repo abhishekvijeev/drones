@@ -140,6 +140,13 @@ struct DomainMetaData
 	char *domain;
 	int allow_cnt;
 	int deny_cnt;
+	int ip_allow_cnt;
+};
+
+struct ListOfIPAddrs 
+{
+	u32 ip_addr;
+	struct list_head ip_addr_list;
 };
 //Custom code: end
 
@@ -165,6 +172,7 @@ struct aa_profile {
 	 */
 	struct DomainMetaData *current_domain;
 	struct ListOfDomains *allow_net_domains;
+	struct ListOfIPAddrs *allowed_ip_addrs;
 	
 
 	struct aa_policydb policy;

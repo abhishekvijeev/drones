@@ -750,6 +750,8 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 		if (!unpack_u32(e, &(profile->current_domain->deny_cnt), NULL))
 			goto fail;
 		// profile->current_domain->deny_cnt = deny_cnt;
+		if (!unpack_u32(e, &(profile->current_domain->ip_allow_cnt), NULL))
+			goto fail;
 		if (!unpack_nameX(e, AA_STRUCTEND, NULL))
 			goto fail;
 		
@@ -786,6 +788,49 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 			{
 				if (apparmor_ioctl_debug)
 					printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+			}
+			// if (apparmor_ioctl_debug)
+			// 	printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
+			// iterator = list_first_entry(&(profile->allow_net_domains->domain_list), typeof(*iterator), domain_list);
+			// while( (&iterator->domain_list) != &(profile->allow_net_domains->domain_list))
+			// {
+			// 	if (apparmor_ioctl_debug)
+			// 		printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+				
+			// 	iterator = list_next_entry (iterator, domain_list);
+			// }
+
+		}		
+
+		if (unpack_nameX(e, AA_STRUCT, "AllowedIPAddrs")) 
+		{
+			if (apparmor_ioctl_debug)
+				printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
+			profile->allowed_ip_addrs = kzalloc(sizeof(struct ListOfIPAddrs), GFP_KERNEL);
+			if (!profile->allowed_ip_addrs)
+				goto fail;
+			INIT_LIST_HEAD(&(profile->allowed_ip_addrs->ip_addr_list));
+
+
+			for (i = 0; i < profile->current_domain->ip_allow_cnt; i++)
+			{
+				struct ListOfIPAddrs *new_node = kzalloc(sizeof(struct ListOfIPAddrs), GFP_KERNEL);
+				if (!new_node)
+					goto fail;
+				if(!unpack_u32(e, &new_node->ip_allow_cnt, NULL))
+					goto fail;
+
+				INIT_LIST_HEAD(&(new_node->ip_addr_list));
+				list_add(&(new_node->ip_addr_list), &(profile->allowed_ip_addrs->ip_addr_list));
+			}
+			if (!unpack_nameX(e, AA_STRUCTEND, NULL))
+				goto fail;
+			
+			struct ListOfIPAddrs *iterator;
+			list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
+			{
+				if (apparmor_ioctl_debug)
+					printk_ratelimited(KERN_INFO "%pi4\n", &(iterator->ip_addr));
 			}
 			// if (apparmor_ioctl_debug)
 			// 	printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
