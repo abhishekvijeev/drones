@@ -958,7 +958,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 	}
 	else 
 	{
-		// printk (KERN_INFO "apparmor_socket_recvmsg: sock not available for process %s\n", current->comm);
+		printk (KERN_INFO "apparmor_socket_recvmsg: sock not available for process %s\n", current->comm);
 	}
 
 	
@@ -1060,8 +1060,8 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		
 		sender_pid = label->pid;
 		
-		// printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
-		// 			current->comm, current->pid, label->pid);
+		printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
+					current->comm, current->pid, label->pid);
 		if (recv_domain)
 			printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", recv_domain);	
 		
@@ -1083,8 +1083,8 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 
 			printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
 		}
-		// else
-		// 	printk (KERN_INFO "4 Error in getting task_struct of pid= %d\n", sender_pid);
+		else
+			printk (KERN_INFO "4 Error in getting task_struct of pid= %d\n", sender_pid);
 
 		if (!allow)
 		{
@@ -1103,7 +1103,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	}//end if (sock->sk) 
 	else 
 	{
-		// printk (KERN_INFO "apparmor_socket_recvmsg: sock not available for process %s\n", current->comm);
+		printk (KERN_INFO "apparmor_socket_recvmsg: sock not available for process %s\n", current->comm);
 	}
 
 
