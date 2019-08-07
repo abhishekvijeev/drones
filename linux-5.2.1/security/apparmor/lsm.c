@@ -1063,7 +1063,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
 					current->comm, current->pid, label->pid);
 		if (recv_domain)
-			printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", recv_domain);	
+			printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", *recv_domain);	
 		
 		struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 		if (sender)
