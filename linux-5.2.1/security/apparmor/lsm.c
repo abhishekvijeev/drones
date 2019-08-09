@@ -956,10 +956,10 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 		aa_put_label(ctx->label);	
 		__end_current_label_crit_section(cl);
 	}
-	else 
-	{
-		printk (KERN_INFO "apparmor_socket_recvmsg: sock not available for process %s\n", current->comm);
-	}
+	// else 
+	// {
+	// 	printk (KERN_INFO "apparmor_socket_recvmsg: sock not available for process %s\n", current->comm);
+	// }
 
 	
 
@@ -1000,10 +1000,11 @@ static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_d
 	{
 		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
 		{
-			printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
 			if (strcmp(iterator->domain, checking_domain) == 0)
 			{
 				*allow = true;
+				printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s is true\n", iterator->domain, checking_domain);
+			
 				break;
 			}
 		}
@@ -1057,13 +1058,11 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		label = aa_get_label(ctx->label);
 		
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
+		if (!recv_domain)
+			recv_domain = '';
 		
 		sender_pid = label->pid;
 		
-		printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
-					current->comm, current->pid, label->pid);
-		if (recv_domain)
-			printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", recv_domain);	
 		
 		struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 		if (sender)
@@ -1073,24 +1072,25 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			{
 				
 				fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
-				if (allow)
-					printk (KERN_INFO "apparmor_socket_recvmsg3: Match is true \n");
-				else 
-					printk (KERN_INFO "apparmor_socket_recvmsg3: Match is false\n");
+				// if (allow)
+				// 	printk (KERN_INFO "apparmor_socket_recvmsg3: Match is true \n");
+				// else 
+				// 	printk (KERN_INFO "apparmor_socket_recvmsg3: Match is false\n");
 			}
 			aa_put_label(sender_label);
 			
 
-			printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
+			// printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
 		}
-		else
-			printk (KERN_INFO "4 Error in getting task_struct of pid= %d\n", sender_pid);
-
-		if (!allow)
-		{
-			printk (KERN_INFO "apparmor_socket_recvmsg: FLOW_FAILED: current process = %s, current pid = %d, sent from pid = %d\n", 
-					current->comm, current->pid, label->pid);
-		}
+		
+		printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, current pid = %d, sent from pid = %d, Flow result=%d\n", 
+					current->comm, current->pid, label->pid, allow);
+		
+		// if (!allow)
+		// {
+		// 	printk (KERN_INFO "apparmor_socket_recvmsg: FLOW_FAILED: current process = %s, current pid = %d, sent from pid = %d\n", 
+		// 			current->comm, current->pid, label->pid);
+		// }
 		//test code to iterate aa_profile list inside aa_label and print domain
 		// struct aa_profile *profile;
 		// fn_for_each (label, profile, print_all_domain(profile));
