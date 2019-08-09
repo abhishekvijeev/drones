@@ -1059,7 +1059,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
 		if (!recv_domain)
-			recv_domain = '';
+			recv_domain = '*';
 		
 		sender_pid = label->pid;
 		
