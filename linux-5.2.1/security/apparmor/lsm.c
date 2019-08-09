@@ -948,8 +948,9 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 		{
 			label->pid = current->pid;
 		}
-		
-		printk (KERN_INFO "apparmor_socket_sendmsg: sock available current process = %s, current pid = %d\n", 
+		struct sock *sk = sock->sk;
+		if (sk->sk_family == AF_INET)
+			printk (KERN_INFO "apparmor_socket_sendmsg: sock available current process = %s, current pid = %d\n", 
 						current->comm, current->pid);
 	
 		
@@ -1082,8 +1083,9 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 
 			// printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
 		}
-		
-		printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, current pid = %d, sent from pid = %d, Flow result=%d\n", 
+		struct sock *sk = sock->sk;
+		if (sk->sk_family == AF_INET)
+			printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, current pid = %d, sent from pid = %d, Flow result=%d\n", 
 					current->comm, current->pid, label->pid, allow);
 		
 		// if (!allow)
