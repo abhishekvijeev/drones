@@ -952,8 +952,12 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 	if(sk->sk_protocol == IPPROTO_IGMP)
 	{
 		// Allow all IGMP packets
-		printk(KERN_INFO "apparmor_socket_sendmsg: IGMP protocol allowed %pi4\n", &daddr);
+		printk(KERN_INFO "apparmor_socket_sendmsg: IGMP protocol allowed %pi4, protocol->%d\n", &daddr, sk->sk_protocol);
 		return 0;
+	}
+	else
+	{
+		printk(KERN_INFO "apparmor_socket_sendmsg: Different protocol->%d\n", sk->sk_protocol);
 	}
 
     if(sk->sk_family == AF_INET)
