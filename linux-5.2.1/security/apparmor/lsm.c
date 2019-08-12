@@ -1246,7 +1246,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 			if(!skb->secmark)
 			{
 				// raise exception because UDP packets originating on the same machine must have secmark set
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: secmark not set on packet from localhost: %pi4\n", &ip->saddr);
+				// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: secmark not set on packet from localhost: %pi4\n", &ip->saddr);
 			}
 			sender_pid = skb->secmark;
 			sender_task = pid_task(find_vpid(sender_pid), PIDTYPE_PID);	
@@ -1257,13 +1257,13 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 			}
 			else
 			{
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: unable to obtain sender task struct for packet from %pi4 to %pi4, sk_label: %s\n", &ip->saddr, &ip->daddr, sk_label->hname);
+				// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: unable to obtain sender task struct for packet from %pi4 to %pi4, sk_label: %s\n", &ip->saddr, &ip->daddr, sk_label->hname);
 			}
 		}
 		else
 		{
 			// UDP Packet from some other machine - probably want to check whether receiving socket has permissions to receive this packet
-			printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: %u, sk_label: %s\n", &ip->saddr, &ip->daddr, ip->protocol, sk_label->hname);
+			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: %u, sk_label: %s\n", &ip->saddr, &ip->daddr, ip->protocol, sk_label->hname);
 		}
 		aa_put_label(ctx->label);
 	}
@@ -1884,6 +1884,82 @@ static unsigned int apparmor_ipv4_postroute(void *priv,
 	return apparmor_ip_postroute(priv, skb, state);
 }
 
+static unsigned int custom_ipv4_output(void *priv,
+					 struct sk_buff *skb,
+					 const struct nf_hook_state *state)
+{
+	const struct iphdr *ip;
+    int sender_pid;
+    struct task_struct *sender_task;
+	struct net_device *dev;
+	u32 dev_addr;
+
+	ip = ip_hdr(skb);
+
+    if(skb->secmark)
+    {
+        sender_pid = skb->secmark;
+        sender_task = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+        if(sender_task)
+        {
+			// 1. Check if packet destination is a network device on this machine 
+			read_lock(&dev_base_lock);
+			dev = first_net_device(&init_net);
+			while (dev) 
+			{
+				dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
+				if(dev_addr == ip->daddr)
+				{
+					printk(KERN_INFO "NF_OUTPUT: Destination IP address %pi4 equals dev ip addr %pi4\n", &(ip->daddr), &dev_addr);
+					read_unlock(&dev_base_lock);
+					return NF_ACCEPT;
+				}
+				dev = next_net_device(dev);
+			}
+			read_unlock(&dev_base_lock);
+			
+			// 2. Check if packet src and dest IP addresses are the same
+			if((ip->saddr & 0x000000FF) == (ip->daddr & 0x000000FF))
+			{
+				printk(KERN_INFO "NF_OUTPUT: Packet from localhost to localhost allowed\n");
+				return NF_ACCEPT;
+			}
+
+			
+
+			// 3. Check if packet destination is DDS multicast address
+			if(ntohs(ip->daddr) == 61439)
+			{
+				printk(KERN_INFO "NF_OUTPUT: DDS Multicast allowed %pi4\n", &(ip->daddr));
+				return NF_ACCEPT;
+			}
+
+			// 4. Check if protocol is IGMP
+			else if(ip->protocol == IPPROTO_IGMP)
+			{
+				printk(KERN_INFO "NF_OUTPUT: IGMP protocol allowed\n");
+				return NF_ACCEPT;
+			}
+
+			/*
+			 * 5. Otherwise, the packet's destination is outside the machine
+			 * Perform domain declassification by obtaining the list of allowed domains
+			 * for the sending process
+			 */
+
+			else
+			{
+				printk(KERN_INFO "NF_OUTPUT: Drop packet from %s %pi4 to %pi4\n", sender_task->comm, &(ip->saddr), &(ip->daddr));
+				
+				return NF_ACCEPT;
+			}
+        }        
+		
+    }
+
+    return NF_ACCEPT;
+}
+
 #if IS_ENABLED(CONFIG_IPV6)
 static unsigned int apparmor_ipv6_postroute(void *priv,
 					    struct sk_buff *skb,
@@ -1899,6 +1975,12 @@ static const struct nf_hook_ops apparmor_nf_ops[] = {
 		.pf =           NFPROTO_IPV4,
 		.hooknum =      NF_INET_POST_ROUTING,
 		.priority =     NF_IP_PRI_SELINUX_FIRST,
+	},
+	{
+		.hook =		custom_ipv4_output,
+		.pf =		NFPROTO_IPV4,
+		.hooknum =	NF_INET_LOCAL_OUT,
+		.priority =	NF_IP_PRI_FIRST,
 	},
 #if IS_ENABLED(CONFIG_IPV6)
 	{
