@@ -1,0 +1,20 @@
+# Last Modified: Mon Aug 12 14:22:37 2019
+#include <tunables/global>
+
+/usr/sbin/avahi-daemon flags=(complain) {
+  #include <abstractions/base>
+  #include <abstractions/libvirt-qemu>
+
+#  dte_domain avahi-daemon,
+#  dte_net_domain avahi-daemon,
+  
+  signal send set=hup peer=unconfined,
+  capability sys_chroot,
+
+  /lib/x86_64-linux-gnu/ld-*.so mr,
+  /run/avahi-daemon/** rwk,
+  /usr/sbin/avahi-daemon mwr,
+  /etc/avahi/avahi-daemon.conf r,
+  /etc/avahi/** r,
+  
+}
