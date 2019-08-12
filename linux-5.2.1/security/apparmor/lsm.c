@@ -980,7 +980,6 @@ static int apparmor_socket_sendmsg(struct socket *sock,
             if(localhost_address(daddr))
 			{
 				// printk(KERN_INFO "apparmor_socket_sendmsg: Packet from localhost to localhost allowed\n");
-				return 0;
 			}
 			
 
@@ -988,14 +987,12 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			else if(ntohs(daddr) == 61439)
 			{
 				// printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4\n", &daddr);
-				return 0;
 			}
 
 			// 3. Check if destination address is multicast address
 			else if((daddr & 0x000000FF >= 224) && (daddr & 0x000000FF <= 239))
 			{
 				printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4\n", &daddr);
-				return 0;
 			}
 			
 			/* 
@@ -1005,8 +1002,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			 */
 			else
 			{
-				printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4\n", current->comm, &daddr);
-				return 0;
+				printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr & 0xFF000000) = %u, addr & 0x000000FF = %u, ntohs(daddr & 0x000000FF) = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr & 0xFF000000), daddr & 0x000000FF, ntohs(daddr & 0x000000FF));
 			}
         }
 
@@ -1946,8 +1942,8 @@ static unsigned int apparmor_ipv4_output(void *priv,
 	if(ip->protocol == IPPROTO_IGMP)
 	{
 		printk(KERN_INFO "NF_OUTPUT: IGMP protocol allowed -> %d\n", ip->protocol);
-		return NF_ACCEPT;
 	}
+	return NF_ACCEPT;
 }
 
 #if IS_ENABLED(CONFIG_IPV6)
