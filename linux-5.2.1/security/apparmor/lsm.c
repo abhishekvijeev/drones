@@ -994,24 +994,40 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			
 
 			// 2. Check if packet destination is DDS multicast address
-			// if(ntohs(daddr) == 61439)
-			// {
-			// 	printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4->, ntohs\n", &daddr);
-			// 	return 0;
-			// }
+			else if(ntohs(daddr) == 61439)
+			{
+				printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4\n", &daddr);
+				return 0;
+			}
+
+			/* 
+			 * 3. Otherwise, the packet's destination is outside the machine
+			 * Perform domain declassification by obtaining the list of allowed domains
+			 * for the sending process
+			 */
+			else
+			{
+				printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4\n", current->comm, &daddr);
+				return 0;
+			}
         }
 
         // IGMP
-        else if(sock->type == SOCK_RAW)
-        {
-            if(sk->sk_protocol == IPPROTO_IGMP)
-            {
-                // Allow all IGMP packets
-                printk(KERN_INFO "apparmor_socket_sendmsg: IGMP protocol allowed %pi4\n", &daddr);
-                return 0;
-            }
-        }
-
+        // else if(sock->type == SOCK_RAW)
+        // {
+        //     if(sk->sk_protocol == IPPROTO_IGMP)
+        //     {
+        //         // Allow all IGMP packets
+        //         printk(KERN_INFO "apparmor_socket_sendmsg: IGMP protocol allowed %pi4\n", &daddr);
+        //         return 0;
+        //     }
+        // }
+		else if(sk->sk_protocol == IPPROTO_IGMP)
+		{
+			// Allow all IGMP packets
+			printk(KERN_INFO "apparmor_socket_sendmsg: IGMP protocol allowed %pi4\n", &daddr);
+			return 0;
+		}
     }
 
 	
