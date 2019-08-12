@@ -1232,7 +1232,7 @@ static int apparmor_socket_shutdown(struct socket *sock, int how)
 
 #ifdef CONFIG_NETWORK_SECMARK
 
-static int localhost_address(u32 ip_addr)
+int localhost_address(u32 ip_addr)
 {
 	struct net_device *dev;
 	u32 dev_addr;

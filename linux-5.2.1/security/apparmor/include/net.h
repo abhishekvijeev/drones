@@ -108,5 +108,6 @@ int aa_sock_file_perm(struct aa_label *label, const char *op, u32 request,
 
 int apparmor_secmark_check(struct aa_label *label, char *op, u32 request,
 			   u32 secid, struct sock *sk);
+int localhost_address(u32 ip_addr);
 
 #endif /* __AA_NET_H */
