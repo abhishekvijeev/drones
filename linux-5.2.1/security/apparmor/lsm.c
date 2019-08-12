@@ -1926,65 +1926,6 @@ static unsigned int apparmor_ipv4_postroute(void *priv,
 	return apparmor_ip_postroute(priv, skb, state);
 }
 
-static unsigned int custom_ipv4_output(void *priv,
-					 struct sk_buff *skb,
-					 const struct nf_hook_state *state)
-{
-	const struct iphdr *ip;
-    int sender_pid;
-    struct task_struct *sender_task;
-	struct net_device *dev;
-	u32 dev_addr;
-
-	ip = ip_hdr(skb);
-
-    if(skb->secmark)
-    {
-        sender_pid = skb->secmark;
-        sender_task = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-        if(sender_task)
-        {
-			// 1. Check if packet destination is localhost
-			if(localhost_address(ip->daddr))
-			{
-				printk(KERN_INFO "NF_OUTPUT: Packet from localhost to localhost allowed\n");
-				return NF_ACCEPT;
-			}
-			
-
-			// 2. Check if packet destination is DDS multicast address
-			if(ntohs(ip->daddr) == 61439)
-			{
-				printk(KERN_INFO "NF_OUTPUT: DDS Multicast allowed %pi4\n", &(ip->daddr));
-				return NF_ACCEPT;
-			}
-
-			// 3. Check if protocol is IGMP
-			else if(ip->protocol == IPPROTO_IGMP)
-			{
-				printk(KERN_INFO "NF_OUTPUT: IGMP protocol allowed\n");
-				return NF_ACCEPT;
-			}
-
-			/*
-			 * 4. Otherwise, the packet's destination is outside the machine
-			 * Perform domain declassification by obtaining the list of allowed domains
-			 * for the sending process
-			 */
-
-			else
-			{
-				printk(KERN_INFO "NF_OUTPUT: Drop packet from %s %pi4 to %pi4\n", sender_task->comm, &(ip->saddr), &(ip->daddr));
-				
-				return NF_ACCEPT;
-			}
-        }        
-		
-    }
-
-    return NF_ACCEPT;
-}
-
 #if IS_ENABLED(CONFIG_IPV6)
 static unsigned int apparmor_ipv6_postroute(void *priv,
 					    struct sk_buff *skb,
@@ -2000,12 +1941,6 @@ static const struct nf_hook_ops apparmor_nf_ops[] = {
 		.pf =           NFPROTO_IPV4,
 		.hooknum =      NF_INET_POST_ROUTING,
 		.priority =     NF_IP_PRI_SELINUX_FIRST,
-	},
-	{
-		.hook =		custom_ipv4_output,
-		.pf =		NFPROTO_IPV4,
-		.hooknum =	NF_INET_LOCAL_OUT,
-		.priority =	NF_IP_PRI_FIRST,
 	},
 #if IS_ENABLED(CONFIG_IPV6)
 	{
