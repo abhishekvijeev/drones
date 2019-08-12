@@ -949,18 +949,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
     struct inet_sock *inet;
     u32 daddr = 0;
 
-	if(sk->sk_protocol == IPPROTO_IGMP)
-	{
-		// Allow all IGMP packets
-		printk(KERN_INFO "apparmor_socket_sendmsg: IGMP protocol allowed %pi4, protocol->%d\n", &daddr, sk->sk_protocol);
-		return 0;
-	}
-	else
-	{
-		printk(KERN_INFO "apparmor_socket_sendmsg: Different protocol->%d\n", sk->sk_protocol);
-	}
-
-    if(sk->sk_family == AF_INET)
+	if(sk->sk_family == AF_INET)
     {   
         inet = inet_sk(sk);
         // UDP
@@ -1002,14 +991,21 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				return 0;
 			}
 
+			// 3. Check if destination address is multicast address
+			else if((daddr & 0x000000FF >= 224) && (daddr & 0x000000FF <= 239))
+			{
+				printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4\n", &daddr);
+				return 0;
+			}
+			
 			/* 
-			 * 3. Otherwise, the packet's destination is outside the machine
+			 * 4. Otherwise, the packet's destination is outside the machine
 			 * Perform domain declassification by obtaining the list of allowed domains
 			 * for the sending process
 			 */
 			else
 			{
-				// printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4\n", current->comm, &daddr);
+				printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4\n", current->comm, &daddr);
 				return 0;
 			}
         }
@@ -1940,6 +1936,20 @@ static unsigned int apparmor_ipv4_postroute(void *priv,
 	return apparmor_ip_postroute(priv, skb, state);
 }
 
+static unsigned int apparmor_ipv4_output(void *priv,
+					 struct sk_buff *skb,
+					 const struct nf_hook_state *state)
+{
+	const struct iphdr *ip;	
+
+	ip = ip_hdr(skb);
+	if(ip->protocol == IPPROTO_IGMP)
+	{
+		printk(KERN_INFO "NF_OUTPUT: IGMP protocol allowed -> %d\n", ip->protocol);
+		return NF_ACCEPT;
+	}
+}
+
 #if IS_ENABLED(CONFIG_IPV6)
 static unsigned int apparmor_ipv6_postroute(void *priv,
 					    struct sk_buff *skb,
@@ -1955,6 +1965,12 @@ static const struct nf_hook_ops apparmor_nf_ops[] = {
 		.pf =           NFPROTO_IPV4,
 		.hooknum =      NF_INET_POST_ROUTING,
 		.priority =     NF_IP_PRI_SELINUX_FIRST,
+	},
+	{
+		.hook =		apparmor_ipv4_output,
+		.pf =		NFPROTO_IPV4,
+		.hooknum =	NF_INET_LOCAL_OUT,
+		.priority =	NF_IP_PRI_FIRST,
 	},
 #if IS_ENABLED(CONFIG_IPV6)
 	{
