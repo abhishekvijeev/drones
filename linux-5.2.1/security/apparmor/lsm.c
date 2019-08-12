@@ -1022,13 +1022,14 @@ static int apparmor_socket_sendmsg(struct socket *sock,
         //         return 0;
         //     }
         // }
-		else if(sk->sk_protocol == IPPROTO_IGMP)
-		{
-			// Allow all IGMP packets
-			printk(KERN_INFO "apparmor_socket_sendmsg: IGMP protocol allowed %pi4\n", &daddr);
-			return 0;
-		}
+		
     }
+	if(sk->sk_protocol == IPPROTO_IGMP)
+	{
+		// Allow all IGMP packets
+		printk(KERN_INFO "apparmor_socket_sendmsg: IGMP protocol allowed %pi4\n", &daddr);
+		return 0;
+	}
 
 	
 
