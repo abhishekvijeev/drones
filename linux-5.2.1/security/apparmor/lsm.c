@@ -941,36 +941,78 @@ static int aa_sock_msg_perm(const char *op, u32 request, struct socket *sock,
 static int apparmor_socket_sendmsg(struct socket *sock,
 				   struct msghdr *msg, int size)
 {
-	if (sock->sk) 
-	{
-		struct aa_label *label, *cl;
-		cl = __begin_current_label_crit_section();
-		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
-		label = aa_get_label(ctx->label);
-		if(label)
-		{
-			label->pid = current->pid;
-		}
-		
-		
-		if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
-		{
-			printk (KERN_INFO "apparmor_socket_sendmsg: current process = %s, current pid = %d\n", 
-							current->comm, current->pid);
-			// DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
-			// if (usin)
+	// Check whether internet socket ie.e sock->family should be AF_INET
+    // Check sock->sk->protocol for UDP/IGMP
+    // Get dest IP address from usin or socket similar to udp.c
+
+    struct sock *sk = sock->sk;
+    struct inet_sock *inet;
+    u32 daddr = 0;
+
+    if(sk->sk_family == AF_INET)
+    {   
+        inet = inet_sk(sk);
+        // UDP
+        if(sock->type == SOCK_DGRAM)
+        {
+            DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
+            if (usin) 
+            {
+                if (msg->msg_namelen < sizeof(*usin))
+                    return -EINVAL;
+                if (usin->sin_family != AF_INET) 
+                {
+                    if (usin->sin_family != AF_UNSPEC)
+                        return -EAFNOSUPPORT;
+                }
+
+                daddr = usin->sin_addr.s_addr;
+            } 
+            else 
+            {
+                if (sk->sk_state != TCP_ESTABLISHED)
+                    return -EDESTADDRREQ;
+                daddr = inet->inet_daddr;
+            }
+
+            if(daddr == 0)
+            {
+                printk(KERN_INFO "apparmor_socket_sendmsg: process %s daddr not set\n", current->comm);
+            }
+            else
+            {
+                printk(KERN_INFO "apparmor_socket_sendmsg: process %s to address %pi4, %u, ntohs->%u\n", current->comm, &daddr, daddr, ntohs(daddr));
+            }
+            
+
+            // 1. Check if packet destination is localhost
+            if(localhost_address(daddr))
+			{
+				printk(KERN_INFO "apparmor_socket_sendmsg: Packet from localhost to localhost allowed\n");
+				return 0;
+			}
+			
+
+			// 2. Check if packet destination is DDS multicast address
+			// if(ntohs(daddr) == 61439)
 			// {
-			// 	printk (KERN_INFO "msg sent to %pi4, %d\n", usin->sin_addr.s_addr, usin->sin_port);
+			// 	printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4->, ntohs\n", &daddr);
+			// 	return 0;
 			// }
-		}
-		
-		aa_put_label(ctx->label);	
-		__end_current_label_crit_section(cl);
-	}
-	else if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
-	{
-		printk (KERN_INFO "apparmor_socket_sendmsg: sock not available for process %s\n", current->comm);
-	}
+        }
+
+        // IGMP
+        else if(sock->type == SOCK_RAW)
+        {
+            if(sk->sk_protocol == IPPROTO_IGMP)
+            {
+                // Allow all IGMP packets
+                printk(KERN_INFO "apparmor_socket_sendmsg: IGMP protocol allowed %pi4\n", &daddr);
+                return 0;
+            }
+        }
+
+    }
 
 	
 
