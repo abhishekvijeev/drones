@@ -1190,13 +1190,13 @@ static int apparmor_socket_shutdown(struct socket *sock, int how)
 
 #ifdef CONFIG_NETWORK_SECMARK
 
-static int packet_origin_localhost(u32 src_ip_addr)
+static int localhost_address(u32 ip_addr)
 {
 	struct net_device *dev;
 	u32 dev_addr;
-	if((src_ip_addr & 0x000000FF) == 127)
+	if((ip_addr & 0x000000FF) == 127)
 	{
-		// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost: src_ip = %pi4\n", &src_ip_addr);
+		// printk(KERN_INFO "localhost_address: Packet from localhost: %pi4\n", &ip_addr);
 		return 1;
 	}
 
@@ -1205,9 +1205,9 @@ static int packet_origin_localhost(u32 src_ip_addr)
 	while (dev) 
 	{
 		dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
-		if(dev_addr == src_ip_addr)
+		if(dev_addr == ip_addr)
 		{
-			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Source IP address %pi4 equals device IP addr %pi4\n", &src_ip_addr, &dev_addr);
+			// printk(KERN_INFO "localhost_address: IP address %pi4 equals device IP addr %pi4\n", &ip_addr, &dev_addr);
 			read_unlock(&dev_base_lock);
 			return 1;
 		}
@@ -1241,7 +1241,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	if(sk->sk_family == AF_INET && ip->protocol == IPPROTO_UDP)
 	{
 		sk_label = aa_get_label(ctx->label);
-		if(packet_origin_localhost(ip->saddr))
+		if(localhost_address(ip->saddr))
 		{
 			if(!skb->secmark)
 			{
@@ -1902,39 +1902,22 @@ static unsigned int custom_ipv4_output(void *priv,
         sender_task = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
         if(sender_task)
         {
-			// 1. Check if packet destination is a network device on this machine 
-			read_lock(&dev_base_lock);
-			dev = first_net_device(&init_net);
-			while (dev) 
-			{
-				dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
-				if(dev_addr == ip->daddr)
-				{
-					printk(KERN_INFO "NF_OUTPUT: Destination IP address %pi4 equals dev ip addr %pi4\n", &(ip->daddr), &dev_addr);
-					read_unlock(&dev_base_lock);
-					return NF_ACCEPT;
-				}
-				dev = next_net_device(dev);
-			}
-			read_unlock(&dev_base_lock);
-			
-			// 2. Check if packet src and dest IP addresses are the same
-			if((ip->saddr & 0x000000FF) == (ip->daddr & 0x000000FF))
+			// 1. Check if packet destination is localhost
+			if(localhost_address(ip->daddr))
 			{
 				printk(KERN_INFO "NF_OUTPUT: Packet from localhost to localhost allowed\n");
 				return NF_ACCEPT;
 			}
-
 			
 
-			// 3. Check if packet destination is DDS multicast address
+			// 2. Check if packet destination is DDS multicast address
 			if(ntohs(ip->daddr) == 61439)
 			{
 				printk(KERN_INFO "NF_OUTPUT: DDS Multicast allowed %pi4\n", &(ip->daddr));
 				return NF_ACCEPT;
 			}
 
-			// 4. Check if protocol is IGMP
+			// 3. Check if protocol is IGMP
 			else if(ip->protocol == IPPROTO_IGMP)
 			{
 				printk(KERN_INFO "NF_OUTPUT: IGMP protocol allowed\n");
@@ -1942,7 +1925,7 @@ static unsigned int custom_ipv4_output(void *priv,
 			}
 
 			/*
-			 * 5. Otherwise, the packet's destination is outside the machine
+			 * 4. Otherwise, the packet's destination is outside the machine
 			 * Perform domain declassification by obtaining the list of allowed domains
 			 * for the sending process
 			 */
