@@ -990,7 +990,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			}
 
 			// 3. Check if destination address is multicast address
-			else if((daddr & 0x000000FF >= 224) && (daddr & 0x000000FF <= 239))
+			else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
 			{
 				printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4\n", &daddr);
 			}
@@ -1002,7 +1002,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			 */
 			else
 			{
-				printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr & 0xFF000000) = %u, addr & 0x000000FF = %u, ntohs(daddr & 0x000000FF) = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr & 0xFF000000), daddr & 0x000000FF, ntohs(daddr & 0x000000FF));
+				printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);
 			}
         }
 
