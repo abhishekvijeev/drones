@@ -935,6 +935,25 @@ static int aa_sock_msg_perm(const char *op, u32 request, struct socket *sock,
 			 aa_sk_perm(op, request, sock->sk));
 }
 
+
+static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_addr, bool *allow)
+{
+	struct ListOfIPAddrs *iterator;
+	if (profile->allowed_ip_addrs)
+	{
+		list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
+		{
+			printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
+			if (iterator->ip_addr == check_ip_addr)
+			{
+				*allow = true;
+				break;
+			}
+		}
+	}
+	return 0;
+}
+
 /**
  * apparmor_socket_sendmsg - check perms before sending msg to another socket
  */
@@ -1002,20 +1021,23 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			 */
 			else
 			{
-				printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);
+				// printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);
+
+				bool allow = false;
+
+				struct aa_label *label, *cl;
+				struct aa_profile *profile;
+				
+				cl = __begin_current_label_crit_section();	
+				
+
+				fn_for_each (cl, profile, apparmor_domain_declassify(profile, daddr, &allow));
+				
+				printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s to address %pi4, flow is %d\n", current->comm, &daddr, allow);
+
+				__end_current_label_crit_section(cl);
 			}
         }
-
-        // IGMP
-        // else if(sock->type == SOCK_RAW)
-        // {
-        //     if(sk->sk_protocol == IPPROTO_IGMP)
-        //     {
-        //         // Allow all IGMP packets
-        //         printk(KERN_INFO "apparmor_socket_sendmsg: IGMP protocol allowed %pi4\n", &daddr);
-        //         return 0;
-        //     }
-        // }
 		
     }
 	
