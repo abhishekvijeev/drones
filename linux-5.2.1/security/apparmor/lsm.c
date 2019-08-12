@@ -949,6 +949,13 @@ static int apparmor_socket_sendmsg(struct socket *sock,
     struct inet_sock *inet;
     u32 daddr = 0;
 
+	if(sk->sk_protocol == IPPROTO_IGMP)
+	{
+		// Allow all IGMP packets
+		printk(KERN_INFO "apparmor_socket_sendmsg: IGMP protocol allowed %pi4\n", &daddr);
+		return 0;
+	}
+
     if(sk->sk_family == AF_INET)
     {   
         inet = inet_sk(sk);
@@ -974,21 +981,12 @@ static int apparmor_socket_sendmsg(struct socket *sock,
                     return -EDESTADDRREQ;
                 daddr = inet->inet_daddr;
             }
-
-            if(daddr == 0)
-            {
-                printk(KERN_INFO "apparmor_socket_sendmsg: process %s daddr not set\n", current->comm);
-            }
-            else
-            {
-                printk(KERN_INFO "apparmor_socket_sendmsg: process %s to address %pi4, %u, ntohs->%u\n", current->comm, &daddr, daddr, ntohs(daddr));
-            }
             
 
             // 1. Check if packet destination is localhost
             if(localhost_address(daddr))
 			{
-				printk(KERN_INFO "apparmor_socket_sendmsg: Packet from localhost to localhost allowed\n");
+				// printk(KERN_INFO "apparmor_socket_sendmsg: Packet from localhost to localhost allowed\n");
 				return 0;
 			}
 			
@@ -996,7 +994,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			// 2. Check if packet destination is DDS multicast address
 			else if(ntohs(daddr) == 61439)
 			{
-				printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4\n", &daddr);
+				// printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4\n", &daddr);
 				return 0;
 			}
 
@@ -1007,7 +1005,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			 */
 			else
 			{
-				printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4\n", current->comm, &daddr);
+				// printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4\n", current->comm, &daddr);
 				return 0;
 			}
         }
@@ -1024,12 +1022,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
         // }
 		
     }
-	if(sk->sk_protocol == IPPROTO_IGMP)
-	{
-		// Allow all IGMP packets
-		printk(KERN_INFO "apparmor_socket_sendmsg: IGMP protocol allowed %pi4\n", &daddr);
-		return 0;
-	}
+	
 
 	
 
