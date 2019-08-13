@@ -1147,6 +1147,8 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	// 	}
 	// }
 
+	struct aa_label *sk_label;
+	struct aa_sk_ctx *sk_ctx;
 	struct task_struct *sender_process;
 	__u32 sender_pid;
 	struct aa_label *current_process_label;
@@ -1155,17 +1157,26 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	char *recv_domain;
 	bool allow = false;
 
+	// Extract the receiving process' domain_name
 	current_process_label = __begin_current_label_crit_section();
-	fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
+	fn_for_each (current_process_label, profile, apparmor_getlabel_domain(profile, &recv_domain));
 	__end_current_label_crit_section(current_process_label);
 
-	printk(KERN_INFO "apparmor_socket_recvmsg: Receiver's domain: %s\n", recv_domain);
+	if(recv_domain)
+		printk(KERN_INFO "apparmor_socket_recvmsg: Receiver's domain: %s for process %s\n", recv_domain, current->comm);
+	else
+		printk(KERN_INFO "apparmor_socket_recvmsg: Unable to obtain domain for process %s\n", current->comm);
 
-
-	sender_pid = label->pid;
+	// Extract the sending process' PID from the socket's label
+	sk_ctx = SK_CTX(sock->sk);
+	sk_label = aa_get_label(sk_ctx->label);
+	sender_pid = sk_label->pid;
+	aa_put_label(sk_ctx->label);
+	
+	// Obtain the task_struct of the sending process from its PID
 	sender_process = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 
-	if(sender_process)
+	if(sender_process && recv_domain)
 	{
 		sender_label = aa_get_task_label(sender_process);
 
