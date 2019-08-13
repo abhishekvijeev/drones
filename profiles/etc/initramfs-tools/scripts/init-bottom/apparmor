@@ -13,17 +13,53 @@ esac
 
 PROFILE="profile init-systemd /lib/systemd/** flags=(complain) 
 {
-	
-	/etc/ld.so.cache	r,
-	/lib/systemd/libsystemd-shared-240.so rm,
-	
-	/lib/x86_64-linux-gnu/**	rm,
-	/proc/** r,
-	/usr/lib/x86_64-linux-gnu/**	rm,
+	capability audit_write,	
+	capability dac_override,
+	capability dac_read_search,
+	capability kill,
+	capability mknod,
+	capability net_admin,
+	capability setuid,
+	capability sys_admin,
+	capability sys_boot,
+	capability sys_module,
+	capability sys_ptrace,
+	capability sys_resource,
+	capability sys_time,
+	capability sys_tty_config,
 
-	/lib/systemd/* cx -> defaultprofile, 
-	profile defaultprofile flags=(complain)
-	{
+	/dev/** rw,
+	/etc/**	r,
+	
+	/lib/systemd/** rix,
+	/lib/** rm,
+
+	mount, 
+
+	/proc/** rw,
+	ptrace, 
+
+
+	/run/**	rwcx -> run_default,
+	signal, 
+
+	/sys/** rwcx -> sys_default,
+	
+	/usr/ r,
+	/usr/lib/x86_64-linux-gnu/**	rm,
+	/usr/** rw,
+	/var/** rw,
+	/tmp/** rw,
+
+	profile run_default flags=(complain){
+		capability mknod,
+
+		capability sys_ptrace,
+	}
+
+	profile sys_default flags=(complain){
+
+		capability sys_ptrace,
 	}
 }"
 
@@ -32,7 +68,7 @@ mount -t securityfs none /sys/kernel/security
 #echo "profile init-upstart /sbin/upstart flags=(complain) {}" | /sbin/apparmor_parser -a
 
 echo "$PROFILE" | /sbin/apparmor_parser -a
-echo "profile init-upstart /sbin/upstart flags=(complain) {}" | /sbin/apparmor_parser -a
+#echo "profile init-upstart /sbin/upstart flags=(complain) {}" | /sbin/apparmor_parser -a
 
 read -p "Enter a name: " name
 echo "Hi, $name"
