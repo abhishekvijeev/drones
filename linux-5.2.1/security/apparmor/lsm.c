@@ -1098,126 +1098,132 @@ static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_d
 static int apparmor_socket_recvmsg(struct socket *sock,
 				   struct msghdr *msg, int size, int flags)
 {
-	struct sock *sk = sock->sk;
-    struct inet_sock *inet;
-	int flag = 1;
-    u32 msg_addr = 0, inet_sk_recv_saddr = 0, inet_sk_saddr = 0, inet_dest_addr = 0;
+	/*
+	 * We can't use this hook to obtain the src and dest IP addresses of the messages
+	 * being received on the socket, since it is 0.0.0.0 most of the time. Therefore,
+	 * IP based filtering logic would have to be moved to a location where we have access
+	 * to the network layer packet i.e sk_buff 
+	 */
 
-    if(sk->sk_family == AF_INET)
-    {   
-        inet = inet_sk(sk);
-        // UDP
-        if(sock->type == SOCK_DGRAM)
-        {
-            DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
-            if (usin) 
-            {
-                if (msg->msg_namelen < sizeof(*usin))
-                    flag = 0;
-                if (usin->sin_family != AF_INET) 
-                {
-                    if (usin->sin_family != AF_UNSPEC)
-                        flag = 0;
-                }
+	// struct sock *sk = sock->sk;
+    // struct inet_sock *inet;
+	// int flag = 1;
+    // u32 msg_addr = 0, inet_sk_recv_saddr = 0, inet_sk_saddr = 0, inet_dest_addr = 0;
 
-				if(flag)
-                	msg_addr = usin->sin_addr.s_addr;
-            } 
-            inet_sk_recv_saddr = inet->inet_rcv_saddr;
-			inet_sk_saddr = inet->inet_saddr;
-			inet_dest_addr = inet->inet_daddr;
+    // if(sk->sk_family == AF_INET)
+    // {   
+    //     inet = inet_sk(sk);
+    //     // UDP
+    //     if(sock->type == SOCK_DGRAM)
+    //     {
+    //         DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
+    //         if (usin) 
+    //         {
+    //             if (msg->msg_namelen < sizeof(*usin))
+    //                 flag = 0;
+    //             if (usin->sin_family != AF_INET) 
+    //             {
+    //                 if (usin->sin_family != AF_UNSPEC)
+    //                     flag = 0;
+    //             }
 
-			printk(KERN_INFO "apparmor_socket_recvmsg: Receiving process = %s, msg_addr = %pi4, inet_sk_recv_saddr = %pi4, inet_sk_saddr = %pi4, inet_daddr = %pi4\n", current->comm, &msg_addr, &inet_sk_recv_saddr, &inet_sk_saddr, &inet_dest_addr);
-		}
-	}
-	// if (sock->sk) 
-	// {
-	// 	if (strcmp(current->comm, "talker") == 0 || strcmp(current->comm, "listener") == 0)
-	// 	{
-	// 		struct aa_label *label, *cl;
-	// 		struct aa_profile *profile;
-			
-	// 		cl = __begin_current_label_crit_section();
-	// 		__u32 sender_pid;
-	// 		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
-	// 		label = aa_get_label(ctx->label);
-	// 		sender_pid = label->pid;
-	// 		struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-	// 		if (apparmor_ioctl_debug)
-	// 		{
-	// 			if (sender)
-	// 			{
-	// 				printk (KERN_INFO "apparmor_socket_recvmsg: sender process %s with pid %d, receiver process %s with pid %d\n", 
-	// 									sender->comm, sender->pid, current->comm, current->pid);
-	// 			}
-	// 			else
-	// 			{
-	// 				printk (KERN_INFO "apparmor_socket_recvmsg: Unable to get sender task struct with pid %d, receiver process %s with pid %d\n", 
-	// 									sender_pid, current->comm, current->pid);
-	// 			}
-	// 		}
-			
-			
-	// 		aa_put_label(ctx->label);	
-	// 		__end_current_label_crit_section(cl);
+	// 			if(flag)
+    //             	msg_addr = usin->sin_addr.s_addr;
+    //         } 
+    //         inet_sk_recv_saddr = inet->inet_rcv_saddr;
+	// 		inet_sk_saddr = inet->inet_saddr;
+	// 		inet_dest_addr = inet->inet_daddr;
+
+	// 		printk(KERN_INFO "apparmor_socket_recvmsg: Receiving process = %s, msg_addr = %pi4, inet_sk_recv_saddr = %pi4, inet_sk_saddr = %pi4, inet_daddr = %pi4\n", current->comm, &msg_addr, &inet_sk_recv_saddr, &inet_sk_saddr, &inet_dest_addr);
 	// 	}
-
-	// 	// if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
-	// 	// {
-	// 	// 	struct aa_label *label, *cl;
-	// 	// 	struct aa_profile *profile;
-			
-	// 	// 	cl = __begin_current_label_crit_section();
-	// 	// 	bool allow = false;		
-	// 	// 	__u32 sender_pid;
-	// 	// 	struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
-	// 	// 	label = aa_get_label(ctx->label);
-	// 	// 	char *recv_domain;
-	// 	// 	fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
-			
-	// 	// 	sender_pid = label->pid;
-			
-	// 	// 	printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
-	// 	// 				current->comm, current->pid, label->pid);
-	// 	// 	if (recv_domain)
-	// 	// 		printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", recv_domain);	
-			
-	// 	// 	struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-	// 	// 	if (sender)
-	// 	// 	{
-	// 	// 		struct aa_label *sender_label = aa_get_task_label(sender);
-	// 	// 		if(sender_label && recv_domain)
-	// 	// 		{
-					
-	// 	// 			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
-	// 	// 			if (allow)
-	// 	// 				printk (KERN_INFO "apparmor_socket_recvmsg3: Match is true \n");
-	// 	// 			else 
-	// 	// 				printk (KERN_INFO "apparmor_socket_recvmsg3: Match is false\n");
-	// 	// 		}
-	// 	// 		aa_put_label(sender_label);
-				
-
-	// 	// 		printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
-	// 	// 	}
-	// 	// 	else
-	// 	// 		printk (KERN_INFO "4 Error in getting task_struct of pid= %d\n", sender_pid);
-
-	// 	// 	//test code to iterate aa_profile list inside aa_label and print domain
-	// 	// 	// struct aa_profile *profile;
-	// 	// 	// fn_for_each (label, profile, print_all_domain(profile));
-			
-	// 	// 	aa_put_label(ctx->label);
-	// 	// 	__end_current_label_crit_section(cl);
-			
-	// 	// }//end if of talker, listener check
-		
-		
-	// }//end if (sock->sk) 
-	// else if (strcmp(current->comm, "talker") == 0 || strcmp(current->comm, "listener") == 0)
-	// {
-	// 	printk (KERN_INFO "apparmor_socket_recvmsg: sock not available for process %s\n", current->comm);
 	// }
+
+
+
+
+
+
+
+	if (strcmp(current->comm, "talker") == 0 || strcmp(current->comm, "listener") == 0)
+	{
+		struct aa_label *label, *cl;
+		struct aa_profile *profile;
+		
+		cl = __begin_current_label_crit_section();
+		__u32 sender_pid;
+		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
+		label = aa_get_label(ctx->label);
+		sender_pid = label->pid;
+		struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+
+		if (sender)
+		{
+			printk (KERN_INFO "apparmor_socket_recvmsg: sender process %s with pid %d, receiver process %s with pid %d\n", 
+								sender->comm, sender->pid, current->comm, current->pid);
+		}
+		else
+		{
+			printk (KERN_INFO "apparmor_socket_recvmsg: Unable to get sender task struct with pid %d, receiver process %s with pid %d\n", 
+								sender_pid, current->comm, current->pid);
+		}
+		
+		
+		
+		aa_put_label(ctx->label);	
+		__end_current_label_crit_section(cl);
+	}
+
+
+
+
+
+
+	// if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
+	// {
+	// 	struct aa_label *label, *cl;
+	// 	struct aa_profile *profile;
+		
+	// 	cl = __begin_current_label_crit_section();
+	// 	bool allow = false;		
+	// 	__u32 sender_pid;
+	// 	struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
+	// 	label = aa_get_label(ctx->label);
+	// 	char *recv_domain;
+	// 	fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
+		
+	// 	sender_pid = label->pid;
+		
+	// 	printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
+	// 				current->comm, current->pid, label->pid);
+	// 	if (recv_domain)
+	// 		printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", recv_domain);	
+		
+	// 	struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+	// 	if (sender)
+	// 	{
+	// 		struct aa_label *sender_label = aa_get_task_label(sender);
+	// 		if(sender_label && recv_domain)
+	// 		{
+				
+	// 			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
+	// 			if (allow)
+	// 				printk (KERN_INFO "apparmor_socket_recvmsg3: Match is true \n");
+	// 			else 
+	// 				printk (KERN_INFO "apparmor_socket_recvmsg3: Match is false\n");
+	// 		}
+	// 		aa_put_label(sender_label);
+			
+
+	// 		printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
+	// 	}
+	// 	else
+	// 		printk (KERN_INFO "4 Error in getting task_struct of pid= %d\n", sender_pid);
+		
+	// 	aa_put_label(ctx->label);
+	// 	__end_current_label_crit_section(cl);
+		
+	// }
+		
 	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
 }
 
@@ -1333,9 +1339,11 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
 	struct aa_sk_ctx *ctx = SK_CTX(sk);
 	struct aa_label *sk_label;
+	struct aa_profile *profile;
 	struct task_struct *sender_task;
 	const struct iphdr *ip;
 	int sender_pid;
+	bool allow = false;
 
 	ip = ip_hdr(skb);	
 
@@ -1356,6 +1364,13 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 			if(sender_task)
 			{
 				// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost %pi4 to %pi4 - checking label flow from task %s to socket label %s\n", &ip->saddr, &ip->daddr, sender_task->comm, sk_label->hname);
+
+				sk_label = aa_get_label(ctx->label);
+
+				fn_for_each(sk_label, profile, apparmor_check_for_flow(profile, &allow,));
+
+				aa_put_label(ctx->label);
+
 			}
 			else
 			{
