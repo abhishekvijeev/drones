@@ -968,6 +968,14 @@ static int apparmor_socket_sendmsg(struct socket *sock,
     struct inet_sock *inet;
     u32 daddr = 0;
 
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	label = aa_get_label(ctx->label);
+	if(label)
+	{
+		label->pid = current->pid;
+	}
+	aa_put_label(ctx->label);
+
 	if(sk->sk_family == AF_INET)
     {   
         inet = inet_sk(sk);
