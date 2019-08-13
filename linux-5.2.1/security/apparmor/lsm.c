@@ -1100,7 +1100,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 {
 	struct sock *sk = sock->sk;
     struct inet_sock *inet;
-    u32 msg_addr = 0, inet_sk_recv_saddr = 0, inet_sk_saddr = 0;
+    u32 msg_addr = 0, inet_sk_recv_saddr = 0, inet_sk_saddr = 0, inet_daddr = 0;
 
     if(sk->sk_family == AF_INET)
     {   
@@ -1123,6 +1123,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
             // } 
             inet_sk_recv_saddr = inet->inet_rcv_saddr;
 			inet_sk_saddr = inet->inet_saddr;
+			inet_daddr = inet->inet_daddr;
 
 			printk(KERN_INFO "apparmor_socket_recvmsg: Receiving process = %s, inet_sk_recv_saddr = %pi4, inet_sk_saddr = %pi4, inet_daddr = %pi4\n", current->comm, &inet_sk_recv_saddr, &inet_sk_saddr, &inet_daddr);
 		}
