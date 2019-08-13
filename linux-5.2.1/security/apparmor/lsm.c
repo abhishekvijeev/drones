@@ -1108,23 +1108,23 @@ static int apparmor_socket_recvmsg(struct socket *sock,
         // UDP
         if(sock->type == SOCK_DGRAM)
         {
-            DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
-            if (usin) 
-            {
-                if (msg->msg_namelen < sizeof(*usin))
-                    return -EINVAL;
-                if (usin->sin_family != AF_INET) 
-                {
-                    if (usin->sin_family != AF_UNSPEC)
-                        return -EAFNOSUPPORT;
-                }
+            // DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
+            // if (usin) 
+            // {
+            //     if (msg->msg_namelen < sizeof(*usin))
+            //         return -EINVAL;
+            //     if (usin->sin_family != AF_INET) 
+            //     {
+            //         if (usin->sin_family != AF_UNSPEC)
+            //             return -EAFNOSUPPORT;
+            //     }
 
-                msg_addr = usin->sin_addr.s_addr;
-            } 
+            //     msg_addr = usin->sin_addr.s_addr;
+            // } 
             inet_sk_recv_saddr = inet->inet_rcv_saddr;
 			inet_sk_saddr = inet->inet_saddr;
 
-			printk(KERN_INFO "apparmor_socket_recvmsg: Receiving process = %s, msg_addr = %pi4, inet_sk_recv_saddr = %pi4, inet_sk_saddr = %pi4\n", current->comm, &msg_addr, &inet_sk_recv_saddr, &inet_sk_saddr);
+			printk(KERN_INFO "apparmor_socket_recvmsg: Receiving process = %s, inet_sk_recv_saddr = %pi4, inet_sk_saddr = %pi4, inet_daddr = %pi4\n", current->comm, &inet_sk_recv_saddr, &inet_sk_saddr, &inet_daddr);
 		}
 	}
 	// if (sock->sk) 
