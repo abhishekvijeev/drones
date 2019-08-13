@@ -1091,7 +1091,7 @@ static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_d
 		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
 		{
 			// printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
-			if (strcmp(iterator->domain, checking_domain) == 0)
+			if ((strcmp(iterator->domain, checking_domain) == 0) || strcmp(iterator->domain, "*") == 0)
 			{
 				*allow = true;
 				break;
@@ -1214,7 +1214,8 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 
 
 
-	if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
+	// if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
+	if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
 	{
 		struct aa_label *label, *cl;
 		struct aa_profile *profile;
@@ -1224,7 +1225,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		__u32 sender_pid;
 		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 		label = aa_get_label(ctx->label);
-		char *recv_domain;
+		char *recv_domain= NULL;
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
 		
 		sender_pid = label->pid;
