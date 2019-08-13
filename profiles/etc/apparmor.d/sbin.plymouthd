@@ -9,4 +9,17 @@
   /usr/share/** r,
   /usr/lib/x86_64-linux-gnu/plymouth/** mr,
   /etc/fonts/** r,
+  /var/cache/** r,
+  /proc/cmdline	r,
+  /run/plymouth/	rw,
+  /dev/ptmx	rw,
+  /etc/nsswitch.conf	r,
+  /etc/group	r, 
+  /dev/**	rw,
+  /sys/**	r,
+  /run/**	r,
+
+  capability sys_admin,
+  capability sys_tty_config,
+  signal,
 }
