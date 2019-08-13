@@ -1154,111 +1154,111 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 
 
 
-	if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
-	{
-		struct aa_label *sk_label;
-		struct aa_sk_ctx *sk_ctx;
-		struct task_struct *sender_process;
-		__u32 sender_pid;
-		struct aa_label *current_process_label;
-		struct aa_label *sender_label;
-		struct aa_profile *profile;
-		char *recv_domain;
-		bool allow = false;
-
-		// Extract the receiving process' domain_name
-		current_process_label = __begin_current_label_crit_section();
-		fn_for_each (current_process_label, profile, apparmor_getlabel_domain(profile, &recv_domain));
-		
-
-		if(recv_domain)
-			printk(KERN_INFO "apparmor_socket_recvmsg: Receiver's domain: %s for process %s\n", recv_domain, current->comm);
-		else
-			printk(KERN_INFO "apparmor_socket_recvmsg: Unable to obtain domain for process %s\n", current->comm);
-
-		// Extract the sending process' PID from the socket's label
-		sk_ctx = SK_CTX(sock->sk);
-		sk_label = aa_get_label(sk_ctx->label);
-		sender_pid = sk_label->pid;
-		aa_put_label(sk_ctx->label);
-		
-		// Obtain the task_struct of the sending process from its PID
-		sender_process = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-
-		if(sender_process && recv_domain)
-		{
-			sender_label = aa_get_task_label(sender_process);
-
-			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
-			if (allow)
-				printk (KERN_INFO "apparmor_socket_recvmsg: Match is true from process %s to %s\n", sender_process->comm, current->comm);
-			else 
-				printk (KERN_INFO "apparmor_socket_recvmsg: Match is false from process %s to %s\n", sender_process->comm, current->comm);
-
-			aa_put_label(sender_label);
-		}
-		else
-		{
-			printk(KERN_INFO "apparmor_socket_recvmsg: Unable to retrieve sender process with PID %d in receiver process %s\n", sender_pid, current->comm);
-		}
-
-		__end_current_label_crit_section(current_process_label);
-	}
-
-
-
-
-
-
-
-
-
-
-	// if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
+	// if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
 	// {
-	// 	struct aa_label *label, *cl;
-	// 	struct aa_profile *profile;
-		
-	// 	cl = __begin_current_label_crit_section();
-	// 	bool allow = false;		
+	// 	struct aa_label *sk_label;
+	// 	struct aa_sk_ctx *sk_ctx;
+	// 	struct task_struct *sender_process;
 	// 	__u32 sender_pid;
-	// 	struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
-	// 	label = aa_get_label(ctx->label);
+	// 	struct aa_label *current_process_label;
+	// 	struct aa_label *sender_label;
+	// 	struct aa_profile *profile;
 	// 	char *recv_domain;
-	// 	fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
-		
-	// 	sender_pid = label->pid;
-		
-	// 	printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
-	// 				current->comm, current->pid, label->pid);
-	// 	if (recv_domain)
-	// 		printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", recv_domain);	
-		
-	// 	struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-	// 	if (sender)
-	// 	{
-	// 		struct aa_label *sender_label = aa_get_task_label(sender);
-	// 		if(sender_label && recv_domain)
-	// 		{
-				
-	// 			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
-	// 			if (allow)
-	// 				printk (KERN_INFO "apparmor_socket_recvmsg3: Match is true \n");
-	// 			else 
-	// 				printk (KERN_INFO "apparmor_socket_recvmsg3: Match is false\n");
-	// 		}
-	// 		aa_put_label(sender_label);
-			
+	// 	bool allow = false;
 
-	// 		printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
+	// 	// Extract the receiving process' domain_name
+	// 	current_process_label = __begin_current_label_crit_section();
+	// 	fn_for_each (current_process_label, profile, apparmor_getlabel_domain(profile, &recv_domain));
+		
+
+	// 	if(recv_domain)
+	// 		printk(KERN_INFO "apparmor_socket_recvmsg: Receiver's domain: %s for process %s\n", recv_domain, current->comm);
+	// 	else
+	// 		printk(KERN_INFO "apparmor_socket_recvmsg: Unable to obtain domain for process %s\n", current->comm);
+
+	// 	// Extract the sending process' PID from the socket's label
+	// 	sk_ctx = SK_CTX(sock->sk);
+	// 	sk_label = aa_get_label(sk_ctx->label);
+	// 	sender_pid = sk_label->pid;
+	// 	aa_put_label(sk_ctx->label);
+		
+	// 	// Obtain the task_struct of the sending process from its PID
+	// 	sender_process = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+
+	// 	if(sender_process && recv_domain)
+	// 	{
+	// 		sender_label = aa_get_task_label(sender_process);
+
+	// 		fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
+	// 		if (allow)
+	// 			printk (KERN_INFO "apparmor_socket_recvmsg: Match is true from process %s to %s\n", sender_process->comm, current->comm);
+	// 		else 
+	// 			printk (KERN_INFO "apparmor_socket_recvmsg: Match is false from process %s to %s\n", sender_process->comm, current->comm);
+
+	// 		aa_put_label(sender_label);
 	// 	}
 	// 	else
-	// 		printk (KERN_INFO "4 Error in getting task_struct of pid= %d\n", sender_pid);
-		
-	// 	aa_put_label(ctx->label);
-	// 	__end_current_label_crit_section(cl);
-		
+	// 	{
+	// 		printk(KERN_INFO "apparmor_socket_recvmsg: Unable to retrieve sender process with PID %d in receiver process %s\n", sender_pid, current->comm);
+	// 	}
+
+	// 	__end_current_label_crit_section(current_process_label);
 	// }
+
+
+
+
+
+
+
+
+
+
+	if (strcmp (current->comm, "talker") == 0 || strcmp (current->comm, "listener") == 0)
+	{
+		struct aa_label *label, *cl;
+		struct aa_profile *profile;
+		
+		cl = __begin_current_label_crit_section();
+		bool allow = false;		
+		__u32 sender_pid;
+		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
+		label = aa_get_label(ctx->label);
+		char *recv_domain;
+		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
+		
+		sender_pid = label->pid;
+		
+		printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
+					current->comm, current->pid, label->pid);
+		if (recv_domain)
+			printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", recv_domain);	
+		
+		struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+		if (sender)
+		{
+			struct aa_label *sender_label = aa_get_task_label(sender);
+			if(sender_label && recv_domain)
+			{
+				
+				fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
+				if (allow)
+					printk (KERN_INFO "apparmor_socket_recvmsg3: Match is true \n");
+				else 
+					printk (KERN_INFO "apparmor_socket_recvmsg3: Match is false\n");
+			}
+			aa_put_label(sender_label);
+			
+
+			printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
+		}
+		else
+			printk (KERN_INFO "4 Error in getting task_struct of pid= %d\n", sender_pid);
+		
+		aa_put_label(ctx->label);
+		__end_current_label_crit_section(cl);
+		
+	}
 		
 	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
 }
