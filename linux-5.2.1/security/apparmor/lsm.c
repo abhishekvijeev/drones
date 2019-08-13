@@ -1337,53 +1337,53 @@ int localhost_address(u32 ip_addr)
  */
 static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
-	struct aa_sk_ctx *ctx = SK_CTX(sk);
-	struct aa_label *sk_label;
-	struct aa_profile *profile;
-	struct task_struct *sender_task;
-	const struct iphdr *ip;
-	int sender_pid;
-	bool allow = false;
+	// struct aa_sk_ctx *ctx = SK_CTX(sk);
+	// struct aa_label *sk_label;
+	// struct aa_profile *profile;
+	// struct task_struct *sender_task;
+	// const struct iphdr *ip;
+	// int sender_pid;
+	// bool allow = false;
 
-	ip = ip_hdr(skb);	
+	// ip = ip_hdr(skb);	
 
-	// Check if packet originated from another process on the same machine
-	if(sk->sk_family == AF_INET && ip->protocol == IPPROTO_UDP)
-	{
-		sk_label = aa_get_label(ctx->label);
-		if(localhost_address(ip->saddr))
-		{
-			if(!skb->secmark)
-			{
-				// raise exception because UDP packets originating on the same machine must have secmark set
-				// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: secmark not set on packet from localhost: %pi4\n", &ip->saddr);
-			}
-			sender_pid = skb->secmark;
-			sender_task = pid_task(find_vpid(sender_pid), PIDTYPE_PID);	
+	// // Check if packet originated from another process on the same machine
+	// if(sk->sk_family == AF_INET && ip->protocol == IPPROTO_UDP)
+	// {
+	// 	sk_label = aa_get_label(ctx->label);
+	// 	if(localhost_address(ip->saddr))
+	// 	{
+	// 		if(!skb->secmark)
+	// 		{
+	// 			// raise exception because UDP packets originating on the same machine must have secmark set
+	// 			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: secmark not set on packet from localhost: %pi4\n", &ip->saddr);
+	// 		}
+	// 		sender_pid = skb->secmark;
+	// 		sender_task = pid_task(find_vpid(sender_pid), PIDTYPE_PID);	
 
-			if(sender_task)
-			{
-				// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost %pi4 to %pi4 - checking label flow from task %s to socket label %s\n", &ip->saddr, &ip->daddr, sender_task->comm, sk_label->hname);
+	// 		if(sender_task)
+	// 		{
+	// 			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost %pi4 to %pi4 - checking label flow from task %s to socket label %s\n", &ip->saddr, &ip->daddr, sender_task->comm, sk_label->hname);
 
-				sk_label = aa_get_label(ctx->label);
+	// 			sk_label = aa_get_label(ctx->label);
 
-				fn_for_each(sk_label, profile, apparmor_check_for_flow(profile, &allow,));
+	// 			fn_for_each(sk_label, profile, apparmor_check_for_flow(profile, &allow,));
 
-				aa_put_label(ctx->label);
+	// 			aa_put_label(ctx->label);
 
-			}
-			else
-			{
-				// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: unable to obtain sender task struct for packet from %pi4 to %pi4, sk_label: %s\n", &ip->saddr, &ip->daddr, sk_label->hname);
-			}
-		}
-		else
-		{
-			// UDP Packet from some other machine - probably want to check whether receiving socket has permissions to receive this packet
-			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: %u, sk_label: %s\n", &ip->saddr, &ip->daddr, ip->protocol, sk_label->hname);
-		}
-		aa_put_label(ctx->label);
-	}
+	// 		}
+	// 		else
+	// 		{
+	// 			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: unable to obtain sender task struct for packet from %pi4 to %pi4, sk_label: %s\n", &ip->saddr, &ip->daddr, sk_label->hname);
+	// 		}
+	// 	}
+	// 	else
+	// 	{
+	// 		// UDP Packet from some other machine - probably want to check whether receiving socket has permissions to receive this packet
+	// 		// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: %u, sk_label: %s\n", &ip->saddr, &ip->daddr, ip->protocol, sk_label->hname);
+	// 	}
+	// 	aa_put_label(ctx->label);
+	// }
 
 
 	if (!skb->secmark)
