@@ -1337,7 +1337,7 @@ int localhost_address(u32 ip_addr)
  */
 static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
-	// struct aa_sk_ctx *ctx = SK_CTX(sk);
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
 	// struct aa_label *sk_label;
 	// struct aa_profile *profile;
 	// struct task_struct *sender_task;
