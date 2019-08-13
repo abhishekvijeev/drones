@@ -966,6 +966,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 
     struct sock *sk = sock->sk;
     struct inet_sock *inet;
+	struct aa_label *label;
     u32 daddr = 0;
 
 	struct aa_sk_ctx *ctx = SK_CTX(sk);
