@@ -1154,7 +1154,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 
 
 
-	if(sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
+	if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
 	{
 		struct aa_label *sk_label;
 		struct aa_sk_ctx *sk_ctx;
