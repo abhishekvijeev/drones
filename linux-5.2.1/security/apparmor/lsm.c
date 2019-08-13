@@ -1160,7 +1160,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	// Extract the receiving process' domain_name
 	current_process_label = __begin_current_label_crit_section();
 	fn_for_each (current_process_label, profile, apparmor_getlabel_domain(profile, &recv_domain));
-	__end_current_label_crit_section(current_process_label);
+	
 
 	if(recv_domain)
 		printk(KERN_INFO "apparmor_socket_recvmsg: Receiver's domain: %s for process %s\n", recv_domain, current->comm);
@@ -1192,6 +1192,8 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	{
 		printk(KERN_INFO "apparmor_socket_recvmsg: Unable to retrieve sender process with PID %d in receiver process %s\n", sender_pid, current->comm);
 	}
+
+	__end_current_label_crit_section(current_process_label);
 
 
 
