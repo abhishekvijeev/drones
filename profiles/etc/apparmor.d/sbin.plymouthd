@@ -1,7 +1,7 @@
 # Last Modified: Tue Aug 13 14:24:38 2019
 #include <tunables/global>
 
-/sbin/plymouthd {
+/sbin/plymouthd flags=(complain){
   #include <abstractions/base>
 
   /lib/x86_64-linux-gnu/ld-*.so mr,
