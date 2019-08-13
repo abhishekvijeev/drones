@@ -943,7 +943,7 @@ static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_
 	{
 		list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
 		{
-			printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
+			// printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
 			if (iterator->ip_addr == check_ip_addr)
 			{
 				*allow = true;
@@ -1011,7 +1011,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			// 3. Check if destination address is multicast address
 			else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
 			{
-				printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4\n", &daddr);
+				// printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4\n", &daddr);
 			}
 			
 			/* 
@@ -1033,7 +1033,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 
 				fn_for_each (cl, profile, apparmor_domain_declassify(profile, daddr, &allow));
 				
-				printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s to address %pi4, flow is %d\n", current->comm, &daddr, allow);
+				// printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s to address %pi4, flow is %d\n", current->comm, &daddr, allow);
 
 				__end_current_label_crit_section(cl);
 			}
@@ -1098,6 +1098,35 @@ static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_d
 static int apparmor_socket_recvmsg(struct socket *sock,
 				   struct msghdr *msg, int size, int flags)
 {
+	struct sock *sk = sock->sk;
+    struct inet_sock *inet;
+    u32 msg_addr = 0, inet_sk_recv_saddr = 0, inet_sk_saddr = 0;
+
+    if(sk->sk_family == AF_INET)
+    {   
+        inet = inet_sk(sk);
+        // UDP
+        if(sock->type == SOCK_DGRAM)
+        {
+            DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
+            if (usin) 
+            {
+                if (msg->msg_namelen < sizeof(*usin))
+                    return -EINVAL;
+                if (usin->sin_family != AF_INET) 
+                {
+                    if (usin->sin_family != AF_UNSPEC)
+                        return -EAFNOSUPPORT;
+                }
+
+                msg_addr = usin->sin_addr.s_addr;
+            } 
+            inet_sk_recv_saddr = inet->inet_rcv_saddr;
+			inet_sk_saddr = inet->inet_saddr;
+
+			printk(KERN_INFO "apparmor_socket_recvmsg: Receiving process = %s, msg_addr = %pi4, inet_sk_recv_saddr = %pi4, inet_sk_saddr = %pi4\n", current->comm, &msg_addr, &inet_sk_recv_saddr, &inet_sk_saddr);
+		}
+	}
 	// if (sock->sk) 
 	// {
 	// 	if (strcmp(current->comm, "talker") == 0 || strcmp(current->comm, "listener") == 0)
@@ -1323,7 +1352,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 
 			if(sender_task)
 			{
-				printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost %pi4 to %pi4 - checking label flow from task %s to socket label %s\n", &ip->saddr, &ip->daddr, sender_task->comm, sk_label->hname);
+				// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost %pi4 to %pi4 - checking label flow from task %s to socket label %s\n", &ip->saddr, &ip->daddr, sender_task->comm, sk_label->hname);
 			}
 			else
 			{
