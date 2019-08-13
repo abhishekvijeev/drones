@@ -1090,7 +1090,7 @@ static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_d
 	{
 		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
 		{
-			printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
+			// printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
 			if (strcmp(iterator->domain, checking_domain) == 0)
 			{
 				*allow = true;
@@ -1147,41 +1147,40 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	// 	}
 	// }
 
+	struct task_struct *sender_process;
+	__u32 sender_pid;
+	struct aa_label *current_process_label;
+	struct aa_label *sender_label;
+	struct aa_profile *profile;
+	char *recv_domain;
+	bool allow = false;
+
+	current_process_label = __begin_current_label_crit_section();
+	fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
+	__end_current_label_crit_section(current_process_label);
+
+	printk(KERN_INFO "apparmor_socket_recvmsg: Receiver's domain: %s\n", recv_domain);
 
 
+	sender_pid = label->pid;
+	sender_process = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 
-
-
-
-	if (strcmp(current->comm, "talker") == 0 || strcmp(current->comm, "listener") == 0)
+	if(sender_process)
 	{
-		struct aa_label *label, *cl;
-		struct aa_profile *profile;
-		
-		cl = __begin_current_label_crit_section();
-		__u32 sender_pid;
-		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
-		label = aa_get_label(ctx->label);
-		sender_pid = label->pid;
-		struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+		sender_label = aa_get_task_label(sender_process);
 
-		if (sender)
-		{
-			printk (KERN_INFO "apparmor_socket_recvmsg: sender process %s with pid %d, receiver process %s with pid %d\n", 
-								sender->comm, sender->pid, current->comm, current->pid);
-		}
-		else
-		{
-			printk (KERN_INFO "apparmor_socket_recvmsg: Unable to get sender task struct with pid %d, receiver process %s with pid %d\n", 
-								sender_pid, current->comm, current->pid);
-		}
-		
-		
-		
-		aa_put_label(ctx->label);	
-		__end_current_label_crit_section(cl);
+		fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
+		if (allow)
+			printk (KERN_INFO "apparmor_socket_recvmsg: Match is true from process %s to %s\n", sender_process->comm, current->comm);
+		else 
+			printk (KERN_INFO "apparmor_socket_recvmsg: Match is false from process %s to %s\n", sender_process->comm, current->comm);
+
+		aa_put_label(sender_label);
 	}
-
+	else
+	{
+		printk(KERN_INFO "apparmor_socket_recvmsg: Unable to retrieve sender process with PID %d in receiver process %s\n", sender_pid, current->comm);
+	}
 
 
 
