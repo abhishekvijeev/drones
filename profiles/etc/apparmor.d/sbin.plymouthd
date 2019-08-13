@@ -1,0 +1,12 @@
+# Last Modified: Tue Aug 13 14:24:38 2019
+#include <tunables/global>
+
+/sbin/plymouthd {
+  #include <abstractions/base>
+
+  /lib/x86_64-linux-gnu/ld-*.so mr,
+  /sbin/plymouthd mr,
+  /usr/share/** r,
+  /usr/lib/x86_64-linux-gnu/plymouth/** mr,
+  /etc/fonts/** r,
+}
