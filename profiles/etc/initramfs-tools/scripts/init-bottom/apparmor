@@ -1,0 +1,38 @@
+#!/bin/sh
+PREREQ=""
+prereqs()
+{
+        echo "$PREREQ"
+}
+case $1 in
+prereqs)
+        prereqs
+        exit 0
+        ;;
+esac
+
+PROFILE="profile init-systemd /lib/systemd/** flags=(complain) 
+{
+	
+	/etc/ld.so.cache	r,
+	/lib/systemd/libsystemd-shared-240.so rm,
+	
+	/lib/x86_64-linux-gnu/**	rm,
+	/proc/** r,
+	/usr/lib/x86_64-linux-gnu/**	rm,
+
+	/lib/systemd/* cx -> defaultprofile, 
+	profile defaultprofile flags=(complain)
+	{
+	}
+}"
+
+mount -t securityfs none /sys/kernel/security
+#echo "profile init-systemd /lib/systemd/** flags=(complain) {/lib/systemd/* ix, /{,usr/}{,s}bin/* pix, /opt/** Px,}" | /sbin/apparmor_parser -a
+#echo "profile init-upstart /sbin/upstart flags=(complain) {}" | /sbin/apparmor_parser -a
+
+echo "$PROFILE" | /sbin/apparmor_parser -a
+echo "profile init-upstart /sbin/upstart flags=(complain) {}" | /sbin/apparmor_parser -a
+
+read -p "Enter a name: " name
+echo "Hi, $name"
