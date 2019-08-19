@@ -67,27 +67,45 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	}
 	
 	profile default_profile flags=(complain){
+
+		/{,usr/}{,s}bin/* r, 
 		/dev/null	rw,
 		/etc/ld.so.cache	r,
+		/etc/locale.alias	r,
 		/lib/netplan/generate mr,
 		/lib/x86_64-linux-gnu/*.so mr,
+		/lib/x86_64-linux-gnu/*.so.* mr,
+		/proc/**	r,
+		/run/systemd/generator/openvpn.service.wants/	rw,
+		/run/systemd/generator/openvpn.service.wants/**	rw,
+		/usr/lib/locale/**	r,
 		/usr/lib/x86_64-linux-gnu/*.so.* rm,
 	}
 	profile netplan_profile flags=(complain) {
+		capability mknod,
+		/bin/udevadm	rix,
 		/dev/null	rw,
 		/etc/ld.so.cache	r,
+		/etc/netplan/	r,
+		/etc/netplan/**	r,
+		/etc/udev/** r,
+		/lib/netplan/	r,
 		/lib/netplan/generate mrix,
 		/lib/systemd/system-generators/netplan	mrix,
 		/lib/x86_64-linux-gnu/*.so mr,
 		/lib/x86_64-linux-gnu/*.so.* mr,
+		/proc/** r,
+		ptrace,
+		/run/NetworkManager/ rw,
 		/run/NetworkManager/** rw,
+		/run/systemd/** rw,
 		/usr/lib/x86_64-linux-gnu/*.so.* rm,
 	}
 	profile snapd_env_generator flags=(complain) {
 		/dev/null	rw,
 		/etc/ld.so.cache	r, 
-		/lib/x86_64-linux-gnu/ld-*.so mr,
-		/lib/x86_64-linux-gnu/libc-*.so mr,
+		/lib/x86_64-linux-gnu/*.so mr,
+		/lib/x86_64-linux-gnu/*.so.* mr,
 		/usr/lib/systemd/system-environment-generators/snapd-env-generator mr,
 	}
 }"
