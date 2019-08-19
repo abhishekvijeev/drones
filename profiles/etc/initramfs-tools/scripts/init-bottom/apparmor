@@ -13,6 +13,11 @@ esac
 
 PROFILE="profile init-systemd /lib/systemd/** flags=(complain) 
 {
+
+	/lib/netplan/generate cx -> netplan_profile,
+
+	/usr/lib/systemd/system-environment-generators/snapd-env-generator cx -> snapd_env_generator,
+
 	capability audit_write,	
 	capability dac_override,
 	capability dac_read_search,
@@ -46,20 +51,44 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	/sys/** rwcx -> sys_default,
 	
 	/usr/ r,
+	/{,usr/}{,s}bin/* rcx -> default_profile,
 	/usr/lib/x86_64-linux-gnu/**	rm,
 	/usr/** rw,
 	/var/** rw,
 	/tmp/** rw,
+	
 
 	profile run_default flags=(complain){
-		capability mknod,
 
-		capability sys_ptrace,
 	}
 
 	profile sys_default flags=(complain){
 
-		capability sys_ptrace,
+	}
+	
+	profile default_profile flags=(complain){
+		/dev/null	rw,
+		/etc/ld.so.cache	r,
+		/lib/netplan/generate mr,
+		/lib/x86_64-linux-gnu/*.so mr,
+		/usr/lib/x86_64-linux-gnu/*.so.* rm,
+	}
+	profile netplan_profile flags=(complain) {
+		/dev/null	rw,
+		/etc/ld.so.cache	r,
+		/lib/netplan/generate mrix,
+		/lib/systemd/system-generators/netplan	mrix,
+		/lib/x86_64-linux-gnu/*.so mr,
+		/lib/x86_64-linux-gnu/*.so.* mr,
+		/run/NetworkManager/** rw,
+		/usr/lib/x86_64-linux-gnu/*.so.* rm,
+	}
+	profile snapd_env_generator flags=(complain) {
+		/dev/null	rw,
+		/etc/ld.so.cache	r, 
+		/lib/x86_64-linux-gnu/ld-*.so mr,
+		/lib/x86_64-linux-gnu/libc-*.so mr,
+		/usr/lib/systemd/system-environment-generators/snapd-env-generator mr,
 	}
 }"
 
