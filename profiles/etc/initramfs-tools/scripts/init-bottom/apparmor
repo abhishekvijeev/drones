@@ -13,7 +13,7 @@ esac
 
 PROFILE="profile init-systemd /lib/systemd/** flags=(complain) 
 {
-
+	/bin/mount cx -> bin_mount,
 	/lib/netplan/generate cx -> netplan_profile,
 
 	/usr/lib/systemd/system-environment-generators/snapd-env-generator cx -> snapd_env_generator,
@@ -36,7 +36,8 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 
 	/dev/** rw,
 	/etc/**	r,
-	
+
+	/lib/console-setup/keyboard-setup.sh	rmix,	
 	/lib/systemd/** rix,
 	/lib/** rm,
 
@@ -87,6 +88,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/sys/module/**	r,
 		/usr/lib/locale/**	r,
 		/usr/lib/x86_64-linux-gnu/*.so.* rm,
+		/usr/share/locale-langpack/**	r,
 	}
 	profile netplan_profile flags=(complain) {
 		capability mknod,
@@ -114,6 +116,14 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/lib/x86_64-linux-gnu/*.so mr,
 		/lib/x86_64-linux-gnu/*.so.* mr,
 		/usr/lib/systemd/system-environment-generators/snapd-env-generator mr,
+	}
+	profile bin_mount flags=(complain) {
+		capability sys_admin,
+		mount, 
+		/bin/mount	rm,	
+		/dev/** r,
+		/run/mount/	rw,
+		/run/mount/**	rw,
 	}
 }"
 
