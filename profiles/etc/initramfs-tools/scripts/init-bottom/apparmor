@@ -18,6 +18,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 
 	/usr/lib/systemd/system-environment-generators/snapd-env-generator cx -> snapd_env_generator,
 
+	capability audit_read,
 	capability audit_write,	
 	capability dac_override,
 	capability dac_read_search,
@@ -72,12 +73,18 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/dev/null	rw,
 		/etc/ld.so.cache	r,
 		/etc/locale.alias	r,
+		/etc/udev/**	r,
 		/lib/netplan/generate mr,
+		/lib/modules/**	rw,
 		/lib/x86_64-linux-gnu/*.so mr,
 		/lib/x86_64-linux-gnu/*.so.* mr,
 		/proc/**	r,
+		ptrace,
 		/run/systemd/generator/openvpn.service.wants/	rw,
 		/run/systemd/generator/openvpn.service.wants/**	rw,
+		/run/tmpfiles.d/	rw,
+		/run/tmpfiles.d/**	rw,
+		/sys/module/**	r,
 		/usr/lib/locale/**	r,
 		/usr/lib/x86_64-linux-gnu/*.so.* rm,
 	}
