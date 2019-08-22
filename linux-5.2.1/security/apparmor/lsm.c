@@ -1216,7 +1216,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 
 	cl = __begin_current_label_crit_section();
 
-	if(!unconfined(cl)
+	if(!unconfined(cl))
 	{
 		if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
 		{
@@ -1257,7 +1257,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		}
 	}
 
-	__end_current_label_crit_section();
+	__end_current_label_crit_section(cl);
 		
 	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
 }
