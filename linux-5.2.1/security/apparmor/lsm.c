@@ -1236,11 +1236,13 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			
 			sender_pid = label->pid;
 			
-			printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
-						current->comm, current->pid, label->pid);
-			if (recv_domain)
-				printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", recv_domain);	
+			// printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
+			// 			current->comm, current->pid, label->pid);
+			// if (recv_domain)
+			// 	printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", recv_domain);	
 			
+			printk(KERN_INFO "apparmor_socket_recvmsg:\nsocket_label: %s, socket_label->size: %d\nprocess_label: %s, process_label->size: %d\n", label->hname, label->size, cl->hname, cl->size);
+
 			struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 			if (sender)
 			{
@@ -1249,18 +1251,18 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				{
 					
 					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
-					if (allow)
-						printk (KERN_INFO "apparmor_socket_recvmsg3: Match is true \n");
-					else 
-						printk (KERN_INFO "apparmor_socket_recvmsg3: Match is false\n");
+					// if (allow)
+					// 	printk (KERN_INFO "apparmor_socket_recvmsg3: Match is true \n");
+					// else 
+					// 	printk (KERN_INFO "apparmor_socket_recvmsg3: Match is false\n");
 				}
 				aa_put_label(sender_label);
 				
 
-				printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
+				// printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
 			}
-			else
-				printk (KERN_INFO "4 Error in getting task_struct of pid= %d\n", sender_pid);
+			// else
+			// 	printk (KERN_INFO "4 Error in getting task_struct of pid= %d\n", sender_pid);
 			
 			aa_put_label(ctx->label);
 		}
