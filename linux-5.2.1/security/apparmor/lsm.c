@@ -1242,6 +1242,14 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			// 	printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", recv_domain);	
 			
 			printk(KERN_INFO "apparmor_socket_recvmsg:\nsocket_label: %s, socket_label->size: %d\nprocess_label: %s, process_label->size: %d\n", label->hname, label->size, cl->hname, cl->size);
+			if(cl->size > 0)
+			{
+				struct aa_profile *proc_profile = cl->vec[0];
+				if(((profile->current_domain) != NULL) && ((profile->current_domain->domain) != NULL))
+				{
+					printk(KERN_INFO "process_label->profiles[0] domain = %s\n", profile->current_domain->domain);
+				}
+			}
 
 			struct task_struct *sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 			if (sender)
