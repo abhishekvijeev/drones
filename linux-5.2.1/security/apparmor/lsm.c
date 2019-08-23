@@ -936,126 +936,6 @@ static int aa_sock_msg_perm(const char *op, u32 request, struct socket *sock,
 }
 
 
-static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_addr, bool *allow)
-{
-	struct ListOfIPAddrs *iterator;
-	if (profile->allowed_ip_addrs)
-	{
-		list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
-		{
-			// printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
-			if (iterator->ip_addr == check_ip_addr)
-			{
-				*allow = true;
-				break;
-			}
-		}
-	}
-	return 0;
-}
-
-/**
- * apparmor_socket_sendmsg - check perms before sending msg to another socket
- */
-static int apparmor_socket_sendmsg(struct socket *sock,
-				   struct msghdr *msg, int size)
-{
-	// Check whether internet socket ie.e sock->family should be AF_INET
-    // Check sock->sk->protocol for UDP/IGMP
-    // Get dest IP address from usin or socket similar to udp.c
-
-    struct sock *sk = sock->sk;
-    struct inet_sock *inet;
-	struct aa_label *label;
-	bool allow = false;
-	struct aa_label *cl;
-	struct aa_profile *profile;
-    u32 daddr = 0;
-	struct aa_sk_ctx *ctx = SK_CTX(sk);
-	
-
-	cl = __begin_current_label_crit_section();	
-				
-
-	if(!unconfined(cl))
-	{
-		label = aa_get_label(ctx->label);
-		if(label)
-		{
-			label->pid = current->pid;
-		}
-		aa_put_label(ctx->label);
-		if(sk->sk_family == AF_INET)
-		{   
-			inet = inet_sk(sk);
-			// UDP
-			if(sock->type == SOCK_DGRAM)
-			{
-				DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
-				if (usin) 
-				{
-					if (msg->msg_namelen < sizeof(*usin))
-						return -EINVAL;
-					if (usin->sin_family != AF_INET) 
-					{
-						if (usin->sin_family != AF_UNSPEC)
-							return -EAFNOSUPPORT;
-					}
-
-					daddr = usin->sin_addr.s_addr;
-				} 
-				else 
-				{
-					if (sk->sk_state != TCP_ESTABLISHED)
-						return -EDESTADDRREQ;
-					daddr = inet->inet_daddr;
-				}
-				
-
-				// 1. Check if packet destination is localhost
-				if(localhost_address(daddr))
-				{
-					// printk(KERN_INFO "apparmor_socket_sendmsg: Packet from localhost to localhost allowed\n");
-				}
-				
-
-				// 2. Check if packet destination is DDS multicast address
-				else if(ntohs(daddr) == 61439)
-				{
-					// printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4\n", &daddr);
-				}
-
-				// 3. Check if destination address is multicast address
-				else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
-				{
-					// printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4\n", &daddr);
-				}
-				
-				/* 
-				* 4. Otherwise, the packet's destination is outside the machine
-				* Perform domain declassification by obtaining the list of allowed domains
-				* for the sending process
-				*/
-				else
-				{
-					// printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);					
-
-					fn_for_each (cl, profile, apparmor_domain_declassify(profile, daddr, &allow));
-					
-					// printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s to address %pi4, flow is %d\n", current->comm, &daddr, allow);
-				}
-			}
-			
-		}
-	}
-	
-	// printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s to address %pi4, flow is %d\n", current->comm, &daddr, allow);
-
-	__end_current_label_crit_section(cl);
-
-	return aa_sock_msg_perm(OP_SENDMSG, AA_MAY_SEND, sock, msg, size);
-}
-
 
 static int print_all_domain(struct aa_profile *profile)
 {
@@ -1076,7 +956,7 @@ static int print_all_domain(struct aa_profile *profile)
 
 static int apparmor_getlabel_domain (struct aa_profile *profile, char **name)
 {
-	if (profile->current_domain)
+	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
 	{
 		*name = profile->current_domain->domain;
 		
@@ -1100,6 +980,135 @@ static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_d
 	}
 	return 0;
 }
+
+static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_addr, bool *allow)
+{
+	struct ListOfIPAddrs *iterator;
+	if (profile->allowed_ip_addrs)
+	{
+		list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
+		{
+			// printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
+			if (iterator->ip_addr == check_ip_addr)
+			{
+				*allow = true;
+				break;
+			}
+		}
+	}
+	return 0;
+}
+
+
+/**
+ * apparmor_socket_sendmsg - check perms before sending msg to another socket
+ */
+static int apparmor_socket_sendmsg(struct socket *sock,
+				   struct msghdr *msg, int size)
+{
+	// Check whether internet socket ie.e sock->family should be AF_INET
+    // Check sock->sk->protocol for UDP/IGMP
+    // Get dest IP address from usin or socket similar to udp.c
+
+    struct sock *sk = sock->sk;
+    struct inet_sock *inet;
+	struct aa_label *label;
+	bool allow = false;
+	struct aa_label *cl;
+	struct aa_profile *profile;
+    u32 daddr = 0;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	char *curr_domain = NULL;
+
+
+	cl = __begin_current_label_crit_section();	
+				
+
+	if(!unconfined(cl))
+	{
+		label = aa_get_label(ctx->label);
+		if(label)
+		{
+			label->pid = current->pid;
+		}
+		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+		aa_put_label(ctx->label);
+		
+		if (curr_domain != NULL)
+		{
+			if(sk->sk_family == AF_INET)
+			{   
+				inet = inet_sk(sk);
+				// UDP
+				if(sock->type == SOCK_DGRAM)
+				{
+					DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
+					if (usin) 
+					{
+						if (msg->msg_namelen < sizeof(*usin))
+							return -EINVAL;
+						if (usin->sin_family != AF_INET) 
+						{
+							if (usin->sin_family != AF_UNSPEC)
+								return -EAFNOSUPPORT;
+						}
+
+						daddr = usin->sin_addr.s_addr;
+					} 
+					else 
+					{
+						if (sk->sk_state != TCP_ESTABLISHED)
+							return -EDESTADDRREQ;
+						daddr = inet->inet_daddr;
+					}
+					
+
+					// 1. Check if packet destination is localhost
+					if(localhost_address(daddr))
+					{
+						printk(KERN_INFO "apparmor_socket_sendmsg: Packet from localhost to localhost allowed\n");
+					}
+					
+
+					// 2. Check if packet destination is DDS multicast address
+					else if(ntohs(daddr) == 61439)
+					{
+						printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4\n", &daddr);
+					}
+
+					// 3. Check if destination address is multicast address
+					else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
+					{
+						printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4\n", &daddr);
+					}
+					
+					/* 
+					* 4. Otherwise, the packet's destination is outside the machine
+					* Perform domain declassification by obtaining the list of allowed domains
+					* for the sending process
+					*/
+					else
+					{
+						// printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);					
+
+						fn_for_each (cl, profile, apparmor_domain_declassify(profile, daddr, &allow));
+						
+						printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s to address %pi4, flow is %d\n", current->comm, &daddr, allow);
+					}
+				}
+				
+			}//end of if(sk->sk_family == AF_INET)
+		}//end if (curr_domain != NULL)
+	}
+	
+	// printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s to address %pi4, flow is %d\n", current->comm, &daddr, allow);
+
+	__end_current_label_crit_section(cl);
+
+	return aa_sock_msg_perm(OP_SENDMSG, AA_MAY_SEND, sock, msg, size);
+}
+
+
 
 /**
  * apparmor_socket_recvmsg - check perms before receiving a message
@@ -1212,49 +1221,50 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	__u32 sender_pid;
 	struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 	struct aa_label *sender_label;
-	char *recv_domain= NULL;
+	char *curr_domain = NULL;
 
 	cl = __begin_current_label_crit_section();
 
 	if(!unconfined(cl))
 	{
+
 		if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
 		{
+
 			label = aa_get_label(ctx->label);
 			
-			fn_for_each (label, profile, apparmor_getlabel_domain(profile, &recv_domain));
-			
-			sender_pid = label->pid;
-			
-			printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
-						current->comm, current->pid, label->pid);
-			if (recv_domain)
-				printk (KERN_INFO "apparmor_socket_recvmsg2: current process domain is %s\n", recv_domain);	
-			
-			sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-			if (sender)
+			fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+			if (curr_domain != NULL)
 			{
-				sender_label = aa_get_task_label(sender);
-				if(sender_label && recv_domain)
-				{
-					
-					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
-					if (allow)
-						printk (KERN_INFO "apparmor_socket_recvmsg3: Match is true \n");
-					else 
-						printk (KERN_INFO "apparmor_socket_recvmsg3: Match is false\n");
-				}
-				aa_put_label(sender_label);
+				sender_pid = label->pid;
+			
+				printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
+							current->comm, current->pid, label->pid);
 				
+				sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+				if (sender)
+				{
+					sender_label = aa_get_task_label(sender);
+					if(sender_label != NULL)
+					{
+						fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
+						if (allow)
+							printk (KERN_INFO "apparmor_socket_recvmsg3: Match is true \n");
+						else 
+							printk (KERN_INFO "apparmor_socket_recvmsg3: Match is false\n");
+					}
+					aa_put_label(sender_label);
+					
 
-				printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
-			}
-			else
-				printk (KERN_INFO "4 Error in getting task_struct of pid= %d\n", sender_pid);
-			
+					printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
+				}
+				
+				
+			} //end of if (curr_domain != NULL)
 			aa_put_label(ctx->label);
+				
 			
-		}
+		}//end of if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
 	}
 
 	__end_current_label_crit_section(cl);
