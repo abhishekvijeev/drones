@@ -925,6 +925,16 @@ send:
 	return err;
 }
 
+static int udp_getlabel_domain (struct aa_profile *profile, char **name)
+{
+	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	{
+		*name = profile->current_domain->domain;
+		
+	}
+	return 0;
+}
+
 /*
  * Push out all pending data as one UDP datagram. Socket is locked.
  */
@@ -940,11 +950,16 @@ int udp_push_pending_frames(struct sock *sk)
 	if (!skb)
 		goto out;
 
+	//Custom code: start
 	struct aa_label *label;
+	char *curr_domain = NULL;
 	struct aa_sk_ctx *ctx = SK_CTX(sk);
 	label = aa_get_label(ctx->label);
-	skb->secmark = label->pid;
+	fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	if (curr_domain != NULL)
+		skb->secmark = label->pid;
 	aa_put_label(ctx->label);
+	//Custom code: end
 
 	err = udp_send_skb(skb, fl4, &inet->cork.base);
 
@@ -1206,11 +1221,16 @@ back_from_confirm:
 		err = PTR_ERR(skb);
 		if (!IS_ERR_OR_NULL(skb))
 		{
+			//Custom code: start
 			struct aa_label *label;
+			char *curr_domain = NULL;
 			struct aa_sk_ctx *ctx = SK_CTX(sk);
 			label = aa_get_label(ctx->label);
-			skb->secmark = label->pid;
+			fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+			if (curr_domain != NULL)
+				skb->secmark = label->pid;
 			aa_put_label(ctx->label);
+			//Custom code: end
 
 			err = udp_send_skb(skb, fl4, &cork);
 		}
@@ -2337,11 +2357,16 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 	sk = __udp4_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
 	if (sk)
 	{
+		//Custom code: start
 		struct aa_label *label;
+		char *curr_domain = NULL;
 		struct aa_sk_ctx *ctx = SK_CTX(sk);
 		label = aa_get_label(ctx->label);
-		label->pid = skb->secmark;
+		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+		if (curr_domain != NULL)
+			label->pid = skb->secmark;
 		aa_put_label(ctx->label);
+		//Custom code: end
 	
 		return udp_unicast_rcv_skb(sk, skb, uh);
 	}

@@ -15,11 +15,16 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 {
 	/bin/mount cx -> bin_mount,
 	/lib/netplan/generate cx -> netplan_profile,
-
+	/sbin/udevadm cx -> udevadm_profile,
+	/usr/bin/basename	cx -> basename_profile,
 	/usr/lib/systemd/system-environment-generators/snapd-env-generator cx -> snapd_env_generator,
+	/usr/lib/colord/color-sane cx -> colord_profile, 
+	/usr/lib/colord/colord cx -> colord_profile, 
+	/usr/lib/colord/color-session cx -> colord_profile, 
 
 	capability audit_read,
 	capability audit_write,	
+	capability chown,
 	capability dac_override,
 	capability dac_read_search,
 	capability kill,
@@ -53,7 +58,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	/sys/** rwcx -> sys_default,
 	
 	/usr/ r,
-	/{,usr/}{,s}bin/* rcx -> default_profile,
+	/{,usr/}{,s}bin/** rmwcx -> default_profile,
 	/usr/lib/x86_64-linux-gnu/**	rm,
 	/usr/** rw,
 	/var/** rw,
@@ -69,6 +74,10 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	}
 	
 	profile default_profile flags=(complain){
+		/** rwmkix,
+		signal,
+		ptrace,
+		mount,
 
 		/{,usr/}{,s}bin/* r, 
 		/dev/null	rw,
@@ -121,9 +130,43 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		capability sys_admin,
 		mount, 
 		/bin/mount	rm,	
+		/dev/loop-control	rw,
 		/dev/** r,
+		/etc/ld.so.cache	r,
+		/etc/locale.alias	r,
+		/lib/x86_64-linux-gnu/*.so mr,
+		/lib/x86_64-linux-gnu/*.so.* mr,
+		/proc/**	r,
 		/run/mount/	rw,
-		/run/mount/**	rw,
+		/run/mount/**	rkw,
+		/sys/devices/**	r,
+		/usr/lib/x86_64-linux-gnu/*.so.* rm,
+		/var/lib/**	r,
+	}
+	profile udevadm_profile flags=(complain) {
+		
+	}
+	
+	profile colord_profile {
+		/dev/**	r,
+		/etc/ld.so.cache	r, 
+		/lib/x86_64-linux-gnu/*.so mr,
+		/lib/x86_64-linux-gnu/*.so.* mr,
+		/sys/**	r,
+		/run/**	r,
+		/usr/lib/x86_64-linux-gnu/*.so.* rm,
+		/usr/lib/colord/**	mrix,
+	}
+	profile basename_profile flags=(complain){
+		/lib/x86_64-linux-gnu/ld-*.so mr,
+		/usr/bin/basename mr,
+		/etc/ld.so.cache  r,
+		/lib/x86_64-linux-gnu/*.so mr,
+		/lib/x86_64-linux-gnu/*.so.* mr,
+		/home/abhishek/.local/share/gvfs-metadata/**  r,
+		/usr/share/code/**    r,
+		/dev/**   wr,
+
 	}
 }"
 
