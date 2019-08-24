@@ -953,6 +953,7 @@ int udp_push_pending_frames(struct sock *sk)
 	//Custom code: start
 	struct aa_label *label;
 	char *curr_domain = NULL;
+	struct aa_profile *profile;
 	struct aa_sk_ctx *ctx = SK_CTX(sk);
 	label = aa_get_label(ctx->label);
 	fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
@@ -1224,6 +1225,7 @@ back_from_confirm:
 			//Custom code: start
 			struct aa_label *label;
 			char *curr_domain = NULL;
+			struct aa_profile *profile;
 			struct aa_sk_ctx *ctx = SK_CTX(sk);
 			label = aa_get_label(ctx->label);
 			fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
@@ -2360,6 +2362,7 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 		//Custom code: start
 		struct aa_label *label;
 		char *curr_domain = NULL;
+		struct aa_profile *profile;
 		struct aa_sk_ctx *ctx = SK_CTX(sk);
 		label = aa_get_label(ctx->label);
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));

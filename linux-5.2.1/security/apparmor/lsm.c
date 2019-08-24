@@ -1237,10 +1237,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			if (curr_domain != NULL)
 			{
 				sender_pid = label->pid;
-			
-				printk (KERN_INFO "apparmor_socket_recvmsg1: current process = %s, current pid = %d, sent from pid = %d\n", 
-							current->comm, current->pid, label->pid);
-				
+				char *process_comm = NULL;
 				sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 				if (sender)
 				{
@@ -1248,16 +1245,12 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 					if(sender_label != NULL)
 					{
 						fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
-						if (allow)
-							printk (KERN_INFO "apparmor_socket_recvmsg3: Match is true \n");
-						else 
-							printk (KERN_INFO "apparmor_socket_recvmsg3: Match is false\n");
 					}
 					aa_put_label(sender_label);
-					
-
-					printk (KERN_INFO "4 sender process name = %s, pid is %d\n", sender->comm, sender->pid);
+					process_comm = sender->comm;
 				}
+				printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
+							current->comm, current->pid, process_comm, label->pid, allow);
 				
 				
 			} //end of if (curr_domain != NULL)
