@@ -1116,7 +1116,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 	if (error == 0)
 	{
 		printk (KERN_INFO "apparmor_socket_sendmsg: return is 1\n");
-		return -EACCES;
+		return -EPERM;
 	}
 	return aa_sock_msg_perm(OP_SENDMSG, AA_MAY_SEND, sock, msg, size);
 }
@@ -1284,7 +1284,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	if (error == 0)
 	{
 		printk (KERN_INFO "apparmor_socket_recvmsg: return is 1\n");
-		return -EACCES;
+		return -EPERM;
 	}
 	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
 }
