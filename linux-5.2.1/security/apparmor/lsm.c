@@ -1039,11 +1039,12 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 		{
 			if(sk->sk_family == AF_INET)
 			{   
-				int ret_val = 0;
 				inet = inet_sk(sk);
 				// UDP
 				if(sock->type == SOCK_DGRAM)
 				{
+					int ret_val = 0;
+				
 					DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
 					if (usin) 
 					{
@@ -1101,9 +1102,10 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 							ret_val = 1;
 						printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s to address %pi4, flow is %d\n", current->comm, &daddr, allow);
 					}
+					if (ret_val == 0)
+						error = 0;
 				}//end of if(sock->type == SOCK_DGRAM)
-				if (!ret_val)
-					error = 0;
+				
 			}//end of if(sk->sk_family == AF_INET)
 		}//end if (curr_domain != NULL)
 	}
@@ -1111,8 +1113,11 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 	// printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s to address %pi4, flow is %d\n", current->comm, &daddr, allow);
 
 	__end_current_label_crit_section(cl);
-	if (!error)
+	if (error == 0)
+	{
+		printk (KERN_INFO "apparmor_socket_sendmsg: return is 1\n");
 		return 1;
+	}
 	return aa_sock_msg_perm(OP_SENDMSG, AA_MAY_SEND, sock, msg, size);
 }
 
@@ -1253,7 +1258,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 					if(sender_label != NULL)
 					{
 						fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
-						if (!allow)
+						if (allow == 0)
 							error = 0;
 					}
 					aa_put_label(sender_label);
@@ -1272,8 +1277,11 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	}
 
 	__end_current_label_crit_section(cl);
-	if (!error)
+	if (error == 0)
+	{
+		printk (KERN_INFO "apparmor_socket_recvmsg: return is 1\n");
 		return 1;
+	}
 	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
 }
 
