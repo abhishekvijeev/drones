@@ -1019,6 +1019,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
     u32 daddr = 0;
 	struct aa_sk_ctx *ctx = SK_CTX(sk);
 	char *curr_domain = NULL;
+	int error = 1;
 
 
 	cl = __begin_current_label_crit_section();	
@@ -1038,6 +1039,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 		{
 			if(sk->sk_family == AF_INET)
 			{   
+				int ret_val = 0;
 				inet = inet_sk(sk);
 				// UDP
 				if(sock->type == SOCK_DGRAM)
@@ -1066,6 +1068,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 					// 1. Check if packet destination is localhost
 					if(localhost_address(daddr))
 					{
+						ret_val = 1;
 						printk(KERN_INFO "apparmor_socket_sendmsg: Packet from localhost to localhost allowed\n");
 					}
 					
@@ -1073,12 +1076,14 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 					// 2. Check if packet destination is DDS multicast address
 					else if(ntohs(daddr) == 61439)
 					{
+						ret_val = 1;
 						printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4\n", &daddr);
 					}
 
 					// 3. Check if destination address is multicast address
 					else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
 					{
+						ret_val = 1;
 						printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4\n", &daddr);
 					}
 					
@@ -1092,11 +1097,13 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 						// printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);					
 
 						fn_for_each (cl, profile, apparmor_domain_declassify(profile, daddr, &allow));
-						
+						if(allow)
+							ret_val = 1;
 						printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s to address %pi4, flow is %d\n", current->comm, &daddr, allow);
 					}
-				}
-				
+				}//end of if(sock->type == SOCK_DGRAM)
+				if (!ret_val)
+					error = 0;
 			}//end of if(sk->sk_family == AF_INET)
 		}//end if (curr_domain != NULL)
 	}
@@ -1104,7 +1111,8 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 	// printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s to address %pi4, flow is %d\n", current->comm, &daddr, allow);
 
 	__end_current_label_crit_section(cl);
-
+	if (!error)
+		return 1;
 	return aa_sock_msg_perm(OP_SENDMSG, AA_MAY_SEND, sock, msg, size);
 }
 
@@ -1222,6 +1230,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 	struct aa_label *sender_label;
 	char *curr_domain = NULL;
+	int error = 1;
 
 	cl = __begin_current_label_crit_section();
 
@@ -1230,7 +1239,6 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 
 		if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
 		{
-
 			label = aa_get_label(ctx->label);
 			
 			fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
@@ -1245,23 +1253,27 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 					if(sender_label != NULL)
 					{
 						fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
+						if (!allow)
+							error = 0;
 					}
 					aa_put_label(sender_label);
 					process_comm = sender->comm;
+					
 				}
 				printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
 							current->comm, current->pid, process_comm, label->pid, allow);
 				
 				
+				
 			} //end of if (curr_domain != NULL)
 			aa_put_label(ctx->label);
-				
 			
 		}//end of if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
 	}
 
 	__end_current_label_crit_section(cl);
-		
+	if (!error)
+		return 1;
 	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
 }
 
@@ -2048,7 +2060,7 @@ static unsigned int apparmor_ipv4_output(void *priv,
 	ip = ip_hdr(skb);
 	if(ip->protocol == IPPROTO_IGMP)
 	{
-		printk(KERN_INFO "NF_OUTPUT: IGMP protocol allowed -> %d\n", ip->protocol);
+		// printk(KERN_INFO "NF_OUTPUT: IGMP protocol allowed -> %d\n", ip->protocol);
 	}
 	return NF_ACCEPT;
 }
