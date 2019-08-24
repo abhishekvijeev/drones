@@ -1275,6 +1275,10 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			
 		}//end of if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
 	}
+	else if (strcmp(current->comm, "talker") == 0 || strcmp(current->comm, "listener") == 0)
+	{
+		printk (KERN_INFO "apparmor_socket_recvmsg: sk_family=%d, sock->type=%d\n", sock->sk->sk_family, sock->type);
+	}
 
 	__end_current_label_crit_section(cl);
 	if (error == 0)
