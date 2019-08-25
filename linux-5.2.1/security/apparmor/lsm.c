@@ -1025,7 +1025,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 	cl = __begin_current_label_crit_section();	
 				
 
-	if(!unconfined(cl))
+	if(!unconfined(cl) && ctx != NULL && ctx->label != NULL)
 	{
 		label = aa_get_label(ctx->label);
 		if(label)
@@ -1115,10 +1115,11 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 	__end_current_label_crit_section(cl);
 	if (error == 0)
 	{
-		printk (KERN_INFO "apparmor_socket_sendmsg: return is 1\n");
-		return -EPERM;
+		printk (KERN_INFO "apparmor_socket_sendmsg: return is -13\n");
+		return -EACCES;
 	}
-	return aa_sock_msg_perm(OP_SENDMSG, AA_MAY_SEND, sock, msg, size);
+	else
+		return aa_sock_msg_perm(OP_SENDMSG, AA_MAY_SEND, sock, msg, size);
 }
 
 
@@ -1242,51 +1243,43 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	if(!unconfined(cl))
 	{
 
-		if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
+		if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM && ctx != NULL && ctx->label != NULL)
 		{
 			label = aa_get_label(ctx->label);
-			
 			fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-			if (curr_domain != NULL)
+			sender_pid = label->pid;
+			char *process_comm = NULL;
+			sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+		
+			if (curr_domain != NULL && sender)
 			{
-				sender_pid = label->pid;
-				char *process_comm = NULL;
-				sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-				if (sender)
+				sender_label = aa_get_task_label(sender);
+				if(sender_label != NULL)
 				{
-					sender_label = aa_get_task_label(sender);
-					if(sender_label != NULL)
-					{
-						fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
-						if (allow == 0)
-							error = 0;
-					}
-					aa_put_label(sender_label);
-					process_comm = sender->comm;
-					
+					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
+					if (allow == 0)
+						error = 0;
 				}
+				aa_put_label(sender_label);
+				process_comm = sender->comm;
+				
 				printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
 							current->comm, current->pid, process_comm, label->pid, allow);
-				
-				
-				
 			} //end of if (curr_domain != NULL)
 			aa_put_label(ctx->label);
 			
 		}//end of if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
 	}
-	else if (strcmp(current->comm, "talker") == 0 || strcmp(current->comm, "listener") == 0)
-	{
-		printk (KERN_INFO "apparmor_socket_recvmsg: sk_family=%d, sock->type=%d\n", sock->sk->sk_family, sock->type);
-	}
+	
 
 	__end_current_label_crit_section(cl);
 	if (error == 0)
 	{
-		printk (KERN_INFO "apparmor_socket_recvmsg: return is 1\n");
-		return -EPERM;
+		printk (KERN_INFO "apparmor_socket_recvmsg: return is -13\n");
+		return -EACCES;
 	}
-	return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
+	else
+		return aa_sock_msg_perm(OP_RECVMSG, AA_MAY_RECEIVE, sock, msg, size);
 }
 
 /* revaliation, get/set attr, shutdown */
