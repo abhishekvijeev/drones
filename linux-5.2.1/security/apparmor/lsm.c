@@ -1070,7 +1070,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 					if(localhost_address(daddr))
 					{
 						ret_val = 1;
-						printk(KERN_INFO "apparmor_socket_sendmsg: Packet from localhost to localhost allowed\n");
+						printk(KERN_INFO "apparmor_socket_sendmsg: Packet from localhost to localhost allowed by process %s, pid %d\n", current->comm, current->pid);
 					}
 					
 
@@ -1078,14 +1078,14 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 					else if(ntohs(daddr) == 61439)
 					{
 						ret_val = 1;
-						printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4\n", &daddr);
+						printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4, by process %s, pid %d\n", &daddr, current->comm, current->pid);
 					}
 
 					// 3. Check if destination address is multicast address
 					else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
 					{
 						ret_val = 1;
-						printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4\n", &daddr);
+						printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4, by process %s, pid %d\n", &daddr, current->comm, current->pid);
 					}
 					
 					/* 
@@ -1100,7 +1100,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 						fn_for_each (cl, profile, apparmor_domain_declassify(profile, daddr, &allow));
 						if(allow)
 							ret_val = 1;
-						printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s to address %pi4, flow is %d\n", current->comm, &daddr, allow);
+						printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s, pid %d, to address %pi4, flow is %d\n", current->comm, current->pid, &daddr, allow);
 					}
 					if (ret_val == 0)
 						error = 0;
