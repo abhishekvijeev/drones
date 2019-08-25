@@ -1,0 +1,5 @@
+//to build ros with sros
+colcon build --symlink-install --cmake-args -DSECURITY=ON
+
+//to build sros with specified packages
+colcon build --symlink-install --cmake-args -DSECURITY=ON --packages-select demo_nodes_cpp
