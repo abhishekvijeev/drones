@@ -1041,73 +1041,85 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			if(sk->sk_family == AF_INET)
 			{   
 				inet = inet_sk(sk);
-				// UDP
-				if(sock->type == SOCK_DGRAM)
+				int ret_val = 0;
+			
+				DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
+				if (usin) 
 				{
-					int ret_val = 0;
+					if (msg->msg_namelen < sizeof(*usin))
+						return -EINVAL;
+					if (usin->sin_family != AF_INET) 
+					{
+						if (usin->sin_family != AF_UNSPEC)
+							return -EAFNOSUPPORT;
+					}
+
+					daddr = usin->sin_addr.s_addr;
+				} 
+				else 
+				{
+					if (sk->sk_state != TCP_ESTABLISHED)
+						return -EDESTADDRREQ;
+					daddr = inet->inet_daddr;
+				}
 				
-					DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
-					if (usin) 
-					{
-						if (msg->msg_namelen < sizeof(*usin))
-							return -EINVAL;
-						if (usin->sin_family != AF_INET) 
-						{
-							if (usin->sin_family != AF_UNSPEC)
-								return -EAFNOSUPPORT;
-						}
 
-						daddr = usin->sin_addr.s_addr;
-					} 
-					else 
-					{
-						if (sk->sk_state != TCP_ESTABLISHED)
-							return -EDESTADDRREQ;
-						daddr = inet->inet_daddr;
-					}
-					
+				// 1. Check if packet destination is localhost
+				if(localhost_address(daddr))
+				{
+					ret_val = 1;
+					printk(KERN_INFO "apparmor_socket_sendmsg: Packet from localhost to localhost allowed by process %s, pid %d\n", current->comm, current->pid);
+				}
+				
 
-					// 1. Check if packet destination is localhost
-					if(localhost_address(daddr))
-					{
+				// 2. Check if packet destination is DDS multicast address
+				else if(ntohs(daddr) == 61439)
+				{
+					ret_val = 1;
+					printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4, by process %s, pid %d\n", &daddr, current->comm, current->pid);
+				}
+
+				// 3. Check if destination address is multicast address
+				else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
+				{
+					ret_val = 1;
+					printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4, by process %s, pid %d\n", &daddr, current->comm, current->pid);
+				}
+				
+				/* 
+				* 4. Otherwise, the packet's destination is outside the machine
+				* Perform domain declassification by obtaining the list of allowed domains
+				* for the sending process
+				*/
+				else
+				{
+					// printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);					
+
+					fn_for_each (cl, profile, apparmor_domain_declassify(profile, daddr, &allow));
+					if(allow)
 						ret_val = 1;
-						printk(KERN_INFO "apparmor_socket_sendmsg: Packet from localhost to localhost allowed by process %s, pid %d\n", current->comm, current->pid);
-					}
-					
-
-					// 2. Check if packet destination is DDS multicast address
-					else if(ntohs(daddr) == 61439)
-					{
-						ret_val = 1;
-						printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4, by process %s, pid %d\n", &daddr, current->comm, current->pid);
-					}
-
-					// 3. Check if destination address is multicast address
-					else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
-					{
-						ret_val = 1;
-						printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4, by process %s, pid %d\n", &daddr, current->comm, current->pid);
-					}
-					
-					/* 
-					* 4. Otherwise, the packet's destination is outside the machine
-					* Perform domain declassification by obtaining the list of allowed domains
-					* for the sending process
-					*/
-					else
-					{
-						// printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);					
-
-						fn_for_each (cl, profile, apparmor_domain_declassify(profile, daddr, &allow));
-						if(allow)
-							ret_val = 1;
-						printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s, pid %d, to address %pi4, flow is %d\n", current->comm, current->pid, &daddr, allow);
-					}
-					if (ret_val == 0)
-						error = 0;
-				}//end of if(sock->type == SOCK_DGRAM)
+					printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s, pid %d, to address %pi4, flow is %d\n", current->comm, current->pid, &daddr, allow);
+				}
+				if (ret_val == 0)
+					error = 0;
+				
 				
 			}//end of if(sk->sk_family == AF_INET)
+			else
+			{
+				int sk_fam = -1, socktype = -1;
+				if (sock)
+				{
+					socktype = sock->type;
+					if(sock->sk)
+						sk_fam = sock->sk->sk_family;
+				}
+				
+				printk (KERN_INFO "apparmor_socket_sendmsg sk->sk_family == AF_INET NOT SATISFIED: current process %s, pid %d, sk_family=%d, sock->type=%d\n", 
+									current->comm, current->pid, sk_fam, socktype);
+					
+			}
+			
 		}//end if (curr_domain != NULL)
 	}
 	
@@ -1241,38 +1253,39 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 
 	cl = __begin_current_label_crit_section();
 
-	if(!unconfined(cl))
+	if(!unconfined(cl) && ctx != NULL && ctx->label != NULL)
 	{
-		if (ctx != NULL && ctx->label != NULL)
+
+		label = aa_get_label(ctx->label);
+		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+		if (curr_domain != NULL)
 		{
-			label = aa_get_label(ctx->label);
-			fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-			if (curr_domain != NULL)
+			if(sock->sk->sk_family == AF_INET)
 			{
-				if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
+				sender_pid = label->pid;
+				char *process_comm = NULL;
+				sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+			
+				if (sender)
 				{
-					sender_pid = label->pid;
-					char *process_comm = NULL;
-					sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-				
-					if (sender)
+					sender_label = aa_get_task_label(sender);
+					if(sender_label != NULL)
 					{
-						sender_label = aa_get_task_label(sender);
-						if(sender_label != NULL)
-						{
-							fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
-							if (allow == 0)
-								error = 0;
-						}
-						aa_put_label(sender_label);
-						process_comm = sender->comm;
-						
-						printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
-									current->comm, current->pid, process_comm, label->pid, allow);
-					} //end of if (curr_domain != NULL)
-					aa_put_label(ctx->label);
+						fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
+						if (allow == 0)
+							error = 0;
+					}
+					aa_put_label(sender_label);
+					process_comm = sender->comm;
 					
-				}//end of if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
+					printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
+								current->comm, current->pid, process_comm, label->pid, allow);
+				} //end of if (curr_domain != NULL)
+				aa_put_label(ctx->label);
+				
+			}//end of if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
+			else
+			{
 				int sk_fam = -1, socktype = -1;
 				if (sock)
 				{
@@ -1283,11 +1296,13 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				
 				printk (KERN_INFO "apparmor_socket_recvmsg IF NOT SATISFIED: current process %s, pid %d, sk_family=%d, sock->type=%d\n", 
 									current->comm, current->pid, sk_fam, socktype);
-				
-				
-				
-			}	
-		}
+					
+			}
+			
+			
+			
+		} // end for if (curr_domain != NULL)	
+	
 			
 		
 	}
