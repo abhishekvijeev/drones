@@ -1243,33 +1243,53 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 
 	if(!unconfined(cl))
 	{
-
-		if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM && ctx != NULL && ctx->label != NULL)
+		if (ctx != NULL && ctx->label != NULL)
 		{
 			label = aa_get_label(ctx->label);
 			fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-			sender_pid = label->pid;
-			char *process_comm = NULL;
-			sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-		
-			if (curr_domain != NULL && sender)
+			if (curr_domain != NULL)
 			{
-				sender_label = aa_get_task_label(sender);
-				if(sender_label != NULL)
+				if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
 				{
-					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
-					if (allow == 0)
-						error = 0;
-				}
-				aa_put_label(sender_label);
-				process_comm = sender->comm;
+					sender_pid = label->pid;
+					char *process_comm = NULL;
+					sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 				
-				printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
-							current->comm, current->pid, process_comm, label->pid, allow);
-			} //end of if (curr_domain != NULL)
-			aa_put_label(ctx->label);
+					if (sender)
+					{
+						sender_label = aa_get_task_label(sender);
+						if(sender_label != NULL)
+						{
+							fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
+							if (allow == 0)
+								error = 0;
+						}
+						aa_put_label(sender_label);
+						process_comm = sender->comm;
+						
+						printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
+									current->comm, current->pid, process_comm, label->pid, allow);
+					} //end of if (curr_domain != NULL)
+					aa_put_label(ctx->label);
+					
+				}//end of if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
+				int sk_fam = -1, socktype = -1;
+				if (sock)
+				{
+					socktype = sock->type;
+					if(sock->sk)
+						sk_fam = sock->sk->sk_family;
+				}
+				
+				printk (KERN_INFO "apparmor_socket_recvmsg IF NOT SATISFIED: current process %s, pid %d, sk_family=%d, sock->type=%d\n", 
+									current->comm, current->pid, sk_fam, socktype);
+				
+				
+				
+			}	
+		}
 			
-		}//end of if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
+		
 	}
 	
 
@@ -1282,19 +1302,22 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			struct sk_buff *skb;
 			if ((skb = __skb_dequeue(list)) != NULL)
 			{
-				if (skb && skb->data)
-					printk (KERN_INFO "apparmor_socket_recvmsg: dropped msg from skb->data %s\n", skb->data);
-				if (skb && skb->head)
-					printk (KERN_INFO "apparmor_socket_recvmsg: dropped msg from skb->head %s\n", skb->head);	
+				if (skb)
+				{
+					if (skb->data)
+						printk (KERN_INFO "apparmor_socket_recvmsg: dropped msg from skb->data %s\n", skb->data);
+					if (skb->head)
+						printk (KERN_INFO "apparmor_socket_recvmsg: dropped msg from skb->head %s\n", skb->head);	
+					
+				}
+				else 
+					printk (KERN_INFO "apparmor_socket_recvmsg: dropped msg and skb is null %s\n");
 				kfree_skb(skb);
 			}
 			
 			
 		}
-		else
-		{
-			printk (KERN_INFO "apparmor_socket_recvmsg: dropping msg failed\n");
-		}
+		
 		printk (KERN_INFO "apparmor_socket_recvmsg: return is -13\n");
 		return -EACCES;
 	}
