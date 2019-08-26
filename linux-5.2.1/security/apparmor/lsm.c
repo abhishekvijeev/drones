@@ -1281,7 +1281,15 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			struct sk_buff_head *list = &sock->sk->sk_receive_queue;
 			struct sk_buff *skb;
 			if ((skb = __skb_dequeue(list)) != NULL)
+			{
+				if (skb && skb->data)
+					printk (KERN_INFO "apparmor_socket_recvmsg: dropped msg from skb->data %s\n", skb->data);
+				if (skb && skb->head)
+					printk (KERN_INFO "apparmor_socket_recvmsg: dropped msg from skb->head %s\n", skb->head);	
 				kfree_skb(skb);
+			}
+			
+			
 		}
 		else
 		{
