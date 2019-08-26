@@ -27,6 +27,7 @@
 #include <linux/rwlock.h>
 #include <uapi/linux/rtnetlink.h>
 #include <linux/inetdevice.h>
+#include <linux/skbuff.h>
 
 
 #include "include/apparmor.h"
@@ -1275,6 +1276,17 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	__end_current_label_crit_section(cl);
 	if (error == 0)
 	{
+		if (sock && sock->sk)
+		{
+			struct sk_buff_head *list = &sock->sk->sk_receive_queue;
+			struct sk_buff *skb;
+			if ((skb = __skb_dequeue(list)) != NULL)
+				kfree_skb(skb);
+		}
+		else
+		{
+			printk (KERN_INFO "apparmor_socket_recvmsg: dropping msg failed\n");
+		}
 		printk (KERN_INFO "apparmor_socket_recvmsg: return is -13\n");
 		return -EACCES;
 	}
