@@ -1311,29 +1311,21 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	__end_current_label_crit_section(cl);
 	if (error == 0)
 	{
+		bool drop_flag = false;
 		if (sock && sock->sk)
 		{
 			struct sk_buff_head *list = &sock->sk->sk_receive_queue;
 			struct sk_buff *skb;
-			if ((skb = __skb_dequeue(list)) != NULL)
+			while ((skb = __skb_dequeue(list)) != NULL)
 			{
-				if (skb)
-				{
-					if (skb->data)
-						printk (KERN_INFO "apparmor_socket_recvmsg: dropped msg from skb->data %s\n", skb->data);
-					if (skb->head)
-						printk (KERN_INFO "apparmor_socket_recvmsg: dropped msg from skb->head %s\n", skb->head);	
-					
-				}
-				else 
-					printk (KERN_INFO "apparmor_socket_recvmsg: dropped msg and skb is null %s\n");
 				kfree_skb(skb);
+				drop_flag = true;
 			}
 			
 			
 		}
 		
-		printk (KERN_INFO "apparmor_socket_recvmsg: return is -13\n");
+		printk (KERN_INFO "apparmor_socket_recvmsg: return is -13, status of drop_flag = %d\n", drop_flag);
 		return -EACCES;
 	}
 	else
