@@ -1015,6 +1015,16 @@ static void tcp_update_skb_after_send(struct sock *sk, struct sk_buff *skb,
 	list_move_tail(&skb->tcp_tsorted_anchor, &tp->tsorted_sent_queue);
 }
 
+static int tcp_output_getlabel_domain (struct aa_profile *profile, char **name)
+{
+	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	{
+		*name = profile->current_domain->domain;
+		
+	}
+	return 0;
+}
+
 /* This routine actually transmits TCP packets queued in by
  * tcp_do_sendmsg().  This is used by both the initial
  * transmission and possible later retransmissions.
@@ -1177,7 +1187,7 @@ static int __tcp_transmit_skb(struct sock *sk, struct sk_buff *skb,
 	label = aa_get_label(ctx->label);
 	if (label != NULL)
 	{
-		fn_for_each (label, profile, tcp_ipv4_getlabel_domain(profile, &curr_domain));
+		fn_for_each (label, profile, tcp_output_getlabel_domain(profile, &curr_domain));
 		if (curr_domain != NULL)
 		{
 			skb->secmark = label->pid;
