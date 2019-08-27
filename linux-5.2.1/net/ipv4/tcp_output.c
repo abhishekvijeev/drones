@@ -1191,7 +1191,7 @@ static int __tcp_transmit_skb(struct sock *sk, struct sk_buff *skb,
 		if (curr_domain != NULL)
 		{
 			skb->secmark = label->pid;
-			printk (KERN_INFO "__tcp_transmit_skb(tcp_output.c): pid %d added to skb\n" label->pid);
+			printk (KERN_INFO "__tcp_transmit_skb(tcp_output.c): pid %d added to skb\n", label->pid);
 		}
 	}
 	aa_put_label(ctx->label);
