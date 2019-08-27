@@ -1846,21 +1846,21 @@ lookup:
 	if (!sk)
 		goto no_tcp_socket;
 	//Custom code: start
-	struct aa_label *label;
-	char *curr_domain = NULL;
-	struct aa_profile *profile;
-	struct aa_sk_ctx *ctx = SK_CTX(sk);
-	label = aa_get_label(ctx->label);
-	if (label != NULL)
-	{
-		fn_for_each (label, profile, tcp_ipv4_getlabel_domain(profile, &curr_domain));
-		if (curr_domain != NULL)
-		{
-			label->pid = skb->secmark;
-			printk(KERN_INFO "tcp_v4_rcv: attaching pid %d to socket\n", skb->secmark);
-		}
-	}
-	aa_put_label(ctx->label);
+	// struct aa_label *label;
+	// char *curr_domain = NULL;
+	// struct aa_profile *profile;
+	// struct aa_sk_ctx *ctx = SK_CTX(sk);
+	// label = aa_get_label(ctx->label);
+	// if (label != NULL)
+	// {
+	// 	fn_for_each (label, profile, tcp_ipv4_getlabel_domain(profile, &curr_domain));
+	// 	if (curr_domain != NULL)
+	// 	{
+	// 		label->pid = skb->secmark;
+	// 		printk(KERN_INFO "tcp_v4_rcv: attaching pid %d to socket\n", skb->secmark);
+	// 	}
+	// }
+	// aa_put_label(ctx->label);
 	//Custom code: end
 process:
 	if (sk->sk_state == TCP_TIME_WAIT)
