@@ -1784,6 +1784,25 @@ try_again:
 	if (!skb)
 		return err;
 
+	//Custom code: start
+	struct aa_label *label;
+	char *curr_domain = NULL;
+	struct aa_profile *profile;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	label = aa_get_label(ctx->label);
+	if (label != NULL)
+	{
+		fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
+		if (curr_domain != NULL)
+		{
+			label->pid = skb->secmark;
+			printk (KERN_INFO "udp_recvmsg: pid %d restored from skb\n", label->pid );
+		}
+	}
+	aa_put_label(ctx->label);
+	//Custom code: end
+
+
 	ulen = udp_skb_len(skb);
 	copied = len;
 	if (copied > ulen - off)

@@ -1280,6 +1280,11 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 					printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
 								current->comm, current->pid, process_comm, label->pid, allow);
 				} //end of if (curr_domain != NULL)
+				else
+				{
+					printk (KERN_INFO "apparmor_socket_recvmsg: Error in finding sender task struct, pid %d\n", sender_pid);
+				}
+				
 				aa_put_label(ctx->label);
 				
 			}//end of if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
