@@ -1855,7 +1855,10 @@ lookup:
 	{
 		fn_for_each (label, profile, tcp_ipv4_getlabel_domain(profile, &curr_domain));
 		if (curr_domain != NULL)
+		{
 			label->pid = skb->secmark;
+			printk(KERN_INFO "tcp_v4_rcv: attaching pid %d to socket\n", skb->secmark);
+		}
 	}
 	aa_put_label(ctx->label);
 	//Custom code: end
