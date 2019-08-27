@@ -1789,6 +1789,16 @@ static void tcp_v4_fill_cb(struct sk_buff *skb, const struct iphdr *iph,
 			skb->tstamp || skb_hwtstamps(skb)->hwtstamp;
 }
 
+static int tcp_ipv4_getlabel_domain (struct aa_profile *profile, char **name)
+{
+	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	{
+		*name = profile->current_domain->domain;
+		
+	}
+	return 0;
+}
+
 /*
  *	From tcp_input.c
  */
@@ -1843,7 +1853,7 @@ lookup:
 	label = aa_get_label(ctx->label);
 	if (label != NULL)
 	{
-		fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
+		fn_for_each (label, profile, tcp_ipv4_getlabel_domain(profile, &curr_domain));
 		if (curr_domain != NULL)
 			label->pid = skb->secmark;
 	}

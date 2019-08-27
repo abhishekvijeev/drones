@@ -949,6 +949,15 @@ static int tcp_send_mss(struct sock *sk, int *size_goal, int flags)
 
 	return mss_now;
 }
+static int tcp_getlabel_domain (struct aa_profile *profile, char **name)
+{
+	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	{
+		*name = profile->current_domain->domain;
+		
+	}
+	return 0;
+}
 
 ssize_t do_tcp_sendpages(struct sock *sk, struct page *page, int offset,
 			 size_t size, int flags)
@@ -1007,7 +1016,7 @@ new_segment:
 			label = aa_get_label(ctx->label);
 			if (label != NULL)
 			{
-				fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
+				fn_for_each (label, profile, tcp_getlabel_domain(profile, &curr_domain));
 				if (curr_domain != NULL)
 					skb->secmark = label->pid;
 				
