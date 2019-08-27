@@ -73,4 +73,5 @@ extern bool aa_g_logsyscall;
 extern bool aa_g_paranoid_load;
 extern unsigned int aa_g_path_max;
 
+
 #endif /* __APPARMOR_H */

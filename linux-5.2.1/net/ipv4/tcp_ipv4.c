@@ -1398,6 +1398,8 @@ int tcp_v4_conn_request(struct sock *sk, struct sk_buff *skb)
 	/* Never answer to SYNs send to broadcast or multicast */
 	if (skb_rtable(skb)->rt_flags & (RTCF_BROADCAST | RTCF_MULTICAST))
 		goto drop;
+	
+	
 
 	return tcp_conn_request(&tcp_request_sock_ops,
 				&tcp_request_sock_ipv4_ops, sk, skb);
@@ -1525,6 +1527,16 @@ static struct sock *tcp_v4_cookie_check(struct sock *sk, struct sk_buff *skb)
 	return sk;
 }
 
+
+static int tcp_ipv4_getlabel_domain (struct aa_profile *profile, char **name)
+{
+	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	{
+		*name = profile->current_domain->domain;
+		
+	}
+	return 0;
+}
 /* The socket must have it's spinlock held when we get
  * here, unless it is a TCP_LISTEN socket.
  *
@@ -1536,6 +1548,24 @@ static struct sock *tcp_v4_cookie_check(struct sock *sk, struct sk_buff *skb)
 int tcp_v4_do_rcv(struct sock *sk, struct sk_buff *skb)
 {
 	struct sock *rsk;
+
+	//Custom code: start
+	struct aa_label *label;
+	char *curr_domain = NULL;
+	struct aa_profile *profile;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	label = aa_get_label(ctx->label);
+	if (label != NULL)
+	{
+		fn_for_each (label, profile, tcp_ipv4_getlabel_domain(profile, &curr_domain));
+		if (curr_domain != NULL)
+		{
+			label->pid = skb->secmark;
+			printk (KERN_INFO "tcp_v4_do_rcv(tcp_ipv4.c): pid %d restored from skb\n", label->pid );
+		}
+	}
+	aa_put_label(ctx->label);
+	//Custom code: end
 
 	if (sk->sk_state == TCP_ESTABLISHED) { /* Fast path */
 		struct dst_entry *dst = sk->sk_rx_dst;
@@ -1789,15 +1819,6 @@ static void tcp_v4_fill_cb(struct sk_buff *skb, const struct iphdr *iph,
 			skb->tstamp || skb_hwtstamps(skb)->hwtstamp;
 }
 
-static int tcp_ipv4_getlabel_domain (struct aa_profile *profile, char **name)
-{
-	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
-	{
-		*name = profile->current_domain->domain;
-		
-	}
-	return 0;
-}
 
 /*
  *	From tcp_input.c
@@ -1845,23 +1866,7 @@ lookup:
 			       th->dest, sdif, &refcounted);
 	if (!sk)
 		goto no_tcp_socket;
-	//Custom code: start
-	// struct aa_label *label;
-	// char *curr_domain = NULL;
-	// struct aa_profile *profile;
-	// struct aa_sk_ctx *ctx = SK_CTX(sk);
-	// label = aa_get_label(ctx->label);
-	// if (label != NULL)
-	// {
-	// 	fn_for_each (label, profile, tcp_ipv4_getlabel_domain(profile, &curr_domain));
-	// 	if (curr_domain != NULL)
-	// 	{
-	// 		label->pid = skb->secmark;
-	// 		printk(KERN_INFO "tcp_v4_rcv: attaching pid %d to socket\n", skb->secmark);
-	// 	}
-	// }
-	// aa_put_label(ctx->label);
-	//Custom code: end
+	
 process:
 	if (sk->sk_state == TCP_TIME_WAIT)
 		goto do_time_wait;

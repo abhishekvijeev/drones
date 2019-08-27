@@ -1153,6 +1153,23 @@ static int __tcp_transmit_skb(struct sock *sk, struct sk_buff *skb,
 	memset(skb->cb, 0, max(sizeof(struct inet_skb_parm),
 			       sizeof(struct inet6_skb_parm)));
 
+	//Custom code: start
+	struct aa_label *label;
+	char *curr_domain = NULL;
+	struct aa_profile *profile;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	label = aa_get_label(ctx->label);
+	if (label != NULL)
+	{
+		fn_for_each (label, profile, tcp_ipv4_getlabel_domain(profile, &curr_domain));
+		if (curr_domain != NULL)
+		{
+			skb->secmark = label->pid;
+			printk (KERN_INFO "__tcp_transmit_skb(tcp_output.c): pid %d added to skb\n" label->pid);
+		}
+	}
+	aa_put_label(ctx->label);
+	//Custom code: end
 	err = icsk->icsk_af_ops->queue_xmit(sk, skb, &inet->cork.fl);
 
 	if (unlikely(err > 0)) {
