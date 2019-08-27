@@ -837,6 +837,15 @@ void udp_set_csum(bool nocheck, struct sk_buff *skb,
 	}
 }
 EXPORT_SYMBOL(udp_set_csum);
+static int udp_getlabel_domain (struct aa_profile *profile, char **name)
+{
+	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	{
+		*name = profile->current_domain->domain;
+		
+	}
+	return 0;
+}
 
 static int udp_send_skb(struct sk_buff *skb, struct flowi4 *fl4,
 			struct inet_cork *cork)
@@ -944,15 +953,7 @@ send:
 	return err;
 }
 
-static int udp_getlabel_domain (struct aa_profile *profile, char **name)
-{
-	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
-	{
-		*name = profile->current_domain->domain;
-		
-	}
-	return 0;
-}
+
 
 /*
  * Push out all pending data as one UDP datagram. Socket is locked.
