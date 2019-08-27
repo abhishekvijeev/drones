@@ -1561,7 +1561,7 @@ int tcp_v4_do_rcv(struct sock *sk, struct sk_buff *skb)
 		if (curr_domain != NULL)
 		{
 			label->pid = skb->secmark;
-			printk (KERN_INFO "tcp_v4_do_rcv(tcp_ipv4.c): pid %d restored from skb\n", label->pid );
+			// printk (KERN_INFO "tcp_v4_do_rcv(tcp_ipv4.c): pid %d restored from skb\n", label->pid );
 		}
 	}
 	aa_put_label(ctx->label);

@@ -850,6 +850,25 @@ static int udp_send_skb(struct sk_buff *skb, struct flowi4 *fl4,
 	int len = skb->len - offset;
 	__wsum csum = 0;
 
+	//Custom code: start
+	struct aa_label *label;
+	char *curr_domain = NULL;
+	struct aa_profile *profile;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	label = aa_get_label(ctx->label);
+	if (label != NULL)
+	{
+		fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
+		if (curr_domain != NULL)
+		{
+			skb->secmark = label->pid;
+			printk (KERN_INFO "udp_send_skb: pid %d added to skb\n", label->pid);
+		}
+	}
+	aa_put_label(ctx->label);
+	//Custom code: end
+
+
 	/*
 	 * Create a UDP header
 	 */
@@ -951,18 +970,18 @@ int udp_push_pending_frames(struct sock *sk)
 		goto out;
 
 	//Custom code: start
-	struct aa_label *label;
-	char *curr_domain = NULL;
-	struct aa_profile *profile;
-	struct aa_sk_ctx *ctx = SK_CTX(sk);
-	label = aa_get_label(ctx->label);
-	if (label != NULL)
-	{
-		fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
-		if (curr_domain != NULL)
-			skb->secmark = label->pid;
-	}
-	aa_put_label(ctx->label);
+	// struct aa_label *label;
+	// char *curr_domain = NULL;
+	// struct aa_profile *profile;
+	// struct aa_sk_ctx *ctx = SK_CTX(sk);
+	// label = aa_get_label(ctx->label);
+	// if (label != NULL)
+	// {
+	// 	fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
+	// 	if (curr_domain != NULL)
+	// 		skb->secmark = label->pid;
+	// }
+	// aa_put_label(ctx->label);
 	//Custom code: end
 
 	err = udp_send_skb(skb, fl4, &inet->cork.base);
@@ -1225,21 +1244,6 @@ back_from_confirm:
 		err = PTR_ERR(skb);
 		if (!IS_ERR_OR_NULL(skb))
 		{
-			//Custom code: start
-			struct aa_label *label;
-			char *curr_domain = NULL;
-			struct aa_profile *profile;
-			struct aa_sk_ctx *ctx = SK_CTX(sk);
-			label = aa_get_label(ctx->label);
-			if (label != NULL)
-			{
-				fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
-				if (curr_domain != NULL)
-					skb->secmark = label->pid;
-			}
-			aa_put_label(ctx->label);
-			//Custom code: end
-
 			err = udp_send_skb(skb, fl4, &cork);
 		}
 		goto out;
@@ -2136,6 +2140,24 @@ static int udp_queue_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	struct sk_buff *next, *segs;
 	int ret;
 
+	//Custom code: start
+	struct aa_label *label;
+	char *curr_domain = NULL;
+	struct aa_profile *profile;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	label = aa_get_label(ctx->label);
+	if (label != NULL)
+	{
+		fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
+		if (curr_domain != NULL)
+		{
+			label->pid = skb->secmark;
+			printk (KERN_INFO "udp_queue_rcv_skb: pid %d restored from skb\n", label->pid );
+		}
+	}
+	aa_put_label(ctx->label);
+	//Custom code: end
+
 	if (likely(!udp_unexpected_gso(sk, skb)))
 		return udp_queue_rcv_one_skb(sk, skb);
 
@@ -2292,6 +2314,7 @@ static int udp_unicast_rcv_skb(struct sock *sk, struct sk_buff *skb,
 			       struct udphdr *uh)
 {
 	int ret;
+	
 
 	if (inet_get_convert_csum(sk) && uh->check && !IS_UDPLITE(sk))
 		skb_checksum_try_convert(skb, IPPROTO_UDP, uh->check,
@@ -2365,21 +2388,6 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 	sk = __udp4_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
 	if (sk)
 	{
-		//Custom code: start
-		struct aa_label *label;
-		char *curr_domain = NULL;
-		struct aa_profile *profile;
-		struct aa_sk_ctx *ctx = SK_CTX(sk);
-		label = aa_get_label(ctx->label);
-		if (label != NULL)
-		{
-			fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
-			if (curr_domain != NULL)
-				label->pid = skb->secmark;
-		}
-		aa_put_label(ctx->label);
-		//Custom code: end
-	
 		return udp_unicast_rcv_skb(sk, skb, uh);
 	}
 
