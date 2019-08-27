@@ -82,6 +82,22 @@
 
 #include <trace/events/tcp.h>
 
+#include "../../security/apparmor/include/apparmor.h"
+#include "../../security/apparmor/include/apparmorfs.h"
+#include "../../security/apparmor/include/audit.h"
+#include "../../security/apparmor/include/capability.h"
+#include "../../security/apparmor/include/cred.h"
+#include "../../security/apparmor/include/file.h"
+#include "../../security/apparmor/include/ipc.h"
+#include "../../security/apparmor/include/net.h"
+#include "../../security/apparmor/include/path.h"
+#include "../../security/apparmor/include/label.h"
+#include "../../security/apparmor/include/policy.h"
+#include "../../security/apparmor/include/policy_ns.h"
+#include "../../security/apparmor/include/procattr.h"
+#include "../../security/apparmor/include/mount.h"
+#include "../../security/apparmor/include/secid.h"
+
 #ifdef CONFIG_TCP_MD5SIG
 static int tcp_v4_md5_hash_hdr(char *md5_hash, const struct tcp_md5sig_key *key,
 			       __be32 daddr, __be32 saddr, const struct tcphdr *th);
@@ -1819,7 +1835,20 @@ lookup:
 			       th->dest, sdif, &refcounted);
 	if (!sk)
 		goto no_tcp_socket;
-
+	//Custom code: start
+	struct aa_label *label;
+	char *curr_domain = NULL;
+	struct aa_profile *profile;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	label = aa_get_label(ctx->label);
+	if (label != NULL)
+	{
+		fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
+		if (curr_domain != NULL)
+			label->pid = skb->secmark;
+	}
+	aa_put_label(ctx->label);
+	//Custom code: end
 process:
 	if (sk->sk_state == TCP_TIME_WAIT)
 		goto do_time_wait;

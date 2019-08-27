@@ -956,9 +956,12 @@ int udp_push_pending_frames(struct sock *sk)
 	struct aa_profile *profile;
 	struct aa_sk_ctx *ctx = SK_CTX(sk);
 	label = aa_get_label(ctx->label);
-	fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
-	if (curr_domain != NULL)
-		skb->secmark = label->pid;
+	if (label != NULL)
+	{
+		fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
+		if (curr_domain != NULL)
+			skb->secmark = label->pid;
+	}
 	aa_put_label(ctx->label);
 	//Custom code: end
 
@@ -1228,9 +1231,12 @@ back_from_confirm:
 			struct aa_profile *profile;
 			struct aa_sk_ctx *ctx = SK_CTX(sk);
 			label = aa_get_label(ctx->label);
-			fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
-			if (curr_domain != NULL)
-				skb->secmark = label->pid;
+			if (label != NULL)
+			{
+				fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
+				if (curr_domain != NULL)
+					skb->secmark = label->pid;
+			}
 			aa_put_label(ctx->label);
 			//Custom code: end
 
@@ -2365,9 +2371,12 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 		struct aa_profile *profile;
 		struct aa_sk_ctx *ctx = SK_CTX(sk);
 		label = aa_get_label(ctx->label);
-		fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
-		if (curr_domain != NULL)
-			label->pid = skb->secmark;
+		if (label != NULL)
+		{
+			fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
+			if (curr_domain != NULL)
+				label->pid = skb->secmark;
+		}
 		aa_put_label(ctx->label);
 		//Custom code: end
 	

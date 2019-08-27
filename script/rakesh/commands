@@ -3,3 +3,9 @@ colcon build --symlink-install --cmake-args -DSECURITY=ON
 
 //to build sros with specified packages
 colcon build --symlink-install --cmake-args -DSECURITY=ON --packages-select demo_nodes_cpp
+
+
+
+
+
+rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y --os=ubuntu:xenial --skip-keys python-imaging 

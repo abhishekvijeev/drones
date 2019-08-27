@@ -1105,20 +1105,19 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				
 				
 			}//end of if(sk->sk_family == AF_INET)
-			else
+			
+			int sk_fam = -1, socktype = -1;
+			if (sock)
 			{
-				int sk_fam = -1, socktype = -1;
-				if (sock)
-				{
-					socktype = sock->type;
-					if(sock->sk)
-						sk_fam = sock->sk->sk_family;
-				}
-				
-				printk (KERN_INFO "apparmor_socket_sendmsg sk->sk_family == AF_INET NOT SATISFIED: current process %s, pid %d, sk_family=%d, sock->type=%d\n", 
-									current->comm, current->pid, sk_fam, socktype);
-					
+				socktype = sock->type;
+				if(sock->sk)
+					sk_fam = sock->sk->sk_family;
 			}
+			
+			printk (KERN_INFO "apparmor_socket_sendmsg sk->sk_family == AF_INET NOT SATISFIED: current process %s, pid %d, sk_family=%d, sock->type=%d\n", 
+								current->comm, current->pid, sk_fam, socktype);
+					
+			
 			
 		}//end if (curr_domain != NULL)
 	}
@@ -1284,21 +1283,19 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				aa_put_label(ctx->label);
 				
 			}//end of if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
-			else
+			
+			int sk_fam = -1, socktype = -1;
+			if (sock)
 			{
-				int sk_fam = -1, socktype = -1;
-				if (sock)
-				{
-					socktype = sock->type;
-					if(sock->sk)
-						sk_fam = sock->sk->sk_family;
-				}
-				
-				printk (KERN_INFO "apparmor_socket_recvmsg IF NOT SATISFIED: current process %s, pid %d, sk_family=%d, sock->type=%d\n", 
-									current->comm, current->pid, sk_fam, socktype);
-					
+				socktype = sock->type;
+				if(sock->sk)
+					sk_fam = sock->sk->sk_family;
 			}
 			
+			printk (KERN_INFO "apparmor_socket_recvmsg IF NOT SATISFIED: current process %s, pid %d, sk_family=%d, sock->type=%d\n", 
+								current->comm, current->pid, sk_fam, socktype);
+				
+		
 			
 			
 		} // end for if (curr_domain != NULL)	

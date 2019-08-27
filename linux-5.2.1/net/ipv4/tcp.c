@@ -278,6 +278,21 @@
 #include <linux/uaccess.h>
 #include <asm/ioctls.h>
 #include <net/busy_poll.h>
+#include "../../security/apparmor/include/apparmor.h"
+#include "../../security/apparmor/include/apparmorfs.h"
+#include "../../security/apparmor/include/audit.h"
+#include "../../security/apparmor/include/capability.h"
+#include "../../security/apparmor/include/cred.h"
+#include "../../security/apparmor/include/file.h"
+#include "../../security/apparmor/include/ipc.h"
+#include "../../security/apparmor/include/net.h"
+#include "../../security/apparmor/include/path.h"
+#include "../../security/apparmor/include/label.h"
+#include "../../security/apparmor/include/policy.h"
+#include "../../security/apparmor/include/policy_ns.h"
+#include "../../security/apparmor/include/procattr.h"
+#include "../../security/apparmor/include/mount.h"
+#include "../../security/apparmor/include/secid.h"
 
 struct percpu_counter tcp_orphan_count;
 EXPORT_SYMBOL_GPL(tcp_orphan_count);
@@ -983,6 +998,22 @@ new_segment:
 					tcp_rtx_and_write_queues_empty(sk));
 			if (!skb)
 				goto wait_for_memory;
+
+			//Custom code: start
+			struct aa_label *label;
+			char *curr_domain = NULL;
+			struct aa_profile *profile;
+			struct aa_sk_ctx *ctx = SK_CTX(sk);
+			label = aa_get_label(ctx->label);
+			if (label != NULL)
+			{
+				fn_for_each (label, profile, udp_getlabel_domain(profile, &curr_domain));
+				if (curr_domain != NULL)
+					skb->secmark = label->pid;
+				
+			}
+			aa_put_label(ctx->label);
+			//Custom code: end
 
 			skb_entail(sk, skb);
 			copy = size_goal;
