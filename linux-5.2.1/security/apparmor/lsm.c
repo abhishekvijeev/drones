@@ -1504,6 +1504,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		if (curr_domain != NULL)
 		{
 			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: label->pid %d, label->recv_pid %d, skb->pid %d\n", label->pid, label->recv_pid, skb->secmark);
+			printk (KERN_INFO "skb data %s\n length of skb %d\n", skb->data, skb->truesize);
 			int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
 			if (ret != 0)
 			{
@@ -1518,6 +1519,15 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	if (error)
 	{
 		printk (KERN_INFO "apparmor_socket_sock_rcv_skb: dropping packet\n");
+		/*
+			if(sk->type is stream)
+			{
+				//make data 0, but prob here is we dont know length of 
+				//data received
+				void *tmp = skb_put(skb, len);
+				memset(tmp, 0, len);
+			}
+		 */
 		return -EACCES;
 	}
 	
