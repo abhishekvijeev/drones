@@ -1135,7 +1135,43 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 }
 
 
+static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
+{
+	struct aa_profile *profile;
+	struct task_struct *sender, *receiver;
+	bool allow = false;		
+	struct aa_label *sender_label, receiver_label;
+	char *receiver_domain = NULL;
+				
+	int err = 0;
+	if (sender_pid != receiver_pid)
+	{
+		sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+		receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
+		if (sender && receiver)
+		{
+			sender_label = aa_get_task_label(sender);
+			receiver_label = aa_get_task_label(receiver);
+			fn_for_each (receiver_label, profile, apparmor_getlabel_domain(profile, &receiver_domain));
+			if (receiver_domain != NULL && sender_label != NULL)
+			{
+				fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, receiver_domain, &allow));
+				if (allow == 0)
+					err = 1;
+			}
+			aa_put_label(sender_label);
+			aa_put_label(receiver_label);
+			printk (KERN_INFO "apparmor_socket_label_compare: current process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
+							current->comm, current->pid, sender->comm, label->pid, allow);
+			
+		}
+		
+	}
+	
+	return err;
+	
 
+}
 /**
  * apparmor_socket_recvmsg - check perms before receiving a message
  */
@@ -1451,6 +1487,8 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	struct aa_profile *profile;
     char *curr_domain = NULL;
 	label = aa_get_label(ctx->label);
+	int error = 0;
+
 	if (label != NULL)
 	{
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
@@ -1458,57 +1496,21 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		{
 			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: label->pid %d, label->recv_pid %d, skb->pid %d\n", label->pid, label->recv_pid, skb->secmark);
 		}
+		int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
+		if (ret != 0)
+		{
+			error = 1;
+		}
 			
 	}
 	aa_put_label(ctx->label);
 
-	// struct aa_profile *profile;
-	// struct task_struct *sender_task;
-	// const struct iphdr *ip;
-	// int sender_pid;
-	// bool allow = false;
-
-	// ip = ip_hdr(skb);	
-
-	// // Check if packet originated from another process on the same machine
-	// if(sk->sk_family == AF_INET && ip->protocol == IPPROTO_UDP)
-	// {
-	// 	sk_label = aa_get_label(ctx->label);
-	// 	if(localhost_address(ip->saddr))
-	// 	{
-	// 		if(!skb->secmark)
-	// 		{
-	// 			// raise exception because UDP packets originating on the same machine must have secmark set
-	// 			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: secmark not set on packet from localhost: %pi4\n", &ip->saddr);
-	// 		}
-	// 		sender_pid = skb->secmark;
-	// 		sender_task = pid_task(find_vpid(sender_pid), PIDTYPE_PID);	
-
-	// 		if(sender_task)
-	// 		{
-	// 			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from localhost %pi4 to %pi4 - checking label flow from task %s to socket label %s\n", &ip->saddr, &ip->daddr, sender_task->comm, sk_label->hname);
-
-	// 			sk_label = aa_get_label(ctx->label);
-
-	// 			fn_for_each(sk_label, profile, apparmor_check_for_flow(profile, &allow,));
-
-	// 			aa_put_label(ctx->label);
-
-	// 		}
-	// 		else
-	// 		{
-	// 			// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: unable to obtain sender task struct for packet from %pi4 to %pi4, sk_label: %s\n", &ip->saddr, &ip->daddr, sk_label->hname);
-	// 		}
-	// 	}
-	// 	else
-	// 	{
-	// 		// UDP Packet from some other machine - probably want to check whether receiving socket has permissions to receive this packet
-	// 		// printk(KERN_INFO "apparmor_socket_sock_rcv_skb: Packet from outside: %pi4 to %pi4, protocol: %u, sk_label: %s\n", &ip->saddr, &ip->daddr, ip->protocol, sk_label->hname);
-	// 	}
-	// 	aa_put_label(ctx->label);
-	// }
-
-
+	if (error)
+	{
+		printk (KERN_INFO "apparmor_socket_sock_rcv_skb: dropping packet\n");
+		return -EACCES;
+	}
+	
 	if (!skb->secmark)
 	{
 		return 0;
