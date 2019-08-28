@@ -1142,9 +1142,9 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 	bool allow = false;		
 	struct aa_label *sender_label, *receiver_label;
 	char *receiver_domain = NULL;
-				
+	char *sender_name = "", *receiver_name = "";
 	int err = 0;
-	if (sender_pid != receiver_pid)
+	if (sender_pid != receiver_pid && sender_pid != 0 && receiver_pid != 0)
 	{
 		sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 		receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
@@ -1161,10 +1161,12 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 			}
 			aa_put_label(receiver_label);
 			aa_put_label(sender_label);
-			printk (KERN_INFO "apparmor_socket_label_compare: current process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
-							current->comm, current->pid, sender->comm, receiver->pid, allow);
+			sender_name = sender->comm;
+			receiver_name = receiver->comm;
 			
 		}
+		printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
+							receiver_name, receiver_pid, sender_name, sender_pid, allow);
 		
 	}
 	
