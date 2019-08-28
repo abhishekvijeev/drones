@@ -1265,7 +1265,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				char *process_comm = NULL;
 				sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 			
-				if (sender)
+				if (sender && sender_pid != current->pid)
 				{
 					sender_label = aa_get_task_label(sender);
 					if(sender_label != NULL)
@@ -1282,7 +1282,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				} //end of if (curr_domain != NULL)
 				else
 				{
-					printk (KERN_INFO "apparmor_socket_recvmsg: Error in finding sender task struct, pid %d\n", sender_pid);
+					printk (KERN_INFO "apparmor_socket_recvmsg: Error in finding sender task struct, pid %d, current process %s\n", sender_pid, current->comm);
 				}
 				
 				aa_put_label(ctx->label);
