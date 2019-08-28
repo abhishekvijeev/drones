@@ -1140,7 +1140,7 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 	struct aa_profile *profile;
 	struct task_struct *sender, *receiver;
 	bool allow = false;		
-	struct aa_label *sender_label, receiver_label;
+	struct aa_label *sender_label, *receiver_label;
 	char *receiver_domain = NULL;
 				
 	int err = 0;
@@ -1159,10 +1159,10 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 				if (allow == 0)
 					err = 1;
 			}
-			aa_put_label(sender_label);
 			aa_put_label(receiver_label);
+			aa_put_label(sender_label);
 			printk (KERN_INFO "apparmor_socket_label_compare: current process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
-							current->comm, current->pid, sender->comm, label->pid, allow);
+							current->comm, current->pid, sender->comm, receiver->pid, allow);
 			
 		}
 		
