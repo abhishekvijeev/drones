@@ -1504,7 +1504,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		if (curr_domain != NULL)
 		{
 			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: label->pid %d, label->recv_pid %d, skb->pid %d\n", label->pid, label->recv_pid, skb->secmark);
-			printk (KERN_INFO "skb data %s\n length of skb %d\n", skb->data, skb->truesize);
+			printk (KERN_INFO "skb len %d skb data_len %d\n", skb->len, skb->data_len);
 			int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
 			if (ret != 0)
 			{
