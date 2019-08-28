@@ -1165,8 +1165,20 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 			receiver_name = receiver->comm;
 			
 		}
-		printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
-							receiver_name, receiver_pid, sender_name, sender_pid, allow);
+		else if(sender)
+		{
+			printk(KERN_INFO "apparmor_socket_label_compare: could not obtain task_struct for receiver pid = %d, allow = %d, err = %d\n", receiver_pid, allow, err);
+		}
+		else if(receiver)
+		{
+			printk(KERN_INFO "apparmor_socket_label_compare: could not obtain task_struct for sender pid = %d, allow = %d, err = %d\n", sender_pid, allow, err);
+		}
+		else
+		{
+			printk(KERN_INFO "apparmor_socket_label_compare: could not obtain task_struct for sender pid = %d and receiver pid = %d, allow = %d, err = %d\n", sender_pid, receiver_pid, allow, err);
+		}
+
+		// printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_name, receiver_pid, sender_name, sender_pid, allow);
 		
 	}
 	
