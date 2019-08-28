@@ -851,7 +851,6 @@ struct sk_buff {
 	};
 #endif
 #ifdef CONFIG_NETWORK_SECMARK
-	int 			testing_field;
 	__u32		secmark;
 #endif
 

@@ -131,6 +131,7 @@ struct aa_label {
 	long flags;
 	u32 secid;
 	u32 pid;
+	u32 recv_pid;
 	int size;
 	struct aa_profile *vec[];
 };

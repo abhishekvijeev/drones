@@ -1259,6 +1259,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if (curr_domain != NULL)
 		{
+			label->recv_pid = current->pid;
 			if(sock->sk->sk_family == AF_INET)
 			{
 				sender_pid = label->pid;
@@ -1320,6 +1321,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			struct sk_buff *skb;
 			while ((skb = __skb_dequeue(list)) != NULL)
 			{
+				//instead use sk_eat_skb() from sock.h
 				kfree_skb(skb);
 				drop_flag = true;
 			}
@@ -1445,7 +1447,21 @@ int localhost_address(u32 ip_addr)
 static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
 	struct aa_sk_ctx *ctx = SK_CTX(sk);
-	// struct aa_label *sk_label;
+	struct aa_label *label;
+	struct aa_profile *profile;
+    char *curr_domain = NULL;
+	label = aa_get_label(ctx->label);
+	if (label != NULL)
+	{
+		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+		if (curr_domain != NULL)
+		{
+			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: label->pid %d, label->recv_pid %d, skb->pid %d\n", label->pid, label->recv_pid, skb->secmark);
+		}
+			
+	}
+	aa_put_label(ctx->label);
+
 	// struct aa_profile *profile;
 	// struct task_struct *sender_task;
 	// const struct iphdr *ip;
