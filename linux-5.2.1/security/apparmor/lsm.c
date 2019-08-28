@@ -1140,47 +1140,42 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 	struct aa_profile *profile;
 	struct task_struct *sender, *receiver;
 	bool allow = false;		
-	struct aa_label *sender_label, *receiver_label;
+	struct aa_label *sender_label, *receiver_label, *cl;
 	char *receiver_domain = NULL;
 	char *sender_name = "", *receiver_name = "";
 	int err = 0;
+	cl = __begin_current_label_crit_section();
 	if (sender_pid != receiver_pid && sender_pid != 0 && receiver_pid != 0)
 	{
 		sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-		receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
-		if (sender && receiver)
+		if (sender)
 		{
 			sender_label = aa_get_task_label(sender);
-			receiver_label = aa_get_task_label(receiver);
-			fn_for_each (receiver_label, profile, apparmor_getlabel_domain(profile, &receiver_domain));
-			if (receiver_domain != NULL && sender_label != NULL)
+			receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
+			if (receiver)
 			{
-				fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, receiver_domain, &allow));
-				if (allow == 0)
-					err = 1;
-			}
-			aa_put_label(receiver_label);
+				receiver_label = aa_get_task_label(receiver);
+				fn_for_each (receiver_label, profile, apparmor_getlabel_domain(profile, &receiver_domain));
+				if (receiver_domain != NULL && sender_label != NULL)
+				{
+					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, receiver_domain, &allow));
+					if (allow == 0)
+						err = 1;
+				}
+				aa_put_label(receiver_label);
+				receiver_name = receiver->comm;
+			
+			}	
 			aa_put_label(sender_label);
 			sender_name = sender->comm;
-			receiver_name = receiver->comm;
 			
 		}
-		else if(sender)
-		{
-			printk(KERN_INFO "apparmor_socket_label_compare: could not obtain task_struct for receiver pid = %d, allow = %d, err = %d\n", receiver_pid, allow, err);
-		}
-		else if(receiver)
-		{
-			printk(KERN_INFO "apparmor_socket_label_compare: could not obtain task_struct for sender pid = %d, allow = %d, err = %d\n", sender_pid, allow, err);
-		}
-		else
-		{
-			printk(KERN_INFO "apparmor_socket_label_compare: could not obtain task_struct for sender pid = %d and receiver pid = %d, allow = %d, err = %d\n", sender_pid, receiver_pid, allow, err);
-		}
+		
 
-		// printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_name, receiver_pid, sender_name, sender_pid, allow);
+		printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_name, receiver_pid, sender_name, sender_pid, allow);
 		
 	}
+	__end_current_label_crit_section(cl);
 	
 	return err;
 	
@@ -1509,12 +1504,13 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		if (curr_domain != NULL)
 		{
 			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: label->pid %d, label->recv_pid %d, skb->pid %d\n", label->pid, label->recv_pid, skb->secmark);
+			int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
+			if (ret != 0)
+			{
+				error = 1;
+			}
 		}
-		int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
-		if (ret != 0)
-		{
-			error = 1;
-		}
+		
 			
 	}
 	aa_put_label(ctx->label);
