@@ -1520,7 +1520,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	{
 		printk (KERN_INFO "apparmor_socket_sock_rcv_skb: dropping packet\n");
 		
-		if(sk->type == SOCK_STREAM && skb->data_len > 0)
+		if(sk->sk_type == SOCK_STREAM && skb->data_len > 0)
 		{
 			//make data 0, but prob here is we dont know length of 
 			//data received
