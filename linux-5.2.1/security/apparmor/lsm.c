@@ -1520,13 +1520,19 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	{
 		printk (KERN_INFO "apparmor_socket_sock_rcv_skb: dropping packet\n");
 		
-		if(sk->sk_type == SOCK_STREAM && skb->data_len > 0)
+		if(sk->sk_type == SOCK_STREAM )
 		{
+			struct sk_buff *tmp = skb;
+			while (tmp != NULL)
+			{
+				printk (KERN_INFO "apparmor_socket_sock_rcv_skb skb data_len %d\n", tmp->data_len);
+				tmp = tmp->next;
+			}
 			//make data 0, but prob here is we dont know length of 
 			//data received
-			void *tmp = skb_put(skb, skb->data_len);
-			memset(tmp, 0, skb->data_len);
-			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: packet set to 0\n");
+			// void *tmp = skb_put(skb, skb->data_len);
+			// memset(tmp, 0, skb->data_len);
+			// printk (KERN_INFO "apparmor_socket_sock_rcv_skb: packet set to 0\n");
 		
 			return 0;
 		}
