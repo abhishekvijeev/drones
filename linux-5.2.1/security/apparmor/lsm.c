@@ -137,13 +137,13 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 		//struct task_struct *task = get_pid_task(find_get_pid(pid), PIDTYPE_PID); 
 
 		// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-		sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID)
+		sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
 		
 		if (sender)
 		{
 			sender_label = aa_get_task_label(sender);
 			// receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
-			receiver = get_pid_task(find_get_pid(receiver_pid), PIDTYPE_PID)
+			receiver = get_pid_task(find_get_pid(receiver_pid), PIDTYPE_PID);
 			if (receiver)
 			{
 				receiver_label = aa_get_task_label(receiver);
@@ -1327,7 +1327,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				sender_pid = label->pid;
 				char *process_comm = NULL;
 				// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-				sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID)
+				sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
 				if (sender && sender_pid != current->pid)
 				{
 					sender_label = aa_get_task_label(sender);
