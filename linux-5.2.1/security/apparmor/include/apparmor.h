@@ -73,11 +73,6 @@ extern bool aa_g_logsyscall;
 extern bool aa_g_paranoid_load;
 extern unsigned int aa_g_path_max;
 
-static int print_all_domain(struct aa_profile *profile);
-static int apparmor_getlabel_domain (struct aa_profile *profile, char **name);
-static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_domain, bool *allow);
-static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_addr, bool *allow);
-static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid);
 
 
 #endif /* __APPARMOR_H */

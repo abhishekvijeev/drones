@@ -55,6 +55,120 @@ int apparmor_ioctl_debug;
 DEFINE_PER_CPU(struct aa_buffers, aa_buffers);
 
 
+
+static int print_all_domain(struct aa_profile *profile)
+{
+	if (apparmor_ioctl_debug)
+	{
+		if (profile->current_domain)
+		{
+			printk (KERN_INFO "print_all_domain: current domain is %s set for process %s with pid %d\n", profile->current_domain->domain, current->comm, current->pid);
+		}
+		else
+		{
+			printk (KERN_INFO "print_all_domain: current domain is NOT set for process %s with pid %d\n", current->comm, current->pid);
+		}
+	}
+	return 0;
+	
+}
+
+static int apparmor_getlabel_domain (struct aa_profile *profile, char **name)
+{
+	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	{
+		*name = profile->current_domain->domain;
+		
+	}
+	return 0;
+}
+static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_domain, bool *allow)
+{
+	struct ListOfDomains *iterator;
+	if (profile->allow_net_domains)
+	{
+		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+		{
+			// printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
+			if ((strcmp(iterator->domain, checking_domain) == 0) || strcmp(iterator->domain, "*") == 0)
+			{
+				*allow = true;
+				break;
+			}
+		}
+	}
+	return 0;
+}
+
+static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_addr, bool *allow)
+{
+	struct ListOfIPAddrs *iterator;
+	if (profile->allowed_ip_addrs)
+	{
+		list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
+		{
+			// printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
+			if (iterator->ip_addr == check_ip_addr)
+			{
+				*allow = true;
+				break;
+			}
+		}
+	}
+	return 0;
+}
+
+
+
+static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
+{
+	struct aa_profile *profile;
+	struct task_struct *sender, *receiver;
+	bool allow = false;		
+	struct aa_label *sender_label, *receiver_label;
+	char *receiver_domain = NULL;
+	char *sender_name = "", *receiver_name = "";
+	int err = 0;
+	
+	if (sender_pid != receiver_pid && sender_pid != 0 && receiver_pid != 0)
+	{
+		sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+		if (sender)
+		{
+			sender_label = aa_get_task_label(sender);
+			receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
+			if (receiver)
+			{
+				receiver_label = aa_get_task_label(receiver);
+				fn_for_each (receiver_label, profile, apparmor_getlabel_domain(profile, &receiver_domain));
+				if (receiver_domain != NULL && sender_label != NULL)
+				{
+					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, receiver_domain, &allow));
+					if (allow == 0)
+						err = 1;
+				}
+				aa_put_label(receiver_label);
+				receiver_name = receiver->comm;
+			
+			}	
+			aa_put_label(sender_label);
+			sender_name = sender->comm;
+			
+		}
+		
+
+		printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_name, receiver_pid, sender_name, sender_pid, allow);
+		
+	}
+	
+	
+	return err;
+	
+
+}
+
+
+
 /*
  * LSM hook functions
  */
@@ -1141,68 +1255,6 @@ static int aa_sock_msg_perm(const char *op, u32 request, struct socket *sock,
 
 
 
-static int print_all_domain(struct aa_profile *profile)
-{
-	if (apparmor_ioctl_debug)
-	{
-		if (profile->current_domain)
-		{
-			printk (KERN_INFO "print_all_domain: current domain is %s set for process %s with pid %d\n", profile->current_domain->domain, current->comm, current->pid);
-		}
-		else
-		{
-			printk (KERN_INFO "print_all_domain: current domain is NOT set for process %s with pid %d\n", current->comm, current->pid);
-		}
-	}
-	return 0;
-	
-}
-
-static int apparmor_getlabel_domain (struct aa_profile *profile, char **name)
-{
-	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
-	{
-		*name = profile->current_domain->domain;
-		
-	}
-	return 0;
-}
-static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_domain, bool *allow)
-{
-	struct ListOfDomains *iterator;
-	if (profile->allow_net_domains)
-	{
-		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
-		{
-			// printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
-			if ((strcmp(iterator->domain, checking_domain) == 0) || strcmp(iterator->domain, "*") == 0)
-			{
-				*allow = true;
-				break;
-			}
-		}
-	}
-	return 0;
-}
-
-static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_addr, bool *allow)
-{
-	struct ListOfIPAddrs *iterator;
-	if (profile->allowed_ip_addrs)
-	{
-		list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
-		{
-			// printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
-			if (iterator->ip_addr == check_ip_addr)
-			{
-				*allow = true;
-				break;
-			}
-		}
-	}
-	return 0;
-}
-
 
 /**
  * apparmor_socket_sendmsg - check perms before sending msg to another socket
@@ -1340,52 +1392,6 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 }
 
 
-static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
-{
-	struct aa_profile *profile;
-	struct task_struct *sender, *receiver;
-	bool allow = false;		
-	struct aa_label *sender_label, *receiver_label;
-	char *receiver_domain = NULL;
-	char *sender_name = "", *receiver_name = "";
-	int err = 0;
-	
-	if (sender_pid != receiver_pid && sender_pid != 0 && receiver_pid != 0)
-	{
-		sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-		if (sender)
-		{
-			sender_label = aa_get_task_label(sender);
-			receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
-			if (receiver)
-			{
-				receiver_label = aa_get_task_label(receiver);
-				fn_for_each (receiver_label, profile, apparmor_getlabel_domain(profile, &receiver_domain));
-				if (receiver_domain != NULL && sender_label != NULL)
-				{
-					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, receiver_domain, &allow));
-					if (allow == 0)
-						err = 1;
-				}
-				aa_put_label(receiver_label);
-				receiver_name = receiver->comm;
-			
-			}	
-			aa_put_label(sender_label);
-			sender_name = sender->comm;
-			
-		}
-		
-
-		printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_name, receiver_pid, sender_name, sender_pid, allow);
-		
-	}
-	
-	
-	return err;
-	
-
-}
 /**
  * apparmor_socket_recvmsg - check perms before receiving a message
  */
