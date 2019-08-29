@@ -28,6 +28,7 @@
 #include <uapi/linux/rtnetlink.h>
 #include <linux/inetdevice.h>
 #include <linux/skbuff.h>
+#include <linux/pid.h>
 
 
 #include "include/apparmor.h"
@@ -132,11 +133,17 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 	
 	if (sender_pid != receiver_pid && sender_pid != 0 && receiver_pid != 0)
 	{
-		sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+		//use this get_pid_task() & find_get_pid coz they use rcu lock defined in pid.h
+		//struct task_struct *task = get_pid_task(find_get_pid(pid), PIDTYPE_PID); 
+
+		// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+		sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID)
+		
 		if (sender)
 		{
 			sender_label = aa_get_task_label(sender);
-			receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
+			// receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
+			receiver = get_pid_task(find_get_pid(receiver_pid), PIDTYPE_PID)
 			if (receiver)
 			{
 				receiver_label = aa_get_task_label(receiver);
@@ -155,6 +162,7 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 			sender_name = sender->comm;
 			
 		}
+		
 		
 
 		printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_name, receiver_pid, sender_name, sender_pid, allow);
@@ -1318,8 +1326,8 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			{
 				sender_pid = label->pid;
 				char *process_comm = NULL;
-				sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-			
+				// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+				sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID)
 				if (sender && sender_pid != current->pid)
 				{
 					sender_label = aa_get_task_label(sender);
