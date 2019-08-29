@@ -1031,6 +1031,10 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 		label = aa_get_label(ctx->label);
 		if(label)
 		{
+			if (label->pid != current->pid)
+			{
+				label->recv_pid = 0;
+			}
 			label->pid = current->pid;
 		}
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
@@ -1140,11 +1144,11 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 	struct aa_profile *profile;
 	struct task_struct *sender, *receiver;
 	bool allow = false;		
-	struct aa_label *sender_label, *receiver_label, *cl;
+	struct aa_label *sender_label, *receiver_label;
 	char *receiver_domain = NULL;
 	char *sender_name = "", *receiver_name = "";
 	int err = 0;
-	cl = __begin_current_label_crit_section();
+	
 	if (sender_pid != receiver_pid && sender_pid != 0 && receiver_pid != 0)
 	{
 		sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
@@ -1175,7 +1179,7 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 		printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_name, receiver_pid, sender_name, sender_pid, allow);
 		
 	}
-	__end_current_label_crit_section(cl);
+	
 	
 	return err;
 	
