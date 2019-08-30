@@ -1508,7 +1508,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	int error = 0;
 	if (label != NULL)
 	{
-		const struct tcphdr *tcpheadder;
+		const struct tcphdr *tcpheader;
 		tcpheader = tcp_hdr(skb);
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if (curr_domain != NULL && (sk->sk_type == SOCK_DGRAM || 
