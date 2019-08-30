@@ -138,20 +138,12 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 
 		// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 		sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
-		if (sender == NULL)
-			sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
-		if (sender == NULL)
-			sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
 		
 		if (sender)
 		{
 			sender_label = aa_get_task_label(sender);
 			// receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
 			receiver = get_pid_task(find_get_pid(receiver_pid), PIDTYPE_PID);
-			if (receiver == NULL)
-				receiver = get_pid_task(find_get_pid(receiver_pid), PIDTYPE_PID);
-			if (receiver == NULL)
-				receiver = get_pid_task(find_get_pid(receiver_pid), PIDTYPE_PID);
 			
 
 			if (receiver)
@@ -1050,7 +1042,7 @@ static int apparmor_socket_accept(struct socket *sock, struct socket *newsock)
 	AA_BUG(!sock->sk);
 	AA_BUG(!newsock);
 	AA_BUG(in_interrupt());
-	
+
 	return af_select(sock->sk->sk_family,
 			 accept_perm(sock, newsock),
 			 aa_sk_perm(OP_ACCEPT, AA_MAY_ACCEPT, sock->sk));
@@ -1334,10 +1326,6 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				char *process_comm = NULL;
 				// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 				sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
-				if(sender == NULL)
-					sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
-				if(sender == NULL)
-					sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
 				
 				if (sender && sender_pid != current->pid)
 				{
@@ -1518,21 +1506,22 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
     char *curr_domain = NULL;
 	label = aa_get_label(ctx->label);
 	int error = 0;
-
 	if (label != NULL)
 	{
+		const struct tcphdr *tcpheadder;
+		tcpheader = tcp_hdr(skb);
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-		if (curr_domain != NULL)
+		if (curr_domain != NULL && (sk->sk_type == SOCK_DGRAM || 
+			(sk->sk_type == SOCK_STREAM && tcpheader->fin != 1 && tcpheader->syn != 1 && tcpheader->ack != 1  ))
+		   )
 		{
-			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: label_name: %s, label->pid %d, label->recv_pid %d, skb->pid %d\n", label->hname, label->pid, label->recv_pid, skb->secmark);
+			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: label_name: %s, label->pid %d, label->recv_pid %d, skb->pid %d, skb->data_len %d\n", label->hname, label->pid, label->recv_pid, skb->secmark, skb->data_len);
 			// printk (KERN_INFO "skb len %d skb data_len %d\n", skb->len, skb->data_len);
 			int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
 			if (ret != 0)
 			{
 				error = 1;
 			}
-			
-			
 		}
 		
 			
