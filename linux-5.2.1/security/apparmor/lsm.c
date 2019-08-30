@@ -1515,7 +1515,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		if(curr_domain != NULL && (sk->sk_type == SOCK_STREAM))
 		{
 			tcpheader = tcp_hdr(skb);
-			if (skb->secmark != label->pid)
+			if (skb->secmark != label->pid && skb->secmark != 0)
 				label->pid = skb->secmark;
 			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: TCP socket label_name: %s, label->pid %d, label->recv_pid %d, skb->pid %d, skb->data_len %d, syn = %d, ack = %d, fin = %d\n", label->hname, label->pid, label->recv_pid, skb->secmark, skb->data_len, tcpheader->syn, tcpheader->ack, tcpheader->fin);
 			int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
