@@ -1314,7 +1314,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if (curr_domain != NULL && label->pid != 0)
 		{
-			printk (KERN_INFO "apparmor_socket_recvmsg (%s): current_pid %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sk_fam, socktype);
+			printk (KERN_INFO "apparmor_socket_recvmsg (%s): current_pid %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
 
 
 			label->recv_pid = current->pid;
