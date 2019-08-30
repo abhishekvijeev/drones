@@ -1101,6 +1101,8 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 		
 		if (curr_domain != NULL)
 		{
+			printk (KERN_INFO "apparmor_socket_sendmsg (%s): current_pid = %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
+
 			if(sk->sk_family == AF_INET)
 			{   
 				inet = inet_sk(sk);
@@ -1131,7 +1133,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				if(localhost_address(daddr))
 				{
 					ret_val = 1;
-					printk(KERN_INFO "apparmor_socket_sendmsg: Packet from localhost to localhost allowed by process %s, pid %d\n", current->comm, current->pid);
+					printk(KERN_INFO "apparmor_socket_sendmsg (%s): Packet from localhost to localhost allowed, current_pid = %d\n", current->comm, current->pid);
 				}
 				
 
@@ -1139,14 +1141,14 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				else if(ntohs(daddr) == 61439)
 				{
 					ret_val = 1;
-					printk(KERN_INFO "apparmor_socket_sendmsg: DDS Multicast allowed %pi4, by process %s, pid %d\n", &daddr, current->comm, current->pid);
+					printk(KERN_INFO "apparmor_socket_sendmsg (%s): DDS Multicast allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
 				}
 
 				// 3. Check if destination address is multicast address
 				else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
 				{
 					ret_val = 1;
-					printk(KERN_INFO "apparmor_socket_sendmsg: Multicast address allowed %pi4, by process %s, pid %d\n", &daddr, current->comm, current->pid);
+					printk(KERN_INFO "apparmor_socket_sendmsg (%s): Multicast address allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
 				}
 				
 				/* 
@@ -1161,7 +1163,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 					fn_for_each (cl, profile, apparmor_domain_declassify(profile, daddr, &allow));
 					if(allow)
 						ret_val = 1;
-					printk(KERN_INFO "apparmor_socket_sendmsg: Domain declassification for message from process %s, pid %d, to address %pi4, flow is %d\n", current->comm, current->pid, &daddr, allow);
+					printk(KERN_INFO "apparmor_socket_sendmsg (%s): Domain declassification for message from process %s(pid = %d) to address %pi4, flow is %d\n", current->comm, current->comm, current->pid, &daddr, allow);
 				}
 				if (ret_val == 0)
 					error = 0;
@@ -1169,16 +1171,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				
 			}//end of if(sk->sk_family == AF_INET)
 			
-			int sk_fam = -1, socktype = -1;
-			if (sock)
-			{
-				socktype = sock->type;
-				if(sock->sk)
-					sk_fam = sock->sk->sk_family;
-			}
 			
-			printk (KERN_INFO "apparmor_socket_sendmsg sk->sk_family == AF_INET NOT SATISFIED: current process %s, pid %d, sk_family=%d, sock->type=%d\n", 
-								current->comm, current->pid, sk_fam, socktype);
 					
 			
 			
@@ -1190,7 +1183,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 	__end_current_label_crit_section(cl);
 	if (error == 0)
 	{
-		printk (KERN_INFO "apparmor_socket_sendmsg: return is -13\n");
+		printk (KERN_INFO "apparmor_socket_sendmsg (%s): return is -13\n", current->comm);
 		return -EACCES;
 	}
 	else
@@ -1321,6 +1314,9 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if (curr_domain != NULL && label->pid != 0)
 		{
+			printk (KERN_INFO "apparmor_socket_recvmsg (%s): current_pid %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sk_fam, socktype);
+
+
 			label->recv_pid = current->pid;
 			if(sock->sk->sk_family == AF_INET)
 			{
@@ -1340,12 +1336,11 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 					aa_put_label(sender_label);
 					process_comm = sender->comm;
 					
-					printk (KERN_INFO "apparmor_socket_recvmsg: current process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", 
-								current->comm, current->pid, process_comm, label->pid, allow);
+					printk (KERN_INFO "apparmor_socket_recvmsg (%s): Match is %d for flow from %s(pid = %d) to %s(pid = %d)\n", current->comm, allow, sender->comm, sender_pid, current->comm, current->pid);
 				} //end of if (curr_domain != NULL)
 				else
 				{
-					printk (KERN_INFO "apparmor_socket_recvmsg: Error in finding sender task struct, pid %d, current process %s\n", sender_pid, current->comm);
+					printk (KERN_INFO "apparmor_socket_recvmsg (%s): Error in finding task struct for sender pid: %d, current pid: %d\n", current->comm, sender_pid, current->pid);
 				}
 				
 				aa_put_label(ctx->label);
@@ -1358,13 +1353,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				socktype = sock->type;
 				if(sock->sk)
 					sk_fam = sock->sk->sk_family;
-			}
-			
-			printk (KERN_INFO "apparmor_socket_recvmsg IF NOT SATISFIED: current process %s, pid %d, sk_family=%d, sock->type=%d\n", 
-								current->comm, current->pid, sk_fam, socktype);
-				
-		
-			
+			}		
 			
 		} // end for if (curr_domain != NULL)	
 	
@@ -1391,7 +1380,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			
 		}
 		
-		printk (KERN_INFO "apparmor_socket_recvmsg: return is -13, status of drop_flag = %d\n", drop_flag);
+		printk (KERN_INFO "apparmor_socket_recvmsg (%s): return is -13, status of drop_flag = %d\n", current->comm, drop_flag);
 		return -EACCES;
 	}
 	else
@@ -1520,7 +1509,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if (curr_domain != NULL)
 		{
-			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: label->pid %d, label->recv_pid %d, skb->pid %d\n", label->pid, label->recv_pid, skb->secmark);
+			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: label_name: %s, label->pid %d, label->recv_pid %d, skb->pid %d\n", label->hname, label->pid, label->recv_pid, skb->secmark);
 			// printk (KERN_INFO "skb len %d skb data_len %d\n", skb->len, skb->data_len);
 			int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
 			if (ret != 0)
@@ -1537,7 +1526,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 
 	if (error)
 	{
-		printk (KERN_INFO "apparmor_socket_sock_rcv_skb: dropping packet\n");
+		printk (KERN_INFO "apparmor_socket_sock_rcv_skb: dropping packet at label_name: %s\n", label->hname);
 		
 		// if(sk->sk_type == SOCK_STREAM )
 		// {
