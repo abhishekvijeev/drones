@@ -1509,13 +1509,21 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	if (label != NULL)
 	{
 		const struct tcphdr *tcpheader;
-		tcpheader = tcp_hdr(skb);
+		
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-		if (curr_domain != NULL && (sk->sk_type == SOCK_DGRAM || 
-			(sk->sk_type == SOCK_STREAM && tcpheader->fin != 1 && tcpheader->syn != 1 && tcpheader->ack != 1  ))
-		   )
+
+		if(curr_domain != NULL && (sk->sk_type == SOCK_STREAM))
 		{
-			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: label_name: %s, label->pid %d, label->recv_pid %d, skb->pid %d, skb->data_len %d\n", label->hname, label->pid, label->recv_pid, skb->secmark, skb->data_len);
+			tcpheader = tcp_hdr(skb);
+			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: TCP socket label_name: %s, label->pid %d, label->recv_pid %d, skb->pid %d, skb->data_len %d, syn = %d, ack = %d, fin = %d\n", label->hname, label->pid, label->recv_pid, skb->secmark, skb->data_len, tcpheader->syn, tcpheader->ack, tcpheader->fin);
+		}
+
+		// if (curr_domain != NULL && (sk->sk_type == SOCK_DGRAM || 
+			// (sk->sk_type == SOCK_STREAM && tcpheader->fin != 1 && tcpheader->syn != 1 && tcpheader->ack != 1  )))
+
+		else if (curr_domain != NULL && (sk->sk_type == SOCK_DGRAM))
+		{
+			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: UDP socket label_name: %s, label->pid %d, label->recv_pid %d, skb->pid %d, skb->data_len %d\n", label->hname, label->pid, label->recv_pid, skb->secmark, skb->data_len);
 			// printk (KERN_INFO "skb len %d skb data_len %d\n", skb->len, skb->data_len);
 			int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
 			if (ret != 0)
