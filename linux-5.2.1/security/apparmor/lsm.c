@@ -136,14 +136,14 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 		//use this get_pid_task() & find_get_pid coz they use rcu lock defined in pid.h
 		//struct task_struct *task = get_pid_task(find_get_pid(pid), PIDTYPE_PID); 
 
-		// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-		sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
+		sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+		// sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
 		
 		if (sender)
 		{
 			sender_label = aa_get_task_label(sender);
-			// receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
-			receiver = get_pid_task(find_get_pid(receiver_pid), PIDTYPE_PID);
+			receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
+			// receiver = get_pid_task(find_get_pid(receiver_pid), PIDTYPE_PID);
 			
 
 			if (receiver)
@@ -1324,8 +1324,8 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			{
 				sender_pid = label->pid;
 				char *process_comm = NULL;
-				// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-				sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
+				sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+				// sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
 				
 				if (sender && sender_pid != current->pid)
 				{
@@ -1515,7 +1515,14 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		if(curr_domain != NULL && (sk->sk_type == SOCK_STREAM))
 		{
 			tcpheader = tcp_hdr(skb);
+			if (skb->secmark != label->pid)
+				label->pid = skb->secmark;
 			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: TCP socket label_name: %s, label->pid %d, label->recv_pid %d, skb->pid %d, skb->data_len %d, syn = %d, ack = %d, fin = %d\n", label->hname, label->pid, label->recv_pid, skb->secmark, skb->data_len, tcpheader->syn, tcpheader->ack, tcpheader->fin);
+			int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
+			if (ret != 0)
+			{
+				error = 1;
+			}
 		}
 
 		// if (curr_domain != NULL && (sk->sk_type == SOCK_DGRAM || 
