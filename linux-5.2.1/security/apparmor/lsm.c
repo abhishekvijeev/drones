@@ -118,7 +118,7 @@ static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_
 	}
 	return 0;
 }
-#define MAX_LABEL_CACHE_SIZE 20
+#define MAX_LABEL_CACHE_SIZE 50
 struct label_cache
 {
 	pid_t pid;
@@ -129,10 +129,12 @@ struct label_cache
 static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
 {
 	int ret = 0, i;
+	static int remove_idx = 0;
 	for(i = 0; i < MAX_LABEL_CACHE_SIZE; i++)
 	{
 		if(label_cache_arr[i].pid == pid)
 		{
+			ret = 1;
 			break;
 		}
 		else if (label_cache_arr[i].pid == 0)
@@ -143,6 +145,15 @@ static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
 			break;
 		}
 	}
+	if (ret == 0)
+	{
+		label_cache_arr[remove_idx].pid = pid;
+		label_cache_arr[remove_idx].cur_label = label;
+		remove_idx += 1;
+		remove_idx %= MAX_LABEL_CACHE_SIZE;
+	}
+
+
 	return ret;	
 }
 static struct aa_label *apparmor_tsk_container_get(pid_t pid)
@@ -298,18 +309,18 @@ static void apparmor_cred_transfer(struct cred *new, const struct cred *old)
 
 static void apparmor_task_free(struct task_struct *task)
 {
-	struct aa_profile *profile;
-	char *curr_domain = NULL;
-	struct aa_label *curr_label;
+	// struct aa_profile *profile;
+	// char *curr_domain = NULL;
+	// struct aa_label *curr_label;
 	
-	curr_label = aa_get_task_label(task);
-	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-	if (curr_domain != NULL)
-	{
-		int ret = apparmor_tsk_container_remove(task->pid);
-		printk (KERN_INFO "apparmor_task_free: remove label cache for task %s, pid %d, result is %d\n", task->comm, task->pid, ret);
+	// curr_label = aa_get_task_label(task);
+	// fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	// if (curr_domain != NULL)
+	// {
+	// 	int ret = apparmor_tsk_container_remove(task->pid);
+	// 	printk (KERN_INFO "apparmor_task_free: remove label cache for task %s, pid %d, result is %d\n", task->comm, task->pid, ret);
 		
-	}
+	// }
 
 
 	aa_free_task_ctx(task_ctx(task));
