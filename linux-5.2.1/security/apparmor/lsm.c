@@ -165,7 +165,7 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 {
 	struct aa_profile *profile;
 	struct task_struct *sender, *receiver;
-	bool allow = false;		
+	bool allow = false, sender_flag = false, receiver_flag = false;		
 	struct aa_label *sender_label, *receiver_label;
 	char *receiver_domain = NULL;
 	char *sender_name = "", *receiver_name = "";
@@ -182,13 +182,15 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 		{
 			sender_label = apparmor_tsk_container_get(sender_pid);
 			if (sender_label != NULL)
+			{
+				sender_flag = true;
 				goto inside_sender;
+			}
 		}
 		if (sender)
 		{
 			sender_label = aa_get_task_label(sender);
 			sender_name = sender->comm;
-			
 			inside_sender:
 			
 			// receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
@@ -197,7 +199,10 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 			{
 				receiver_label = apparmor_tsk_container_get(receiver_pid);
 				if (receiver_label != NULL)
+				{
+					receiver_flag = true;
 					goto inside_receiver;
+				}
 			}
 
 			if (receiver)
@@ -213,11 +218,13 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 					if (allow == 0)
 						err = 1;
 				}
-				aa_put_label(receiver_label);
+				if (!receiver_flag)
+					aa_put_label(receiver_label);
 				
 			
 			}	
-			aa_put_label(sender_label);
+			if (!sender_flag)
+				aa_put_label(sender_label);
 			
 		}
 		
