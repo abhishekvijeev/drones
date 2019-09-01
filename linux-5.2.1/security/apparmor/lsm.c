@@ -118,26 +118,27 @@ static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_
 	}
 	return 0;
 }
-struct task_struct_container
+#define MAX_LABEL_CACHE_SIZE 20
+struct label_cache
 {
 	pid_t pid;
 	struct aa_label *cur_label;
 
-}task_struct_arr[20];
+}label_cache_arr[MAX_TASK_CACHE_SIZE];
 
 static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
 {
 	int ret = 0, i;
-	for(i = 0; i < 20; i++)
+	for(i = 0; i < MAX_TASK_CACHE_SIZE; i++)
 	{
-		if(task_struct_arr[i].pid == pid)
+		if(label_cache_arr[i].pid == pid)
 		{
 			break;
 		}
-		else if (task_struct_arr[i].pid == 0)
+		else if (label_cache_arr[i].pid == 0)
 		{
-			task_struct_arr[i].pid = pid;
-			task_struct_arr[i].cur_label = label;
+			label_cache_arr[i].pid = pid;
+			label_cache_arr[i].cur_label = label;
 			ret = 1;
 			break;
 		}
@@ -148,17 +149,30 @@ static struct aa_label *apparmor_tsk_container_get(pid_t pid)
 {
 	struct aa_label *ret = NULL;
 	int i;
-	for(i = 0; i < 20; i++)
+	for(i = 0; i < MAX_TASK_CACHE_SIZE; i++)
 	{
-		if (task_struct_arr[i].pid == pid && task_struct_arr[i].cur_label != NULL)
+		if (label_cache_arr[i].pid == pid && label_cache_arr[i].cur_label != NULL)
 		{
-			ret = task_struct_arr[i].cur_label;
+			ret = label_cache_arr[i].cur_label;
 			break;
 		}
 	}
 	return ret;
 }
-//TODO: add apparmor_tsk_container_remove function
+static int apparmor_tsk_container_remove(pid_t pid)
+{
+	int ret = 0, i;
+	for(i = 0; i < MAX_LABEL_CACHE_SIZE; i++)
+	{
+		if(label_cache_arr[i].pid == pid)
+		{
+			label_cache_arr[i].pid = 0;
+			label_cache_arr[i].cur_label = NULL;
+			ret = 1;
+		}
+	}
+	return ret;	
+}
 
 
 static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
@@ -284,6 +298,19 @@ static void apparmor_cred_transfer(struct cred *new, const struct cred *old)
 
 static void apparmor_task_free(struct task_struct *task)
 {
+	struct aa_profile *profile;
+	char *curr_domain = NULL;
+	struct aa_label *curr_label;
+	
+	curr_label = aa_get_task_label(task);
+	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	if (curr_domain != NULL)
+	{
+		int ret = apparmor_tsk_container_remove(task->pid);
+		printk (KERN_INFO "apparmor_task_free: remove label cache for task %s, pid %d, result is %d\n", task->comm, task->pid, ret);
+		
+	}
+
 
 	aa_free_task_ctx(task_ctx(task));
 }
@@ -1593,15 +1620,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 			int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
 			if (ret != 0)
 			{
-				//clear the data
-				if (skb->data_len > 0)
-				{
-					void *tmp = skb_put(skb, skb->data_len);
-					memset(tmp, 0, skb->data_len);
-					printk (KERN_INFO "apparmor_socket_sock_rcv_skb: packet set to 0\n");
-				}
-				else 
-					error = 1;
+				error = 1;
 			}
 		}
 
