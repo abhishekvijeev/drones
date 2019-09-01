@@ -146,7 +146,7 @@ static struct aa_label *apparmor_tsk_container_get(pid_t pid)
 	int i;
 	for(i = 0; i < 20; i++)
 	{
-		if (task_struct_arr[i].pid == pid)
+		if (task_struct_arr[i].pid == pid && task_struct_arr[i].cur_label != NULL)
 		{
 			ret = task_struct_arr[i].cur_label;
 			break;
@@ -183,10 +183,6 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 		if (sender)
 		{
 			sender_label = aa_get_task_label(sender);
-			if (sender_label != NULL)
-			{
-				int ret = apparmor_tsk_container_add(sender_label, sender_pid);
-			}
 			inside_sender:
 			
 			// receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
@@ -201,10 +197,6 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 			if (receiver)
 			{
 				receiver_label = aa_get_task_label(receiver);
-				if (receiver_label != NULL)
-				{
-					int ret = apparmor_tsk_container_add(receiver_label, receiver_pid);
-				}
 				inside_receiver:
 				
 				fn_for_each (receiver_label, profile, apparmor_getlabel_domain(profile, &receiver_domain));
@@ -1155,6 +1147,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				label->recv_pid = 0;
 			}
 			label->pid = current->pid;
+			
 		}
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		aa_put_label(ctx->label);
@@ -1385,11 +1378,16 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 				sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
 				
+				
 				if (sender && sender_pid != current->pid)
 				{
 					sender_label = aa_get_task_label(sender);
 					if(sender_label != NULL)
 					{
+						//add sender & receiver label to cache
+						int ret = apparmor_tsk_container_add(sender_label, sender_pid);
+						ret = apparmor_tsk_container_add(label, current->pid);
+
 						fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
 						if (allow == 0)
 							error = 0;
