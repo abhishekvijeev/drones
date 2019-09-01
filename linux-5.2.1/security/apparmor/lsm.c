@@ -130,7 +130,11 @@ static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
 	int ret = 0, i;
 	for(i = 0; i < 20; i++)
 	{
-		if (task_struct_arr[i].pid == 0)
+		if(task_struct_arr[i].pid == pid)
+		{
+			break;
+		}
+		else if (task_struct_arr[i].pid == 0)
 		{
 			task_struct_arr[i].pid = pid;
 			task_struct_arr[i].cur_label = label;
@@ -1150,6 +1154,8 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			
 		}
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+		if (curr_domain != NULL)
+			int ret = apparmor_tsk_container_add(label, current->pid);
 		aa_put_label(ctx->label);
 		
 		if (curr_domain != NULL)
@@ -1385,8 +1391,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 					if(sender_label != NULL)
 					{
 						//add sender & receiver label to cache
-						int ret = apparmor_tsk_container_add(sender_label, sender_pid);
-						ret = apparmor_tsk_container_add(label, current->pid);
+						int ret = apparmor_tsk_container_add(label, current->pid);
 
 						fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
 						if (allow == 0)
