@@ -118,7 +118,18 @@ static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_
 	}
 	return 0;
 }
+static struct task_struct *apparmor_iterate_all_task(__u32 pid)
+{
+	struct task_struct *task;
+	
+	for_each_process(task) {
+		printk(KERN_INFO "apparmor_iterate_all_task: Task %s (pid = %d)\n",task->comm, task_pid_nr(task));
+		if (task->pid == pid)
+			return task;
+	}
+	return NULL;
 
+}
 
 
 static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
@@ -138,13 +149,17 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 
 		sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 		// sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
-		
+		if (sender == NULL)
+			sender = apparmor_iterate_all_task(sender_pid);
+
 		if (sender)
 		{
 			sender_label = aa_get_task_label(sender);
 			receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
 			// receiver = get_pid_task(find_get_pid(receiver_pid), PIDTYPE_PID);
-			
+			if (receiver == NULL)
+				receiver = apparmor_iterate_all_task(receiver_pid);
+		
 
 			if (receiver)
 			{
@@ -1308,7 +1323,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	int error = 1;
 
 	cl = __begin_current_label_crit_section();
-
+	
 	if(!unconfined(cl) && ctx != NULL && ctx->label != NULL)
 	{
 
