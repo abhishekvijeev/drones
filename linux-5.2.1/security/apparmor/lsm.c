@@ -123,9 +123,10 @@ static struct task_struct *apparmor_iterate_all_task(int pid)
 	struct task_struct *task;
 	
 	for_each_process(task) {
-		if (task_pid_nr(task) == pid)
+		printk(KERN_INFO "apparmor_iterate_all_task: Task %s (pid = %d), match pid %d\n",task->comm, task_pid_nr(task), pid);
+		if (task->pid == pid)
 		{
-			printk(KERN_INFO "apparmor_iterate_all_task: Task %s (pid = %d)\n",task->comm, task_pid_nr(task));
+			printk (KERN_INFO "PID match \n");
 			return task;
 		}
 	}
@@ -1341,8 +1342,8 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			{
 				sender_pid = label->pid;
 				char *process_comm = NULL;
-				sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
-				// sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
+				// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
+				sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
 				
 				if (sender && sender_pid != current->pid)
 				{
