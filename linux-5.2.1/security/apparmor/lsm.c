@@ -121,14 +121,14 @@ static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_
 struct task_struct_container
 {
 	pid_t pid;
-	struct aa_label cur_label;
+	struct aa_label *cur_label;
 
 }task_struct_arr[20];
 
 static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
 {
-	int ret = 0;
-	for(int i = 0; i < 20; i++)
+	int ret = 0, i;
+	for(i = 0; i < 20; i++)
 	{
 		if (task_struct_arr[i].pid == 0)
 		{
@@ -143,7 +143,8 @@ static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
 static struct aa_label *apparmor_tsk_container_get(pid_t pid)
 {
 	struct aa_label *ret = NULL;
-	for(int i = 0; i < 20; i++)
+	int i;
+	for(i = 0; i < 20; i++)
 	{
 		if (task_struct_arr[i].pid == pid)
 		{
