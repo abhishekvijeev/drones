@@ -1155,7 +1155,9 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 		}
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if (curr_domain != NULL)
+		{
 			int ret = apparmor_tsk_container_add(label, current->pid);
+		}
 		aa_put_label(ctx->label);
 		
 		if (curr_domain != NULL)
