@@ -1406,7 +1406,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	struct aa_label *label, *cl;
 	struct aa_profile *profile;
 	struct task_struct *sender;
-	bool allow = false;		
+	bool allow = false, sender_flag = false;		
 	__u32 sender_pid;
 	struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 	struct aa_label *sender_label;
@@ -1432,11 +1432,22 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				char *process_comm = NULL;
 				// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 				sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
-				
+				if (sender == NULL)
+				{
+					sender_label = apparmor_tsk_container_get(sender_pid);
+					if (sender_label != NULL)
+					{
+						sender_flag = true;
+						goto socket_recvmsg_inside_sender;
+					}
+				}
 				
 				if (sender && sender_pid != current->pid)
 				{
+					process_comm = sender->comm;
 					sender_label = aa_get_task_label(sender);
+					
+					socket_recvmsg_inside_sender:
 					if(sender_label != NULL)
 					{
 						//add sender & receiver label to cache
@@ -1446,8 +1457,9 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 						if (allow == 0)
 							error = 0;
 					}
-					aa_put_label(sender_label);
-					process_comm = sender->comm;
+					//sender_flag true means its taken from cache so no need to do aa_put_label
+					if (sender_flag == false)
+						aa_put_label(sender_label);
 					
 					printk (KERN_INFO "apparmor_socket_recvmsg (%s): Match is %d for flow from %s(pid = %d) to %s(pid = %d)\n", current->comm, allow, sender->comm, sender_pid, current->comm, current->pid);
 				} //end of if (curr_domain != NULL)
