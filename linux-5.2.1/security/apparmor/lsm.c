@@ -187,6 +187,8 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 		if (sender)
 		{
 			sender_label = aa_get_task_label(sender);
+			sender_name = sender->comm;
+			
 			inside_sender:
 			
 			// receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
@@ -201,6 +203,7 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 			if (receiver)
 			{
 				receiver_label = aa_get_task_label(receiver);
+				receiver_name = receiver->comm;
 				inside_receiver:
 				
 				fn_for_each (receiver_label, profile, apparmor_getlabel_domain(profile, &receiver_domain));
@@ -211,11 +214,10 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 						err = 1;
 				}
 				aa_put_label(receiver_label);
-				receiver_name = receiver->comm;
+				
 			
 			}	
 			aa_put_label(sender_label);
-			sender_name = sender->comm;
 			
 		}
 		
@@ -1591,6 +1593,8 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 					memset(tmp, 0, skb->data_len);
 					printk (KERN_INFO "apparmor_socket_sock_rcv_skb: packet set to 0\n");
 				}
+				else 
+					error = 1;
 			}
 		}
 
