@@ -149,7 +149,7 @@ static struct aa_label *apparmor_tsk_container_get(pid_t pid)
 {
 	struct aa_label *ret = NULL;
 	int i;
-	for(i = 0; i < MAX_TASK_CACHE_SIZE; i++)
+	for(i = 0; i < MAX_LABEL_CACHE_SIZE; i++)
 	{
 		if (label_cache_arr[i].pid == pid && label_cache_arr[i].cur_label != NULL)
 		{
