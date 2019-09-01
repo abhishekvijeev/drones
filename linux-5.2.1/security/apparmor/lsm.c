@@ -1584,7 +1584,13 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 			int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
 			if (ret != 0)
 			{
-				error = 1;
+				//clear the data
+				if (skb->data_len > 0)
+				{
+					void *tmp = skb_put(skb, skb->data_len);
+					memset(tmp, 0, skb->data_len);
+					printk (KERN_INFO "apparmor_socket_sock_rcv_skb: packet set to 0\n");
+				}
 			}
 		}
 
