@@ -124,12 +124,12 @@ struct label_cache
 	pid_t pid;
 	struct aa_label *cur_label;
 
-}label_cache_arr[MAX_TASK_CACHE_SIZE];
+}label_cache_arr[MAX_LABEL_CACHE_SIZE];
 
 static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
 {
 	int ret = 0, i;
-	for(i = 0; i < MAX_TASK_CACHE_SIZE; i++)
+	for(i = 0; i < MAX_LABEL_CACHE_SIZE; i++)
 	{
 		if(label_cache_arr[i].pid == pid)
 		{
