@@ -118,21 +118,42 @@ static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_
 	}
 	return 0;
 }
-static struct task_struct *apparmor_iterate_all_task(int pid)
+struct task_struct_container
 {
-	struct task_struct *task;
-	
-	for_each_process(task) {
-		printk(KERN_INFO "apparmor_iterate_all_task: Task %s (pid = %d), match pid %d\n",task->comm, task_pid_nr(task), pid);
-		if (task->pid == pid)
+	pid_t pid;
+	struct aa_label cur_label;
+
+}task_struct_arr[20];
+
+static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
+{
+	int ret = 0;
+	for(int i = 0; i < 20; i++)
+	{
+		if (task_struct_arr[i].pid == 0)
 		{
-			printk (KERN_INFO "PID match \n");
-			return task;
+			task_struct_arr[i].pid = pid;
+			task_struct_arr[i].cur_label = label;
+			ret = 1;
+			break;
 		}
 	}
-	return NULL;
-
+	return ret;	
 }
+static struct aa_label *apparmor_tsk_container_get(pid_t pid)
+{
+	struct aa_label *ret = NULL;
+	for(int i = 0; i < 20; i++)
+	{
+		if (task_struct_arr[i].pid == pid)
+		{
+			ret = task_struct_arr[i].cur_label;
+			break;
+		}
+	}
+	return ret;
+}
+//TODO: add apparmor_tsk_container_remove function
 
 
 static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
@@ -153,20 +174,38 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 		// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 		sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
 		if (sender == NULL)
-			sender = apparmor_iterate_all_task(sender_pid);
-
+		{
+			sender_label = apparmor_tsk_container_get(sender_pid);
+			if (sender_label != NULL)
+				goto inside_sender;
+		}
 		if (sender)
 		{
 			sender_label = aa_get_task_label(sender);
+			if (sender_label != NULL)
+			{
+				int ret = apparmor_tsk_container_add(sender_label, sender_pid);
+			}
+			inside_sender:
+			
 			// receiver = pid_task(find_vpid(receiver_pid), PIDTYPE_PID);
 			receiver = get_pid_task(find_get_pid(receiver_pid), PIDTYPE_PID);
 			if (receiver == NULL)
-				receiver = apparmor_iterate_all_task(receiver_pid);
-		
+			{
+				receiver_label = apparmor_tsk_container_get(receiver_pid);
+				if (receiver_label != NULL)
+					goto inside_receiver;
+			}
 
 			if (receiver)
 			{
 				receiver_label = aa_get_task_label(receiver);
+				if (receiver_label != NULL)
+				{
+					int ret = apparmor_tsk_container_add(receiver_label, receiver_pid);
+				}
+				inside_receiver:
+				
 				fn_for_each (receiver_label, profile, apparmor_getlabel_domain(profile, &receiver_domain));
 				if (receiver_domain != NULL && sender_label != NULL)
 				{
