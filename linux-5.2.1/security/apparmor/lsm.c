@@ -147,6 +147,7 @@ static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
 	}
 	if (ret == 0)
 	{
+		printk (KERN_INFO "apparmor_tsk_container_add: adding data at idx %d\n", remove_idx);
 		label_cache_arr[remove_idx].pid = pid;
 		label_cache_arr[remove_idx].cur_label = label;
 		remove_idx += 1;
