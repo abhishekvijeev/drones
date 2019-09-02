@@ -118,7 +118,7 @@ static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_
 	}
 	return 0;
 }
-#define MAX_LABEL_CACHE_SIZE 50
+#define MAX_LABEL_CACHE_SIZE 20
 struct label_cache
 {
 	pid_t pid;
@@ -147,12 +147,18 @@ static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
 	}
 	if (ret == 0)
 	{
-		printk (KERN_INFO "apparmor_tsk_container_add: adding data at idx %d\n", remove_idx);
+		printk (KERN_INFO "apparmor_tsk_container_add: adding data at idx %d, pid %d, label %s\n", remove_idx, pid, label->hname);
 		label_cache_arr[remove_idx].pid = pid;
 		label_cache_arr[remove_idx].cur_label = label;
 		remove_idx += 1;
 		remove_idx %= MAX_LABEL_CACHE_SIZE;
 	}
+	else
+	{
+		printk (KERN_INFO "apparmor_tsk_container_add: adding data at idx %d, pid %d, label %s\n", i, pid, label->hname);
+		
+	}
+	
 
 
 	return ret;	
@@ -169,20 +175,33 @@ static struct aa_label *apparmor_tsk_container_get(pid_t pid)
 			break;
 		}
 	}
+	if (ret != NULL)
+	{
+		printk (KERN_INFO "apparmor_tsk_container_get: data found at idx %d, pid %d, label %s\n", i, pid, ret->hname);
+	}
+	else
+	{
+		printk (KERN_INFO "apparmor_tsk_container_get: data not found  of pid %d\n", pid);
+	}
 	return ret;
 }
 static int apparmor_tsk_container_remove(pid_t pid)
 {
 	int ret = 0, i;
+	char *hname = " ";
 	for(i = 0; i < MAX_LABEL_CACHE_SIZE; i++)
 	{
 		if(label_cache_arr[i].pid == pid)
 		{
 			label_cache_arr[i].pid = 0;
+			hname = label_cache_arr[i].cur_label->hname;
 			label_cache_arr[i].cur_label = NULL;
 			ret = 1;
 		}
 	}
+	if (ret == 1)
+		printk (KERN_INFO "apparmor_tsk_container_get: data removed at idx %d, pid %d, label %s\n", i, pid, hname);
+	
 	return ret;	
 }
 
