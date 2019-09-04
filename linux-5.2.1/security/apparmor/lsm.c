@@ -1826,6 +1826,24 @@ static int apparmor_inet_conn_request(struct sock *sk, struct sk_buff *skb,
 }
 #endif
 
+static int apparmor_shm_alloc_security(struct kern_ipc_perm *perm)
+{
+	printk(KERN_INFO "apparmor_shm_alloc_security (%s): key: %d\n", current->comm, perm->key);
+	return 0;
+}
+
+static int apparmor_ipc_permission(struct kern_ipc_perm *ipcp, short flag)
+{
+	printk(KERN_INFO "apparmor_ipc_permission (%s): key: %d, flag: %d\n", current->comm, perm->key, flag);
+	return 0;
+}
+
+static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, int shmflg)
+{
+	printk(KERN_INFO "apparmor_shm_shmat (%s): key: %d\n", current->comm, perm->key);
+	return 0;
+}
+
 /*
  * The cred blob is a pointer to, not an instance of, an aa_task_ctx.
  */
@@ -1923,6 +1941,10 @@ static struct security_hook_list apparmor_hooks[] __lsm_ro_after_init = {
 	LSM_HOOK_INIT(secid_to_secctx, apparmor_secid_to_secctx),
 	LSM_HOOK_INIT(secctx_to_secid, apparmor_secctx_to_secid),
 	LSM_HOOK_INIT(release_secctx, apparmor_release_secctx),
+
+	LSM_HOOK_INIT(shm_alloc_security, apparmor_shm_alloc_security),
+	LSM_HOOK_INIT(ipc_permission, apparmor_ipc_permission),
+	LSM_HOOK_INIT(shm_shmat, apparmor_shm_shmat),
 };
 
 /*
