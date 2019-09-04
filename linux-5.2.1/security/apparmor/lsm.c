@@ -1834,7 +1834,7 @@ static int apparmor_shm_alloc_security(struct kern_ipc_perm *perm)
 
 static int apparmor_ipc_permission(struct kern_ipc_perm *ipcp, short flag)
 {
-	printk(KERN_INFO "apparmor_ipc_permission (%s): key: %d, flag: %d\n", current->comm, perm->key, flag);
+	printk(KERN_INFO "apparmor_ipc_permission (%s): key: %d, flag: %d\n", current->comm, ipcp->key, flag);
 	return 0;
 }
 
