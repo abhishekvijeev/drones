@@ -1827,7 +1827,7 @@ static int apparmor_inet_conn_request(struct sock *sk, struct sk_buff *skb,
 #endif
 
 
-static int apparmor_shm_free_security(struct kern_ipc_perm *perm)
+static void apparmor_shm_free_security(struct kern_ipc_perm *perm)
 {
 	struct aa_profile *profile;
 	struct aa_label *curr_label;
@@ -1840,7 +1840,7 @@ static int apparmor_shm_free_security(struct kern_ipc_perm *perm)
 		aa_put_label((struct aa_label *) perm->security);	
 	}
 	aa_put_label(curr_label);
-	return 0;
+	
 }
 static int apparmor_shm_alloc_security(struct kern_ipc_perm *perm)
 {
