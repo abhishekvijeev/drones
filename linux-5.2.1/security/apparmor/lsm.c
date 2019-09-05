@@ -1826,9 +1826,41 @@ static int apparmor_inet_conn_request(struct sock *sk, struct sk_buff *skb,
 }
 #endif
 
+
+static int apparmor_shm_free_security(struct kern_ipc_perm *perm)
+{
+	struct aa_profile *profile;
+	struct aa_label *curr_label;
+	char *curr_domain = NULL;
+	curr_label = aa_get_current_label();
+	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	if (curr_domain != NULL)
+	{
+		printk(KERN_INFO "apparmor_shm_free_security (%s): key: %d\n", current->comm, perm->key);
+		aa_put_label((struct aa_label *) perm->security);	
+	}
+	aa_put_label(curr_label);
+	return 0;
+}
 static int apparmor_shm_alloc_security(struct kern_ipc_perm *perm)
 {
-	printk(KERN_INFO "apparmor_shm_alloc_security (%s): key: %d\n", current->comm, perm->key);
+	
+
+	struct aa_profile *profile;
+	struct aa_label *curr_label;
+	char *curr_domain = NULL;
+	curr_label = aa_get_current_label();
+	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	if (curr_domain != NULL)
+	{
+		perm->security = aa_get_label(curr_label);
+		printk(KERN_INFO "apparmor_shm_alloc_security (%s): key: %d\n", current->comm, perm->key);
+	
+	}
+	aa_put_label(curr_label);
+
+
+	
 	return 0;
 }
 
@@ -1840,7 +1872,37 @@ static int apparmor_ipc_permission(struct kern_ipc_perm *ipcp, short flag)
 
 static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, int shmflg)
 {
-	printk(KERN_INFO "apparmor_shm_shmat (%s): key: %d\n", current->comm, perm->key);
+	
+	struct aa_profile *profile;
+	struct aa_label *curr_label, *sender_label;
+	char *curr_domain = NULL, *sender_domain = NULL;
+	curr_label = aa_get_current_label();
+	int error = 1;
+
+	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	if (curr_domain != NULL)
+	{
+		bool allow = false; 
+		sender_label = aa_get_label((struct aa_label *)perm->security);
+		fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &sender_domain));
+		if (sender_domain != NULL)
+		{
+			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
+			if (allow == 0)
+				error = 0;
+			
+			
+		}
+		aa_put_label(sender_label);
+		printk(KERN_INFO "apparmor_shm_shmat (%s): key: %d\n", current->comm, perm->key);
+	}
+	aa_put_label(curr_label);
+	if (error == 0)
+	{
+		printk ("apparmor_shm_shmat: not in list, deny\n");
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -1945,6 +2007,8 @@ static struct security_hook_list apparmor_hooks[] __lsm_ro_after_init = {
 	LSM_HOOK_INIT(shm_alloc_security, apparmor_shm_alloc_security),
 	LSM_HOOK_INIT(ipc_permission, apparmor_ipc_permission),
 	LSM_HOOK_INIT(shm_shmat, apparmor_shm_shmat),
+	LSM_HOOK_INIT(shm_free_security, apparmor_shm_free_security),
+	
 };
 
 /*
