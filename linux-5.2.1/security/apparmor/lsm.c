@@ -90,7 +90,7 @@ static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_d
 	{
 		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
 		{
-			// printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
+			printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
 			if ((strcmp(iterator->domain, checking_domain) == 0) || strcmp(iterator->domain, "*") == 0)
 			{
 				*allow = true;
@@ -1866,7 +1866,7 @@ static int apparmor_shm_alloc_security(struct kern_ipc_perm *perm)
 
 static int apparmor_ipc_permission(struct kern_ipc_perm *ipcp, short flag)
 {
-	printk(KERN_INFO "apparmor_ipc_permission (%s): key: %d, flag: %d\n", current->comm, ipcp->key, flag);
+	// printk(KERN_INFO "apparmor_ipc_permission (%s): key: %d, flag: %d\n", current->comm, ipcp->key, flag);
 	return 0;
 }
 
@@ -1894,7 +1894,7 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 			
 		}
 		aa_put_label(sender_label);
-		printk(KERN_INFO "apparmor_shm_shmat (%s): key: %d\n", current->comm, perm->key);
+		printk(KERN_INFO "apparmor_shm_shmat (%s): key: %d, allow=%d\n", current->comm, perm->key, allow);
 	}
 	aa_put_label(curr_label);
 	if (error == 0)
