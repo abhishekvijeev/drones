@@ -432,7 +432,7 @@ static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 	ns = current->nsproxy->ipc_ns;
 	int bkt;
 	struct kern_ipc_perm *perm
-	hash_for_each_entry(&shm_ids(ns), bkt, perm, next){
+	hash_for_each_entry(&shm_ids(ns), bkt, perm, khtnode){
 		printk(KERN_INFO "policy_update :key %d, uid %d, gid %d,  is in bucket %d\n", perm->key, perm->uid, perm->gid, bkt);
 	}
 	//Custom Code:end
