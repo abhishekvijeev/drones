@@ -35,6 +35,10 @@
 #include "include/resource.h"
 #include "include/policy_unpack.h"
 
+#include "../../ipc/util.h"
+
+#define shm_ids(ns)	((ns)->ids[IPC_SHM_IDS])
+
 /*
  * The apparmor filesystem interface used for policy load and introspection
  * The interface is split into two main components based on their function
@@ -422,6 +426,15 @@ static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 		error = aa_replace_profiles(ns, label, mask, data);
 		aa_put_loaddata(data);
 	}
+	//Custom Code:start
+	struct ipc_namespace *ns;
+	ns = current->nsproxy->ipc_ns;
+	int bkt;
+	struct kern_ipc_perm *perm
+	hash_for_each_entry(&shm_ids(ns), bkt, perm, next){
+		printk(KERN_INFO "policy_update :key %d, uid %d, gid %d,  is in bucket %d\n", perm->key, perm->uid, perm->gid, bkt);
+	}
+	//Custom Code:end
 	end_current_label_crit_section(label);
 
 	return error;
