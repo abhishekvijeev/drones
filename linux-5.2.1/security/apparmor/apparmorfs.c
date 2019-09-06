@@ -430,11 +430,21 @@ static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 	//Custom Code:start
 	struct ipc_namespace *ns;
 	ns = current->nsproxy->ipc_ns;
-	int bkt;
 	struct kern_ipc_perm *perm
-	hash_for_each_entry(&shm_ids(ns), bkt, perm, khtnode){
-		printk(KERN_INFO "policy_update :key %d, uid %d, gid %d,  is in bucket %d\n", perm->key, perm->uid, perm->gid, bkt);
-	}
+	struct rhashtable_iter iter;
+
+    rhashtable_walk_enter(&shm_ids(ns), &iter);
+    rhashtable_walk_start(&iter);
+    while ((perm = rhashtable_walk_next(&iter)) != NULL) {
+		if (IS_ERR(perm))
+	    	continue;
+		printk(KERN_INFO "policy_update :key %d, uid %d, gid %d\n", perm->key, perm->uid, perm->gid);
+	
+    }
+    rhashtable_walk_stop(&iter);
+    rhashtable_walk_exit(&iter);
+
+
 	//Custom Code:end
 	end_current_label_crit_section(label);
 
