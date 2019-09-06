@@ -36,6 +36,7 @@
 #include "include/policy_unpack.h"
 
 #include "../../ipc/util.h"
+#include <linux/rhashtable.h>
 
 #define shm_ids(ns)	((ns)->ids[IPC_SHM_IDS])
 
