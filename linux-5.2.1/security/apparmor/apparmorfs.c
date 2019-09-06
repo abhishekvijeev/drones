@@ -428,12 +428,13 @@ static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 		aa_put_loaddata(data);
 	}
 	//Custom Code:start
-	struct ipc_namespace *ns;
-	ns = current->nsproxy->ipc_ns;
-	struct kern_ipc_perm *perm
+	struct ipc_namespace *nss;
+	nss = current->nsproxy->ipc_ns;
+	struct ipc_ids *idss = &shm_ids(nss);
+	struct kern_ipc_perm *perm;
 	struct rhashtable_iter iter;
 
-    rhashtable_walk_enter(&shm_ids(ns), &iter);
+    rhashtable_walk_enter(&idss->key_ht, &iter);
     rhashtable_walk_start(&iter);
     while ((perm = rhashtable_walk_next(&iter)) != NULL) {
 		if (IS_ERR(perm))
