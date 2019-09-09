@@ -1841,22 +1841,21 @@ static void apparmor_shm_free_security(struct kern_ipc_perm *perm)
 	// }
 	// aa_put_label(curr_label);
 
-
-	printk(KERN_INFO "apparmor_shm_free_security (%s)\n", current->comm);
 	struct ListOfDomains *perm_security_list = (struct ListOfDomains *)perm->security;
 
 	if(perm_security_list)
 	{
-		struct ListOfDomains *iterator, *tmp;
-		iterator = list_first_entry(&(perm_security_list->domain_list), typeof(*iterator), domain_list);
-		while((&iterator->domain_list) != &(perm_security_list->domain_list))
-		{
-			tmp = iterator;
-			iterator = list_next_entry (iterator, domain_list);
-			printk(KERN_INFO "apparmor_shm_free_security (%s): Freeing list node %s\n", current->comm, tmp->domain);
-			kzfree (tmp->domain);
-			kzfree (tmp);
-		}	
+		// struct ListOfDomains *iterator, *tmp;
+		// iterator = list_first_entry(&(perm_security_list->domain_list), typeof(*iterator), domain_list);
+		// while((&iterator->domain_list) != &(perm_security_list->domain_list))
+		// {
+		// 	tmp = iterator;
+		// 	iterator = list_next_entry (iterator, domain_list);
+		// 	printk(KERN_INFO "apparmor_shm_free_security (%s): Freeing list node %s\n", current->comm, tmp->domain);
+		// 	kzfree (tmp->domain);
+		// 	kzfree (tmp);
+		// }	
+		printk(KERN_INFO "apparmor_shm_free_security (%s)\n", current->comm);
 		kzfree(perm_security_list);
 	}
 	
