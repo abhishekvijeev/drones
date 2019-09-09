@@ -1845,9 +1845,9 @@ static void apparmor_shm_free_security(struct kern_ipc_perm *perm)
 	struct aa_label *curr_label;
 	char *curr_domain = NULL;
 	int curr_domain_len = 0;
-	curr_label = aa_get_current_label();
+	curr_label = __begin_current_label_crit_section();
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-	aa_put_label(curr_label);
+	__end_current_label_crit_section(curr_label);
 
 	if(curr_domain != NULL)
 	{
@@ -1887,9 +1887,9 @@ static int apparmor_shm_alloc_security(struct kern_ipc_perm *perm)
 	struct aa_label *curr_label;
 	char *curr_domain = NULL;
 	int curr_domain_len = 0;
-	curr_label = aa_get_current_label();
+	curr_label = __begin_current_label_crit_section();
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-	aa_put_label(curr_label);
+	__end_current_label_crit_section(curr_label);
 
 	if(curr_domain != NULL)
 	{
@@ -1948,13 +1948,16 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 	// 	return -1;
 	// }
 
+
+
+	/*
 	struct aa_profile *profile;
 	struct aa_label *curr_label;
 	char *curr_domain = NULL;
 	int curr_domain_len = 0;
-	curr_label = aa_get_current_label();
+	curr_label = __begin_current_label_crit_section();
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-	aa_put_label(curr_label);
+	__end_current_label_crit_section(curr_label);
 
 	if(curr_domain != NULL)
 	{
@@ -1980,6 +1983,7 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 			printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
 		}
 	}
+	*/
 	
 
 	return 0;
