@@ -1948,7 +1948,7 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 
 
 
-	/*
+	
 	struct aa_profile *profile;
 	struct aa_label *curr_label;
 	char *curr_domain = NULL;
@@ -1960,6 +1960,7 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 
 	if(curr_domain != NULL && perm_security_list != NULL)
 	{
+		// would be good to check whether the current domain exists in the list before inserting
 		curr_domain_len = strlen(curr_domain);
 		struct ListOfDomains *new_node = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
 		
@@ -1981,7 +1982,7 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 			printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
 		}
 	}
-	*/
+	
 	
 
 	return 0;
