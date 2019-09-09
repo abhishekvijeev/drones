@@ -1858,7 +1858,7 @@ static void apparmor_shm_free_security(struct kern_ipc_perm *perm)
 			// 	kzfree (tmp);
 			// }	
 			printk(KERN_INFO "apparmor_shm_free_security (%s)\n", current->comm);
-			kfree(perm_security_list);
+			//kfree(perm_security_list);
 		}
 	}
 	
