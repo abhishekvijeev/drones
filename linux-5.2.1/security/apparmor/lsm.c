@@ -1856,7 +1856,7 @@ static void apparmor_shm_free_security(struct kern_ipc_perm *perm)
 		// 	kzfree (tmp);
 		// }	
 		printk(KERN_INFO "apparmor_shm_free_security (%s)\n", current->comm);
-		kzfree(perm_security_list);
+		kfree(perm_security_list);
 	}
 	
 	
@@ -1885,20 +1885,19 @@ static int apparmor_shm_alloc_security(struct kern_ipc_perm *perm)
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 	__end_current_label_crit_section(curr_label);
 
-	if(curr_domain != NULL)
+
+
+	printk(KERN_INFO "apparmor_shm_alloc_security (%s)\n", current->comm);
+
+	struct ListOfDomains *perm_security_list = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+	if(!perm_security_list)
 	{
-
-		printk(KERN_INFO "apparmor_shm_alloc_security (%s)\n", current->comm);
-
-		struct ListOfDomains *perm_security_list = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
-		if(!perm_security_list)
-		{
-			return -ENOMEM;
-		}
-		INIT_LIST_HEAD(&(perm_security_list->domain_list));
-
-		perm->security = perm_security_list;
+		return -ENOMEM;
 	}
+	INIT_LIST_HEAD(&(perm_security_list->domain_list));
+
+	perm->security = perm_security_list;
+	
 	
 	return 0;
 }
@@ -1952,10 +1951,10 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 	curr_label = __begin_current_label_crit_section();
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 	__end_current_label_crit_section(curr_label);
+	struct ListOfDomains *perm_security_list = (struct ListOfDomains *)perm->security;
 
-	if(curr_domain != NULL)
+	if(curr_domain != NULL && perm_security_list != NULL)
 	{
-		struct ListOfDomains *perm_security_list = (struct ListOfDomains *)perm->security;
 		curr_domain_len = strlen(curr_domain);
 		struct ListOfDomains *new_node = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
 		
