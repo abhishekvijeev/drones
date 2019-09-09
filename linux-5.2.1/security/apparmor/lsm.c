@@ -1847,17 +1847,16 @@ static void apparmor_shm_free_security(struct kern_ipc_perm *perm)
 
 		if(perm_security_list)
 		{
-			// struct ListOfDomains *iterator, *tmp;
-			// iterator = list_first_entry(&(perm_security_list->domain_list), typeof(*iterator), domain_list);
-			// while((&iterator->domain_list) != &(perm_security_list->domain_list))
-			// {
-			// 	tmp = iterator;
-			// 	iterator = list_next_entry (iterator, domain_list);
-			// 	printk(KERN_INFO "apparmor_shm_free_security (%s): Freeing list node %s\n", current->comm, tmp->domain);
-			// 	kzfree (tmp->domain);
-			// 	kzfree (tmp);
-			// }	
-			printk(KERN_INFO "apparmor_shm_free_security (%s)\n", current->comm);
+			struct ListOfDomains *iterator, *tmp;
+			iterator = list_first_entry(&(perm_security_list->domain_list), typeof(*iterator), domain_list);
+			while((&iterator->domain_list) != &(perm_security_list->domain_list))
+			{
+				tmp = iterator;
+				iterator = list_next_entry (iterator, domain_list);
+				kzfree (tmp->domain);
+				kzfree (tmp);
+			}	
+			printk(KERN_INFO "apparmor_shm_free_security \n");
 			//kfree(perm_security_list);
 		}
 	}
