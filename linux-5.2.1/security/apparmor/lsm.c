@@ -1936,7 +1936,7 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 	if(curr_domain != NULL)
 	{
 		struct ListOfDomains *perm_security_list = (struct ListOfDomains *)perm->security;
-		curr_domain_len = strlen(curr->domain);
+		curr_domain_len = strlen(curr_domain);
 		struct ListOfDomains *new_node = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
 		
 		if (!new_node)
