@@ -404,6 +404,15 @@ static struct aa_loaddata *aa_simple_write_to_buffer(const char __user *userbuf,
 
 	return data;
 }
+static int apparmorfs_getlabel_domain (struct aa_profile *profile, char **name)
+{
+	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	{
+		*name = profile->current_domain->domain;
+		
+	}
+	return 0;
+}
 
 static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 			     loff_t *pos, struct aa_ns *ns)
@@ -440,6 +449,33 @@ static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 		if (IS_ERR(perm))
 	    	continue;
 		printk(KERN_INFO "policy_update :key %d, uid %d, gid %d\n", perm->key, perm->uid, perm->gid);
+		void *tmpsecurity = perm->security;
+		if (tmpsecurity)
+		{
+			struct ListOfDomains *perm_security_list = (struct ListOfDomains *)tmpsecurity;
+			if(perm_security_list)
+			{
+				struct aa_profile *profile;
+				char *curr_domain = NULL;
+				fn_for_each (label, profile, apparmorfs_getlabel_domain(profile, &curr_domain));
+				if (curr_domain != NULL)
+				{
+					printk(KERN_INFO "policy_update: for domain %s\n", curr_domain);
+				}
+				
+
+
+				struct ListOfDomains *iterator, *tmp;
+				iterator = list_first_entry(&(perm_security_list->domain_list), typeof(*iterator), domain_list);
+				printk (KERN_INFO "policy_update: list of domains are\n");
+				while((&iterator->domain_list) != &(perm_security_list->domain_list))
+				{
+					printk (KERN_INFO "\t%s\n", iterator->domain);
+					iterator = list_next_entry (iterator, domain_list);
+				}	
+				
+			}
+		}
 	
     }
     rhashtable_walk_stop(&iter);
