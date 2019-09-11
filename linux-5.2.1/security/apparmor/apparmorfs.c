@@ -530,6 +530,10 @@ static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 		rhashtable_walk_stop(&iter);
 		rhashtable_walk_exit(&iter);
 	}
+	else
+	{
+		printk(KERN_INFO "policy_update: curr_domain NULL for label %s, current_comm = %s\n", label->hname, current->comm);
+	}
 
     
 
