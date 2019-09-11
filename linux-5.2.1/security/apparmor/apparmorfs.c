@@ -499,6 +499,7 @@ static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 						if (strcmp(iterator->domain, curr_domain) == 0)
 						{
 							present = true;
+							printk (KERN_INFO "policy_update: domain matched\n");
 							break;
 						}
 						iterator = list_next_entry (iterator, domain_list);
@@ -514,6 +515,8 @@ static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 							if(!allow)
 							{
 								apparmorfs_delete_shm(nss, perm);
+								printk (KERN_INFO "policy_update: shared memory deleted\n");
+								break;
 							}
 			
 							iterator = list_next_entry (iterator, domain_list);
