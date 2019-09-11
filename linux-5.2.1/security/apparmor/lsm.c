@@ -85,6 +85,7 @@ static int apparmor_getlabel_domain (struct aa_profile *profile, char **name)
 }
 static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_domain, bool *allow)
 {
+	*allow = false;
 	struct ListOfDomains *iterator;
 	if (profile->allow_net_domains)
 	{
