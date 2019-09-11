@@ -474,7 +474,7 @@ static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 	struct aa_profile *profile;
 	char *curr_domain = NULL;
 	bool allow = false;
-	struct aa_profile *profile;
+	
 	fn_for_each (label, profile, apparmorfs_getlabel_domain(profile, &curr_domain));
 	if (curr_domain != NULL)
 	{
