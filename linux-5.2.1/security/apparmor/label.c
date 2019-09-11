@@ -85,6 +85,7 @@ static int apparmorfs_check_for_flow (struct aa_profile *profile, char *checking
 
 void apparmorfs_delete_shm(struct ipc_namespace *nss, struct kern_ipc_perm *perm)
 {
+	ipc_lock_object(&shp->shm_perm);
 	do_shm_rmid(nss, perm);
 }
 
