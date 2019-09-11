@@ -124,6 +124,7 @@ static void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
 	} else
 		shm_destroy(ns, shp);
 }
+EXPORT_SYMBOL(do_shm_rmid);
 
 #ifdef CONFIG_IPC_NS
 void shm_exit_ns(struct ipc_namespace *ns)

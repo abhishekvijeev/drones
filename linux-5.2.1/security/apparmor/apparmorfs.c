@@ -38,7 +38,43 @@
 #include "../../ipc/util.h"
 #include <linux/rhashtable.h>
 
+
 #define shm_ids(ns)	((ns)->ids[IPC_SHM_IDS])
+
+
+static int apparmorfs_getlabel_domain (struct aa_profile *profile, char **name)
+{
+	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	{
+		*name = profile->current_domain->domain;
+		
+	}
+	return 0;
+}
+
+
+static int apparmorfs_check_for_flow (struct aa_profile *profile, char *checking_domain, bool *allow)
+{
+	struct ListOfDomains *iterator;
+	if (profile->allow_net_domains)
+	{
+		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+		{
+			printk (KERN_INFO "apparmorfs_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
+			if ((strcmp(iterator->domain, checking_domain) == 0) || strcmp(iterator->domain, "*") == 0)
+			{
+				*allow = true;
+				break;
+			}
+		}
+	}
+	return 0;
+}
+
+void apparmorfs_delete_shm(struct ipc_namespace *nss, struct kern_ipc_perm *perm)
+{
+	do_shm_rmid(nss, perm);
+}
 
 /*
  * The apparmor filesystem interface used for policy load and introspection
@@ -404,15 +440,6 @@ static struct aa_loaddata *aa_simple_write_to_buffer(const char __user *userbuf,
 
 	return data;
 }
-static int apparmorfs_getlabel_domain (struct aa_profile *profile, char **name)
-{
-	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
-	{
-		*name = profile->current_domain->domain;
-		
-	}
-	return 0;
-}
 
 static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 			     loff_t *pos, struct aa_ns *ns)
@@ -443,43 +470,64 @@ static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 	struct kern_ipc_perm *perm;
 	struct rhashtable_iter iter;
 
-    rhashtable_walk_enter(&idss->key_ht, &iter);
-    rhashtable_walk_start(&iter);
-    while ((perm = rhashtable_walk_next(&iter)) != NULL) {
-		if (IS_ERR(perm))
-	    	continue;
-		printk(KERN_INFO "policy_update :key %d, uid %d, gid %d\n", perm->key, perm->uid, perm->gid);
-		void *tmpsecurity = perm->security;
-		if (tmpsecurity)
-		{
-			struct ListOfDomains *perm_security_list = (struct ListOfDomains *)tmpsecurity;
-			if(perm_security_list)
+	struct aa_profile *profile;
+	char *curr_domain = NULL;
+	bool allow = false;
+	struct aa_profile *profile;
+	fn_for_each (label, profile, apparmorfs_getlabel_domain(profile, &curr_domain));
+	if (curr_domain != NULL)
+	{
+		printk(KERN_INFO "policy_update: for domain %s\n", curr_domain);
+		rhashtable_walk_enter(&idss->key_ht, &iter);
+		rhashtable_walk_start(&iter);
+		while ((perm = rhashtable_walk_next(&iter)) != NULL) {
+			if (IS_ERR(perm))
+				continue;
+			printk(KERN_INFO "policy_update :key %d, uid %d, gid %d\n", perm->key, perm->uid, perm->gid);
+			void *tmpsecurity = perm->security;
+			if (tmpsecurity)
 			{
-				struct aa_profile *profile;
-				char *curr_domain = NULL;
-				fn_for_each (label, profile, apparmorfs_getlabel_domain(profile, &curr_domain));
-				if (curr_domain != NULL)
+				struct ListOfDomains *perm_security_list = (struct ListOfDomains *)tmpsecurity;
+				if(perm_security_list)
 				{
-					printk(KERN_INFO "policy_update: for domain %s\n", curr_domain);
+					bool present = false;
+					struct ListOfDomains *iterator, *tmp;
+					iterator = list_first_entry(&(perm_security_list->domain_list), typeof(*iterator), domain_list);
+					while((&iterator->domain_list) != &(perm_security_list->domain_list))
+					{
+						if (strcmp(iterator->domain, curr_domain) == 0)
+						{
+							present = true;
+							break;
+						}
+						iterator = list_next_entry (iterator, domain_list);
+					}	
+
+					//again check if new allow list gives current process access to shm
+					if(present)
+					{
+						iterator = list_first_entry(&(perm_security_list->domain_list), typeof(*iterator), domain_list);
+						while((&iterator->domain_list) != &(perm_security_list->domain_list))
+						{
+							fn_for_each (label, profile, apparmorfs_check_for_flow(profile, iterator->domain, &allow));
+							if(!allow)
+							{
+								apparmorfs_delete_shm(nss, perm);
+							}
+			
+							iterator = list_next_entry (iterator, domain_list);
+						}	
+					}
+					
 				}
-				
-
-
-				struct ListOfDomains *iterator, *tmp;
-				iterator = list_first_entry(&(perm_security_list->domain_list), typeof(*iterator), domain_list);
-				printk (KERN_INFO "policy_update: list of domains are\n");
-				while((&iterator->domain_list) != &(perm_security_list->domain_list))
-				{
-					printk (KERN_INFO "\t%s\n", iterator->domain);
-					iterator = list_next_entry (iterator, domain_list);
-				}	
-				
 			}
+		
 		}
-	
-    }
-    rhashtable_walk_stop(&iter);
-    rhashtable_walk_exit(&iter);
+		rhashtable_walk_stop(&iter);
+		rhashtable_walk_exit(&iter);
+	}
+
+    
 
 
 	//Custom Code:end
