@@ -50,6 +50,8 @@
 #define PROXY_POISON 97
 #define LABEL_POISON 100
 
+#define shm_ids(ns)	((ns)->ids[IPC_SHM_IDS])
+
 extern void do_shm_rmid(struct ipc_namespace *nss, struct kern_ipc_perm *perm);
 
 static int apparmorfs_getlabel_domain (struct aa_profile *profile, char **name)
