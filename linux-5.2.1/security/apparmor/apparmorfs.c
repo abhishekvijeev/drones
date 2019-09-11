@@ -415,6 +415,8 @@ static ssize_t policy_update(u32 mask, const char __user *buf, size_t size,
 	struct aa_label *label;
 	ssize_t error;
 
+	printk(KERN_INFO "apparmorfs: policy_update()\n");
+
 	label = begin_current_label_crit_section();
 
 	/* high level check about policy management - fine grained in
@@ -461,6 +463,8 @@ static ssize_t profile_replace(struct file *f, const char __user *buf,
 	int error = policy_update(AA_MAY_LOAD_POLICY | AA_MAY_REPLACE_POLICY,
 				  buf, size, pos, ns);
 	aa_put_ns(ns);
+
+	printk(KERN_INFO "apparmorfs: profile_replace()\n");
 
 	return error;
 }

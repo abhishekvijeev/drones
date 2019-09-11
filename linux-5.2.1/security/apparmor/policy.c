@@ -110,6 +110,8 @@ static void __add_profile(struct list_head *list, struct aa_profile *profile)
 {
 	struct aa_label *l;
 
+	printk(KERN_INFO "policy: __add_profile()\n");
+
 	AA_BUG(!list);
 	AA_BUG(!profile);
 	AA_BUG(!profile->ns);
@@ -768,6 +770,8 @@ static void __replace_profile(struct aa_profile *old, struct aa_profile *new)
 {
 	struct aa_profile *child, *tmp;
 
+	printk(KERN_INFO "policy: __replace_profile()\n");
+
 	if (!list_empty(&old->base.profiles)) {
 		LIST_HEAD(lh);
 		list_splice_init_rcu(&old->base.profiles, &lh, synchronize_rcu);
@@ -890,6 +894,8 @@ ssize_t aa_replace_profiles(struct aa_ns *policy_ns, struct aa_label *label,
 	const char *op;
 	ssize_t count, error;
 	LIST_HEAD(lh);
+
+	printk(KERN_INFO "policy: aa_replace_profiles()\n");
 
 	op = mask & AA_MAY_REPLACE_POLICY ? OP_PROF_REPL : OP_PROF_LOAD;
 	aa_get_loaddata(udata);

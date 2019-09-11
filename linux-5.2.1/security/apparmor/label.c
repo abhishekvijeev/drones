@@ -816,6 +816,8 @@ bool aa_label_replace(struct aa_label *old, struct aa_label *new)
 	unsigned long flags;
 	bool res;
 
+	printk(KERN_INFO "label: aa_label_replace()\n");
+
 	if (name_is_shared(old, new) && labels_ns(old) == labels_ns(new)) {
 		write_lock_irqsave(&labels_set(old)->lock, flags);
 		if (old->proxy != new->proxy)
