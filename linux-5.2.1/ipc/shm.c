@@ -110,7 +110,7 @@ void shm_init_ns(struct ipc_namespace *ns)
  * Called with shm_ids.rwsem (writer) and the shp structure locked.
  * Only shm_ids.rwsem remains locked on exit.
  */
-static void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
+void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
 {
 	struct shmid_kernel *shp;
 
