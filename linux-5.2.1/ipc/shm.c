@@ -46,7 +46,7 @@
 #include <linux/rhashtable.h>
 
 #include <linux/uaccess.h>
-
+#include <linux/export.h>
 #include "util.h"
 
 struct shmid_kernel /* private to the kernel */

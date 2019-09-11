@@ -37,7 +37,7 @@
 
 #include "../../ipc/util.h"
 #include <linux/rhashtable.h>
-
+#include <linux/export.h>
 
 #define shm_ids(ns)	((ns)->ids[IPC_SHM_IDS])
 
