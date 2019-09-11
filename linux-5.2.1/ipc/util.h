@@ -15,6 +15,8 @@
 #include <linux/err.h>
 #include <linux/ipc_namespace.h>
 
+void do_shm_rmid(struct ipc_namespace *nss, struct kern_ipc_perm *perm);
+
 /*
  * The IPC ID contains 2 separate numbers - index and sequence number.
  * By default,
