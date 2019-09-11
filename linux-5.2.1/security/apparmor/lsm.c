@@ -1913,46 +1913,58 @@ static int apparmor_ipc_permission(struct kern_ipc_perm *ipcp, short flag)
 	return 0;
 }
 
+
+static int apparmor_shm_add_domain(char *curr_domain, struct ListOfDomains *perm_security_list)
+{
+	int curr_domain_len = strlen(curr_domain);
+	struct ListOfDomains *new_node = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+	
+	if (!new_node)
+		return -ENOMEM;
+
+	new_node->domain = kzalloc(curr_domain_len, GFP_KERNEL);
+	if(!new_node->domain)
+		return -ENOMEM;
+
+	strncpy(new_node->domain, curr_domain, curr_domain_len);
+	INIT_LIST_HEAD(&(new_node->domain_list));
+	list_add(&(new_node->domain_list), &(perm_security_list->domain_list));
+	return 0;
+}
+
+static int apparmor_check_domain_present(char *cur_domain, struct ListOfDomains *perm_security_list)
+{
+	struct ListOfDomains *iterator;
+	list_for_each_entry(iterator, &(perm_security_list->domain_list), domain_list)
+	{
+		if (strcmp(iterator->domain, cur_domain) == 0)
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
+
+
+void apparmor_print_list_domain(struct ListOfDomains *perm_security_list)
+{
+	printk(KERN_INFO "apparmor_shm_shmat (%s): shm security list:\n", current->comm);
+	struct ListOfDomains *iterator;
+	list_for_each_entry(iterator, &(perm_security_list->domain_list), domain_list)
+	{
+		printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+	}
+}
+
+
 static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, int shmflg)
 {
-	
-	// struct aa_profile *profile;
-	// struct aa_label *curr_label, *sender_label;
-	// char *curr_domain = NULL, *sender_domain = NULL;
-	// curr_label = aa_get_current_label();
-	// int error = 1;
-
-	// fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-	// if (curr_domain != NULL)
-	// {
-	// 	bool allow = false; 
-	// 	sender_label = aa_get_label((struct aa_label *)perm->security);
-	// 	fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &sender_domain));
-	// 	if (sender_domain != NULL)
-	// 	{
-	// 		fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
-	// 		if (allow == 0)
-	// 			error = 0;
-			
-			
-	// 	}
-	// 	aa_put_label(sender_label);
-	// 	printk(KERN_INFO "apparmor_shm_shmat (%s): key: %d, allow=%d\n", current->comm, perm->key, allow);
-	// }
-	// aa_put_label(curr_label);
-	// if (error == 0)
-	// {
-	// 	printk ("apparmor_shm_shmat: not in list, deny\n");
-	// 	return -1;
-	// }
-
-
-
 	
 	struct aa_profile *profile;
 	struct aa_label *curr_label;
 	char *curr_domain = NULL;
-	int curr_domain_len = 0;
+	bool allow = false;
 	curr_label = __begin_current_label_crit_section();
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 	__end_current_label_crit_section(curr_label);
@@ -1960,27 +1972,23 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 
 	if(curr_domain != NULL && perm_security_list != NULL)
 	{
-		// would be good to check whether the current domain exists in the list before inserting
-		curr_domain_len = strlen(curr_domain);
-		struct ListOfDomains *new_node = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
-		
-		if (!new_node)
-			return -ENOMEM;
-
-		new_node->domain = kzalloc(curr_domain_len, GFP_KERNEL);
-		if(!new_node->domain)
-			return -ENOMEM;
-
-		strncpy(new_node->domain, curr_domain, curr_domain_len);
-		INIT_LIST_HEAD(&(new_node->domain_list));
-		list_add(&(new_node->domain_list), &(perm_security_list->domain_list));
-
-		printk(KERN_INFO "apparmor_shm_shmat (%s): shm security list:\n", current->comm);
-		struct ListOfDomains *iterator;
-		list_for_each_entry(iterator, &(perm_security_list->domain_list), domain_list)
+		struct ListOfDomains *iterator, *tmp;
+		iterator = list_first_entry(&(perm_security_list->domain_list), typeof(*iterator), domain_list);
+		while((&iterator->domain_list) != &(perm_security_list->domain_list))
 		{
-			printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+			fn_for_each (curr_label, profile, apparmor_check_for_flow(profile, iterator->domain, &allow));
+			if(!allow)
+			{
+				return -EPERM;
+			}
+			iterator = list_next_entry (iterator, domain_list);
 		}
+		if (apparmor_check_domain_present(curr_domain, perm_security_list) == 0)
+		{
+			if (apparmor_shm_add_domain(curr_domain, perm_security_list) < 0)
+				return -EPERM;
+		}
+		apparmor_print_list_domain(perm_security_list);
 	}
 	
 	
