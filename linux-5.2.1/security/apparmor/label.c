@@ -16,6 +16,17 @@
 #include "include/label.h"
 #include "include/policy.h"
 #include "include/secid.h"
+#include "include/apparmorfs.h"
+#include "include/audit.h"
+#include "include/crypto.h"
+#include "include/ipc.h"
+#include "include/policy_ns.h"
+#include "include/resource.h"
+#include "include/policy_unpack.h"
+
+#include "../../ipc/util.h"
+#include <linux/rhashtable.h>
+#include <linux/export.h>
 
 
 /*
@@ -38,6 +49,42 @@
 
 #define PROXY_POISON 97
 #define LABEL_POISON 100
+
+extern void do_shm_rmid(struct ipc_namespace *nss, struct kern_ipc_perm *perm);
+
+static int apparmorfs_getlabel_domain (struct aa_profile *profile, char **name)
+{
+	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	{
+		*name = profile->current_domain->domain;
+		
+	}
+	return 0;
+}
+
+
+static int apparmorfs_check_for_flow (struct aa_profile *profile, char *checking_domain, bool *allow)
+{
+	struct ListOfDomains *iterator;
+	if (profile->allow_net_domains)
+	{
+		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+		{
+			printk (KERN_INFO "apparmorfs_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
+			if ((strcmp(iterator->domain, checking_domain) == 0) || strcmp(iterator->domain, "*") == 0)
+			{
+				*allow = true;
+				break;
+			}
+		}
+	}
+	return 0;
+}
+
+void apparmorfs_delete_shm(struct ipc_namespace *nss, struct kern_ipc_perm *perm)
+{
+	do_shm_rmid(nss, perm);
+}
 
 static void free_proxy(struct aa_proxy *proxy)
 {
@@ -791,6 +838,82 @@ bool aa_label_replace(struct aa_label *old, struct aa_label *new)
 		write_unlock_irqrestore(&ls->lock, flags);
 		aa_put_label(l);
 	}
+
+	//Custom Code:start
+	struct ipc_namespace *nss;
+	nss = current->nsproxy->ipc_ns;
+	struct ipc_ids *idss = &shm_ids(nss);
+	struct kern_ipc_perm *perm;
+	struct rhashtable_iter iter;
+
+	struct aa_profile *profile;
+	char *curr_domain = NULL;
+	bool allow = false;
+	
+	fn_for_each (new, profile, apparmorfs_getlabel_domain(profile, &curr_domain));
+	if (curr_domain != NULL)
+	{
+		printk(KERN_INFO "policy_update: for domain %s\n", curr_domain);
+		rhashtable_walk_enter(&idss->key_ht, &iter);
+		rhashtable_walk_start(&iter);
+		while ((perm = rhashtable_walk_next(&iter)) != NULL) {
+			if (IS_ERR(perm))
+				continue;
+			printk(KERN_INFO "policy_update: key %d, uid %d, gid %d\n", perm->key, perm->uid, perm->gid);
+			void *tmpsecurity = perm->security;
+			if (tmpsecurity)
+			{
+				struct ListOfDomains *perm_security_list = (struct ListOfDomains *)tmpsecurity;
+				if(perm_security_list)
+				{
+					bool present = false;
+					struct ListOfDomains *iterator, *tmp;
+					iterator = list_first_entry(&(perm_security_list->domain_list), typeof(*iterator), domain_list);
+					while((&iterator->domain_list) != &(perm_security_list->domain_list))
+					{
+						if (strcmp(iterator->domain, curr_domain) == 0)
+						{
+							present = true;
+							printk (KERN_INFO "policy_update: domain matched\n");
+							break;
+						}
+						iterator = list_next_entry (iterator, domain_list);
+					}	
+
+					//again check if new allow list gives current process access to shm
+					if(present)
+					{
+						iterator = list_first_entry(&(perm_security_list->domain_list), typeof(*iterator), domain_list);
+						while((&iterator->domain_list) != &(perm_security_list->domain_list))
+						{
+							fn_for_each (new, profile, apparmorfs_check_for_flow(profile, iterator->domain, &allow));
+							if(!allow)
+							{
+								apparmorfs_delete_shm(nss, perm);
+								printk (KERN_INFO "policy_update: shared memory deleted\n");
+								break;
+							}
+			
+							iterator = list_next_entry (iterator, domain_list);
+						}	
+					}
+					
+				}
+			}
+		
+		}
+		rhashtable_walk_stop(&iter);
+		rhashtable_walk_exit(&iter);
+	}
+	else
+	{
+		printk(KERN_INFO "policy_update: curr_domain NULL for label %s, current_comm = %s\n", new->hname, current->comm);
+	}
+
+    
+
+
+	//Custom Code:end
 
 	return res;
 }
