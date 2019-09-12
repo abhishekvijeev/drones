@@ -1997,25 +1997,25 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 	return 0;
 }
 
-int msg_msg_alloc_security(struct msg_msg *msg)
+static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 {
 	printk(KERN_INFO "msg_msg_alloc_security: current = %s\n", current->comm);
 	return 0;
 }
 
-void msg_msg_free_security(struct msg_msg *msg)
+static void apparmor_msg_msg_free_security(struct msg_msg *msg)
 {
 	printk(KERN_INFO "msg_msg_free_security: current = %s\n", current->comm);
 }
 
-int msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg *msg,
+static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg *msg,
 				int msqflg)
 {
 	printk(KERN_INFO "msg_queue_msgsnd: current = %s\n", current->comm);
 	return 0;
 }
 
-int msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg *msg,
+static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg *msg,
 				struct task_struct *target, long type,
 				int mode)
 {
