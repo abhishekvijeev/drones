@@ -2029,11 +2029,11 @@ static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 }
 
 static void apparmor_msg_msg_free_security(struct msg_msg *msg)
-{
-	printk(KERN_INFO "msg_msg_free_security: current = %s, msg_label = %s\n", current->comm, (char *)msg->security);
+{	
 	if(msg->security)
 	{
-		kzfree(msg->security);
+		printk(KERN_INFO "msg_msg_free_security: current = %s, msg_label = %s\n", current->comm, (char *)msg->security);
+		// kzfree(msg->security);
 	}
 }
 
