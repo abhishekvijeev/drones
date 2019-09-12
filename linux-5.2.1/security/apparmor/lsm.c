@@ -2007,23 +2007,30 @@ static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 	char *msg_label = NULL;
 	int curr_domain_len = 0;
 	curr_label = __begin_current_label_crit_section();
+
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-	__end_current_label_crit_section(curr_label);
+	
 
 	if(curr_domain != NULL)
 	{
-		curr_domain_len = strlen(curr_domain);
-		msg_label = kzalloc(curr_domain_len + 2, GFP_KERNEL);
+		// curr_domain_len = strlen(curr_domain);
+		// msg_label = kzalloc(curr_domain_len + 2, GFP_KERNEL);
 		
-		if (!msg_label)
-			return -ENOMEM;
+		// if (!msg_label)
+		// 	return -ENOMEM;
 
-		strncpy(msg_label, curr_domain, curr_domain_len);
+		// strncpy(msg_label, curr_domain, curr_domain_len);
 
-		msg->security = msg_label;
+		// msg->security = msg_label;
 
-		printk(KERN_INFO "msg_msg_alloc_security: attached label %s to message from process %s\n", (char *)msg->security, current->comm);
+		// printk(KERN_INFO "msg_msg_alloc_security: attached label %s to message from process %s\n", (char *)msg->security, current->comm);
+
+		msg->security = aa_get_label(curr_label);
+		printk(KERN_INFO "msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
+
 	}
+
+	__end_current_label_crit_section(curr_label);
 
 	return 0;
 }
@@ -2047,18 +2054,42 @@ static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg 
 static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg *msg,
 				struct task_struct *target, long type,
 				int mode)
-{
+{	
 	if(!msg->security)
 	{
 		printk(KERN_INFO "msg_queue_msgrcv: msg label not set for message to process %s\n", target->comm);
 	}
 	else
 	{
-		printk(KERN_INFO "msg_queue_msgrcv: msg_label = %s, target = %s\n", (char *)msg->security, target->comm);
+		
+		char *target_domain == NULL;
+		struct aa_profile *profile;
+		struct aa_label *target_label = aa_get_task_label(target);
+		struct aa_label *sender_label = (struct aa_label *)msg->security;
+		bool allow = false;
+		int err = 0;
+
+		printk(KERN_INFO "msg_queue_msgrcv: msg_sender_label: %s, target = %s\n", sender_label->hname, target->comm);
+
+		fn_for_each (target_label, profile, apparmor_getlabel_domain(profile, &target_domain));
+		if (target_domain != NULL)
+		{
+			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, target_domain, &allow));
+			if (allow == 0)
+				err = 1;
+		}	
+
+		if(err != 0)
+		{
+			printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label -> hname, target->comm);
+			return -EPERM;
+		}
+
+		aa_put_label(target_label);
+		aa_put_label(sender_label);
 	}
 
-	struct aa_label *target_label = aa_get_task_label(target);
-	aa_put_label(target_label);
+	
 
 	return 0;
 }
