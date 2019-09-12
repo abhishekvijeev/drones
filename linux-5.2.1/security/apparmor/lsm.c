@@ -2020,17 +2020,20 @@ static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 		strncpy(msg_label, curr_domain, curr_domain_len);
 
 		msg->security = msg_label;
+
+		printk(KERN_INFO "msg_msg_alloc_security: attached label %s to message from process %s\n", (char *)msg->security, current->comm);
 	}
-
-	
-
 
 	return 0;
 }
 
 static void apparmor_msg_msg_free_security(struct msg_msg *msg)
 {
-	printk(KERN_INFO "msg_msg_free_security: current = %s\n", current->comm);
+	printk(KERN_INFO "msg_msg_free_security: current = %s, msg_label = %s\n", current->comm, (char *)msg->security);
+	if(msg->security)
+	{
+		kzfree(msg->security);
+	}
 }
 
 static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg *msg,
@@ -2044,7 +2047,18 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 				struct task_struct *target, long type,
 				int mode)
 {
-	printk(KERN_INFO "msg_queue_msgrcv: target = %s\n", target->comm);
+	if(!msg->security)
+	{
+		printk(KERN_INFO "msg_queue_msgrcv: msg label not set for message to process %s\n", target->comm);
+	}
+	else
+	{
+		printk(KERN_INFO "msg_queue_msgrcv: msg_label = %s, target = %s\n", (char *)msg->security, target->comm);
+	}
+
+	struct aa_label *target_label = aa_get_task_label(target);
+	aa_put_label(target_label);
+
 	return 0;
 }
 
