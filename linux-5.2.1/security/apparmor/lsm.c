@@ -2019,7 +2019,7 @@ static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 
 		strncpy(msg_label, curr_domain, curr_domain_len);
 
-		msg->security = msg_label;
+		msg->security = (void *)msg_label;
 
 		printk(KERN_INFO "msg_msg_alloc_security: attached label %s to message from process %s\n", (char *)msg->security, current->comm);
 	}
