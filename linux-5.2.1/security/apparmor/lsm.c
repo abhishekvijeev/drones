@@ -2000,6 +2000,31 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 {
 	printk(KERN_INFO "msg_msg_alloc_security: current = %s\n", current->comm);
+	struct aa_profile *profile;
+	struct aa_label *curr_label;
+	char *curr_domain = NULL;
+	char *msg_label = NULL;
+	int curr_domain_len = 0;
+	curr_label = __begin_current_label_crit_section();
+	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	__end_current_label_crit_section(curr_label);
+
+	if(curr_domain != NULL)
+	{
+		curr_domain_len = strlen(curr_domain);
+		msg_label = kzalloc(curr_domain_len, GFP_KERNEL);
+		
+		if (!msg_label)
+			return -ENOMEM;
+
+		strncpy(msg_label, curr_domain, curr_domain_len);
+
+		msg->security = msg_label;
+	}
+
+	
+
+
 	return 0;
 }
 
