@@ -29,7 +29,7 @@
 #include <linux/inetdevice.h>
 #include <linux/skbuff.h>
 #include <linux/pid.h>
-
+#include <linux/msg.h>
 
 #include "include/apparmor.h"
 #include "include/apparmorfs.h"
@@ -46,6 +46,7 @@
 #include "include/procattr.h"
 #include "include/mount.h"
 #include "include/secid.h"
+
 
 
 /* Flag indicating whether initialization completed */
@@ -2012,14 +2013,14 @@ static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 	if(curr_domain != NULL)
 	{
 		curr_domain_len = strlen(curr_domain);
-		msg_label = kzalloc(curr_domain_len, GFP_KERNEL);
+		msg_label = kzalloc(curr_domain_len + 2, GFP_KERNEL);
 		
 		if (!msg_label)
 			return -ENOMEM;
 
 		strncpy(msg_label, curr_domain, curr_domain_len);
 
-		msg->security = (void *)msg_label;
+		msg->security = msg_label;
 
 		printk(KERN_INFO "msg_msg_alloc_security: attached label %s to message from process %s\n", (char *)msg->security, current->comm);
 	}
