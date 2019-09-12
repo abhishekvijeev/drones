@@ -1997,6 +1997,32 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 	return 0;
 }
 
+int msg_msg_alloc_security(struct msg_msg *msg)
+{
+	printk(KERN_INFO "msg_msg_alloc_security: current = %s\n", current->comm);
+	return 0;
+}
+
+void msg_msg_free_security(struct msg_msg *msg)
+{
+	printk(KERN_INFO "msg_msg_free_security: current = %s\n", current->comm);
+}
+
+int msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg *msg,
+				int msqflg)
+{
+	printk(KERN_INFO "msg_queue_msgsnd: current = %s\n", current->comm);
+	return 0;
+}
+
+int msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg *msg,
+				struct task_struct *target, long type,
+				int mode)
+{
+	printk(KERN_INFO "msg_queue_msgrcv: target = %s\n", target->comm);
+	return 0;
+}
+
 /*
  * The cred blob is a pointer to, not an instance of, an aa_task_ctx.
  */
@@ -2099,6 +2125,11 @@ static struct security_hook_list apparmor_hooks[] __lsm_ro_after_init = {
 	LSM_HOOK_INIT(ipc_permission, apparmor_ipc_permission),
 	LSM_HOOK_INIT(shm_shmat, apparmor_shm_shmat),
 	LSM_HOOK_INIT(shm_free_security, apparmor_shm_free_security),
+
+	LSM_HOOK_INIT(msg_msg_alloc_security, apparmor_msg_msg_alloc_security),
+	LSM_HOOK_INIT(msg_msg_free_security, apparmor_msg_msg_free_security),
+	LSM_HOOK_INIT(msg_queue_msgsnd, apparmor_msg_queue_msgsnd),
+	LSM_HOOK_INIT(msg_queue_msgrcv, apparmor_msg_queue_msgrcv),
 	
 };
 
