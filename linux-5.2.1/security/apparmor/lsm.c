@@ -2062,7 +2062,7 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 	else
 	{
 		
-		char *target_domain == NULL;
+		char *target_domain = NULL;
 		struct aa_profile *profile;
 		struct aa_label *target_label = aa_get_task_label(target);
 		struct aa_label *sender_label = (struct aa_label *)msg->security;
