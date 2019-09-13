@@ -13,161 +13,224 @@ esac
 
 PROFILE="profile init-systemd /lib/systemd/** flags=(complain) 
 {
-	/bin/mount cx -> bin_mount,
-	/lib/netplan/generate cx -> netplan_profile,
-	/sbin/udevadm cx -> udevadm_profile,
-	/usr/bin/basename	cx -> basename_profile,
-	/usr/lib/systemd/system-environment-generators/snapd-env-generator cx -> snapd_env_generator,
-	/usr/lib/colord/color-sane cx -> colord_profile, 
-	/usr/lib/colord/colord cx -> colord_profile, 
-	/usr/lib/colord/color-session cx -> colord_profile, 
+	/bin/cp  cx -> binprofile,
+	/bin/dash cx -> binprofile,
+	/bin/mount cx -> binprofile,
+	/bin/readlink cx -> binprofile,
+	/bin/rm cx -> binprofile,
+	
+	
+	/etc/init.d/network-manager cx -> networkmanager,
 
-	capability audit_read,
-	capability audit_write,	
-	capability chown,
-	capability dac_override,
-	capability dac_read_search,
-	capability kill,
-	capability mknod,
-	capability net_admin,
-	capability setuid,
-	capability sys_admin,
-	capability sys_boot,
-	capability sys_module,
-	capability sys_ptrace,
-	capability sys_resource,
-	capability sys_time,
-	capability sys_tty_config,
+	/lib/netplan/generate cx -> netplan,
+	/lib/systemd/systemd-journald cx -> systemdjournal,
+
+	/sbin/plymouthd cx -> plymouthd,
+	/usr/bin/chcon cx -> usrbinprofile,
+	/usr/bin/dbus-daemon cx -> usrbinprofile,
+	/usr/bin/gnome-shell cx -> usrbinprofile,
+	/usr/bin/find cx -> usrbinprofile,
+	/usr/bin/host cx -> usrbinprofile,
+	/usr/bin/make cx -> usrbinprofile,
+	/usr/bin/unshare cx -> usrbinprofile,
+	/usr/bin/x86_64-linux-gnu-as cx -> usrbinprofile,
+	/usr/bin/x86_64-linux-gnu-gcc-8 cx -> usrbinprofile,
+	/usr/bin/Xwayland cx -> usrbinprofile,
+
+	/usr/lib/colord/colord-sane cx -> usrlibprofile,
+	/usr/lib/gcc/x86_64-linux-gnu/8/cc1 cx -> usrlibprofile,
+	/usr/lib/gnome-online-accounts/goa-daemon cx -> usrlibprofile,
+	/usr/lib/gnome-session/gnome-session-binary cx -> usrlibprofile,
+	/usr/lib/gnome-settings-daemon/gsd-media-keys cx -> usrlibprofile,
+	/usr/lib/gnome-settings-daemon/gsd-rfkill cx -> usrlibprofile,
+	/usr/lib/gnome-settings-daemon/gsd-wacom cx -> usrlibprofile,
+	/usr/lib/gvfs/gvfsd cx -> usrlibprofile,
+	/usr/lib/gvfs/gvfsd-burn cx -> usrlibprofile,
+	/usr/lib/gvfs/gvfs-goa-volume-monitor cx -> usrlibprofile,
+	/usr/lib/ibus/ibus-x11 cx -> usrlibprofile,
+	/usr/lib/snapd/snapd cx -> usrlibprofile,
+	/usr/lib/systemd/system-environment-generators/snapd-env-generator cx -> usrlibprofile,
+	/usr/lib/tracker/tracker-miner-apps cx -> usrlibprofile,
+	/usr/lib/udisks2/udisksd cx -> usrlibprofile,
+	/usr/lib/x86_64-linux-gnu/glib-2.0/gio-launch-desktop cx -> usrlibprofile,
+	/usr/lib/xorg/Xorg cx -> usrlibprofile,
+
+	/usr/libexec/evolution-source-registry cx -> evolution_sourc,
+	/usr/sbin/cupsd cx -> usrsbinprofile,
+	/usr/sbin/gdm3 cx -> usrsbinprofile,
+
+	
+
+    capability audit_read,
+    capability audit_write, 
+    capability chown,
+    capability dac_override,
+    capability dac_read_search,
+    capability kill,
+    capability mknod,
+    capability net_admin,
+    capability setuid,
+    capability sys_admin,
+    capability sys_boot,
+    capability sys_module,
+    capability sys_ptrace,
+    capability sys_resource,
+    capability sys_time,
+    capability sys_tty_config,	
 
 	/dev/** rw,
-	/etc/**	r,
+    /etc/** r,
 
-	/lib/console-setup/keyboard-setup.sh	rmix,	
-	/lib/systemd/** rix,
-	/lib/** rm,
-
-	mount, 
-
-	/proc/** rw,
-	ptrace, 
-
-
-	/run/**	rwcx -> run_default,
-	signal, 
-
-	/sys/** rwcx -> sys_default,
-	
-	/usr/ r,
-	/{,usr/}{,s}bin/** rmwcx -> default_profile,
-	/usr/lib/x86_64-linux-gnu/**	rm,
-	/usr/** rw,
-	/var/** rw,
-	/tmp/** rw,
-	
+	/lib/console-setup/keyboard-setup.sh    rmix,   
+    /lib/systemd/** rix,
+    /lib/** rm,
+   
+    mount, 
+   
+    /proc/** rw,
+    ptrace, 
+  
+    /run/** rwcx -> run_default,
+    signal, 
+    /sys/** rwcx -> sys_default,
+	/snap/** r,
+	umount,
+    /usr/ r,
+    /{,usr/}{,s}bin/** rmwcx -> default_profile,
+    /usr/lib/x86_64-linux-gnu/**    rm,
+    /usr/** rw,
+    /var/** rw,
+    /tmp/** rw,
 
 	profile run_default flags=(complain){
+  
+    }
+  
+    profile sys_default flags=(complain){
+   
+    }
+       
+    profile default_profile flags=(complain){
 
 	}
 
-	profile sys_default flags=(complain){
+	
+	profile netplan flags=(complain){
+		/dev/null wr,
+		/lib/netplan/generate r,
 
 	}
 	
-	profile default_profile flags=(complain){
-		/** rwmkix,
-		signal,
-		ptrace,
-		mount,
+	profile plymouthd flags=(complain){
+		capability sys_tty_config,
+		/usr/lib/x86_64-linux-gnu/libXext.so.6.4.0 r,
+	}
 
-		/{,usr/}{,s}bin/* r, 
-		/dev/null	rw,
-		/etc/ld.so.cache	r,
-		/etc/locale.alias	r,
-		/etc/udev/**	r,
-		/lib/netplan/generate mr,
-		/lib/modules/**	rw,
-		/lib/x86_64-linux-gnu/*.so mr,
-		/lib/x86_64-linux-gnu/*.so.* mr,
-		/proc/**	r,
+	profile NetworkManager flags=(complain){
+		/usr/lib/x86_64-linux-gnu/libroken.so.18.1.0 rm,
+		/usr/lib/x86_64-linux-gnu/libwind.so.0.0.0 r,
+		/usr/lib/x86_64-linux-gnu/libwind.so.0.0.0 rm,
+		/usr/lib/x86_64-linux-gnu/libheimbase.so.1.0.0 r,
+		/etc/hosts r,
+	}
+
+	profile systemd_journal flags=(complain){
 		ptrace,
-		/run/systemd/generator/openvpn.service.wants/	rw,
-		/run/systemd/generator/openvpn.service.wants/**	rw,
-		/run/tmpfiles.d/	rw,
-		/run/tmpfiles.d/**	rw,
-		/sys/module/**	r,
-		/usr/lib/locale/**	r,
-		/usr/lib/x86_64-linux-gnu/*.so.* rm,
-		/usr/share/locale-langpack/**	r,
+		signal,
+		capability,
 	}
-	profile netplan_profile flags=(complain) {
-		capability mknod,
-		/bin/udevadm	rix,
-		/dev/null	rw,
-		/etc/ld.so.cache	r,
-		/etc/netplan/	r,
-		/etc/netplan/**	r,
-		/etc/udev/** r,
-		/lib/netplan/	r,
-		/lib/netplan/generate mrix,
-		/lib/systemd/system-generators/netplan	mrix,
-		/lib/x86_64-linux-gnu/*.so mr,
-		/lib/x86_64-linux-gnu/*.so.* mr,
-		/proc/** r,
-		ptrace,
-		/run/NetworkManager/ rw,
-		/run/NetworkManager/** rw,
-		/run/systemd/** rw,
-		/usr/lib/x86_64-linux-gnu/*.so.* rm,
+
+	profile evolution_sourc flags=(complain){
+		/usr/lib/evolution-data-server/registry-modules/module-oauth2-services.so r,
 	}
-	profile snapd_env_generator flags=(complain) {
-		/dev/null	rw,
-		/etc/ld.so.cache	r, 
-		/lib/x86_64-linux-gnu/*.so mr,
-		/lib/x86_64-linux-gnu/*.so.* mr,
-		/usr/lib/systemd/system-environment-generators/snapd-env-generator mr,
-	}
-	profile bin_mount flags=(complain) {
-		capability sys_admin,
-		mount, 
-		/bin/mount	rm,	
-		/dev/loop-control	rw,
-		/dev/** r,
-		/etc/ld.so.cache	r,
-		/etc/locale.alias	r,
-		/lib/x86_64-linux-gnu/*.so mr,
-		/lib/x86_64-linux-gnu/*.so.* mr,
-		/proc/**	r,
-		/run/mount/	rw,
-		/run/mount/**	rkw,
-		/sys/devices/**	r,
-		/usr/lib/x86_64-linux-gnu/*.so.* rm,
-		/var/lib/**	r,
-	}
-	profile udevadm_profile flags=(complain) {
+
+	profile binprofile flags=(complain){
+		/opt/VBoxGuestAdditions-5.2.16/src/vboxguest-5.2.16/vboxguest/include/iprt/latin1.h r,
+		/bin/** rix,
+		/dev/null r,
+		/etc/ld.so.cache r,
+				
+		/lib/x86_64-linux-gnu/ld-2.29.so r,
+		/lib/x86_64-linux-gnu/libmount.so.1.1.0 rm,
+		/lib/x86_64-linux-gnu/libc-2.29.so rm,
+		/lib/x86_64-linux-gnu/libblkid.so.1.1.0 r,
 		
 	}
 	
-	profile colord_profile {
-		/dev/**	r,
-		/etc/ld.so.cache	r, 
-		/lib/x86_64-linux-gnu/*.so mr,
-		/lib/x86_64-linux-gnu/*.so.* mr,
-		/sys/**	r,
-		/run/**	r,
-		/usr/lib/x86_64-linux-gnu/*.so.* rm,
-		/usr/lib/colord/**	mrix,
-	}
-	profile basename_profile flags=(complain){
-		/lib/x86_64-linux-gnu/ld-*.so mr,
-		/usr/bin/basename mr,
-		/etc/ld.so.cache  r,
-		/lib/x86_64-linux-gnu/*.so mr,
-		/lib/x86_64-linux-gnu/*.so.* mr,
-		/home/abhishek/.local/share/gvfs-metadata/**  r,
-		/usr/share/code/**    r,
-		/dev/**   wr,
+	profile usrbinprofile flags=(complain){
+		/bin/* cx -> binprofile,		
+		/dev/shm/ r,
+		/dev/urandom r,
+		/dev/null r,
 
+		/etc/pulse/client.conf r,
+		/etc/pulse/client.conf.d/ r,
+		/etc/pulse/client.conf.d/00-disable-autospawn.conf r,
+		/etc/ld.so.cache r,
+		/etc/locale.alias r,
+		/etc/passwd r,
+		/etc/ssl/openssl.cnf r,
+		/home/abhishek/.config/pulse/cookie rk,
+	
+		/lib/x86_64-linux-gnu/ld-2.29.so r,
+		/lib/x86_64-linux-gnu/libc-2.29.so rm,
+				
+		/proc/[0-9]*/cmdline r,
+		/proc/[0-9]*/oom_score_adj w,
+		/run/** rw,
+		
+		/usr/bin/* rix,
+		/usr/share/dbus-1/system.d/org.freedesktop.PolicyKit1.conf r,
+		/usr/lib/gnome-online-accounts/goa-daemon ix,
+		/usr/share/dbus-1/services/ r,
+		/usr/share/zoneinfo/Etc/GMT+12 r,
+		/usr/share/desktop-directories/X-GNOME-Utilities.directory r,
+		/usr/share/applications/org.gnome.baobab.desktop r,
+		/usr/lib/** r,
+		/var/lib/gdm3/.config/pulse/cookie rk,
+		/tmp/** rw,
+	
 	}
+	
+	profile usrsbinprofile flags=(complain){
+		/etc/default/locale r,
+				/usr/share/cups/mime/command.types r,
+		/usr/share/xsessions/ubuntu.desktop r,	
+	}
+	
+	profile usrlibprofile flags=(complain){
+		/dev/bus/usb/ r,
+		/dev/null wr,
+		/dev/rfkill w,
+		/etc/locale.alias r,
+		/etc/ld.so.cache r,
+		/etc/sane.d/dell1600n_net.conf r,
+		/home/abhishek/** rk,
+		/lib/x86_64-linux-gnu/ld-2.29.so r,
+		/lib/x86_64-linux-gnu/libc-2.29.so rm,
+		/lib/x86_64-linux-gnu/libdevmapper.so.1.02.1 rm,
+
+		/proc/[0-9]*/cmdline r,
+		/proc/[0-9]*/fd/ r,
+		/proc/filesystems r,
+		/proc/version r,
+				
+		/run/udev/data/c189:129 r,
+		/run/user/** wrix,
+		/sys/bus/ r,
+		/sys/bus/** r,
+		/sys/devices/** r,
+		/usr/lib/** rmix,
+		/usr/src/** r,
+		/usr/share/** r,
+		/var/lib/** r,
+		/tmp/** rwix,		
+		
+		
+	}
+
+
+
 }"
 
 mount -t securityfs none /sys/kernel/security

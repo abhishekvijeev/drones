@@ -8,7 +8,7 @@ def print_data(final_data):
         print(data['comm'])
         print (data['profile'].split("//null-")[-1])
         print(data['operation'])
-        if "name" in data:
+        if "name" in data: 
             print(data['name'])
             if "requested_mask" in data:
                 print(data['requested_mask'])
@@ -27,22 +27,43 @@ def print_data(final_data):
 def group_data_by_app(final_data):
     group_data = {}
     for data in final_data:
-        appname = data['profile'].split("//null-")[-1]
+        #appname = data['profile'].split("//null-")[-1]
+        appname = data['comm']
         if appname not in group_data:
             group_data[appname] = []
+            group_data[appname].append("profile " + appname + " flags=(complain){")
+            group_data[appname].append(data['profile'].split("//null-")[-1] + " cx -> " + appname + ",")
+            group_data[appname].append(data['profile'])
+
+
+
+            group_data[appname].append("")
         if data['operation'] == "mount":
-            group_data[appname].append("mount " + data['name'] )
+            if ("mount " + data['name']) not in group_data[appname]:
+                group_data[appname].append("mount " + data['name'] )
+
+        elif data['operation'] == "umount":
+            if ("mount " + data['name']) not in group_data[appname]:
+                group_data[appname].append("mount " + data['name'] )
+
+
         elif data['operation'] == "capable":
-            group_data[appname].append("capable " + data['capname'] )
+            if ("capable " + data['capname']) not in group_data[appname]:
+                group_data[appname].append("capability " + data['capname']  )
 
         elif data['operation'] == "signal":
-            group_data[appname].append("signal " + data['peer'] )
+            if ("signal " + data['peer'] ) not in group_data[appname]:
+                group_data[appname].append("signal " + data['peer'] )
 
         elif data['operation'] == "mount":
-            group_data[appname].append("mount " + data)
+            if ("mount " + data) not in group_data[appname]:
+                group_data[appname].append("mount " + data)
         else:
-            if 'name'  in data and 'requested_mask' in data:
-                group_data[appname].append(data['name'] + " " + data['requested_mask'])
+            if 'name'  in data and 'requested_mask' in data and len(data['name']) > 0:
+                put_data = data['name'] + " " + data['requested_mask'] + ","
+
+                if put_data not in group_data[appname]:
+                    group_data[appname].append(put_data)
             else:
                 group_data[appname].append(data)
 
