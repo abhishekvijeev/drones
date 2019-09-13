@@ -13,29 +13,17 @@ esac
 
 PROFILE="profile init-systemd /lib/systemd/** flags=(complain) 
 {
-	/bin/cp  cx -> binprofile,
-	/bin/dash cx -> binprofile,
-	/bin/mount cx -> binprofile,
-	/bin/readlink cx -> binprofile,
-	/bin/rm cx -> binprofile,
-	
+	/bin/*  cx -> binprofile,
 	
 	/etc/init.d/network-manager cx -> networkmanager,
 
 	/lib/netplan/generate cx -> netplan,
 	/lib/systemd/systemd-journald cx -> systemdjournal,
 
-	/sbin/plymouthd cx -> plymouthd,
-	/usr/bin/chcon cx -> usrbinprofile,
-	/usr/bin/dbus-daemon cx -> usrbinprofile,
-	/usr/bin/gnome-shell cx -> usrbinprofile,
-	/usr/bin/find cx -> usrbinprofile,
-	/usr/bin/host cx -> usrbinprofile,
-	/usr/bin/make cx -> usrbinprofile,
-	/usr/bin/unshare cx -> usrbinprofile,
-	/usr/bin/x86_64-linux-gnu-as cx -> usrbinprofile,
-	/usr/bin/x86_64-linux-gnu-gcc-8 cx -> usrbinprofile,
-	/usr/bin/Xwayland cx -> usrbinprofile,
+
+	/sbin/* cx ->  sbinprofile,	
+
+	/usr/bin/* cx -> usrbinprofile,
 
 	/usr/lib/colord/colord-sane cx -> usrlibprofile,
 	/usr/lib/gcc/x86_64-linux-gnu/8/cc1 cx -> usrlibprofile,
@@ -51,13 +39,16 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	/usr/lib/snapd/snapd cx -> usrlibprofile,
 	/usr/lib/systemd/system-environment-generators/snapd-env-generator cx -> usrlibprofile,
 	/usr/lib/tracker/tracker-miner-apps cx -> usrlibprofile,
+	/usr/lib/tracker/tracker-extract cx -> usrlibprofile,
+	/usr/lib/tracker/tracker-miner-fs cx -> usrlibprofile,
+	/usr/lib/tracker/tracker-store cx -> usrlibprofile,
 	/usr/lib/udisks2/udisksd cx -> usrlibprofile,
 	/usr/lib/x86_64-linux-gnu/glib-2.0/gio-launch-desktop cx -> usrlibprofile,
 	/usr/lib/xorg/Xorg cx -> usrlibprofile,
 
-	/usr/libexec/evolution-source-registry cx -> evolution_sourc,
-	/usr/sbin/cupsd cx -> usrsbinprofile,
-	/usr/sbin/gdm3 cx -> usrsbinprofile,
+	/usr/libexec/** rcx -> usrlibexecprofile,
+	
+	/usr/sbin/* cx -> usrsbinprofile,
 
 	
 
@@ -96,7 +87,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	/snap/** r,
 	umount,
     /usr/ r,
-    /{,usr/}{,s}bin/** rmwcx -> default_profile,
+    # /{,usr/}{,s}bin/** rmwcx -> default_profile,
     /usr/lib/x86_64-linux-gnu/**    rm,
     /usr/** rw,
     /var/** rw,
@@ -117,21 +108,28 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	
 	profile netplan flags=(complain){
 		/dev/null wr,
+		/etc/ld.so.cache r,
+		/lib/x86_64-linux-gnu/ld-2.29.so r,
 		/lib/netplan/generate r,
+		/usr/lib/** rm,
 
 	}
 	
-	profile plymouthd flags=(complain){
+	profile sbinprofile flags=(complain){
 		capability sys_tty_config,
+		/etc/apparmor.d/** r,
+		/lib/x86_64-linux-gnu/libe2p.so.2.3 rm,
+		/lib/x86_64-linux-gnu/libblkid.so.1.1.0 rm,
+		/lib/x86_64-linux-gnu/libc-2.29.so rm,
 		/usr/lib/x86_64-linux-gnu/libXext.so.6.4.0 r,
 	}
 
 	profile NetworkManager flags=(complain){
-		/usr/lib/x86_64-linux-gnu/libroken.so.18.1.0 rm,
-		/usr/lib/x86_64-linux-gnu/libwind.so.0.0.0 r,
-		/usr/lib/x86_64-linux-gnu/libwind.so.0.0.0 rm,
-		/usr/lib/x86_64-linux-gnu/libheimbase.so.1.0.0 r,
+		capability,
 		/etc/hosts r,
+		/proc/sys/net/ipv6/conf/enp0s3/accept_ra w,
+		/usr/lib/** rm,
+
 	}
 
 	profile systemd_journal flags=(complain){
@@ -140,21 +138,21 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		capability,
 	}
 
-	profile evolution_sourc flags=(complain){
-		/usr/lib/evolution-data-server/registry-modules/module-oauth2-services.so r,
+	profile usrlibexecprofile flags=(complain){
+		/usr/lib/** rm,
 	}
 
 	profile binprofile flags=(complain){
 		/opt/VBoxGuestAdditions-5.2.16/src/vboxguest-5.2.16/vboxguest/include/iprt/latin1.h r,
 		/bin/** rix,
-		/dev/null r,
+		/dev/null rw,
 		/etc/ld.so.cache r,
-				
+		/home/abhishek/.oh-my-zsh/** r,
 		/lib/x86_64-linux-gnu/ld-2.29.so r,
 		/lib/x86_64-linux-gnu/libmount.so.1.1.0 rm,
 		/lib/x86_64-linux-gnu/libc-2.29.so rm,
 		/lib/x86_64-linux-gnu/libblkid.so.1.1.0 r,
-		
+	    	/usr/lib/** rm,	
 	}
 	
 	profile usrbinprofile flags=(complain){
@@ -168,43 +166,51 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/etc/pulse/client.conf.d/00-disable-autospawn.conf r,
 		/etc/ld.so.cache r,
 		/etc/locale.alias r,
+		/etc/nsswitch.conf r,
 		/etc/passwd r,
 		/etc/ssl/openssl.cnf r,
-		/home/abhishek/.config/pulse/cookie rk,
+		/home/abhishek/** rk,
 	
 		/lib/x86_64-linux-gnu/ld-2.29.so r,
 		/lib/x86_64-linux-gnu/libc-2.29.so rm,
+		/lib/x86_64-linux-gnu/libnss_compat-2.29.so rm,
+		/lib/x86_64-linux-gnu/libnss_nis-2.29.so rm,
 				
 		/proc/[0-9]*/cmdline r,
 		/proc/[0-9]*/oom_score_adj w,
 		/run/** rw,
 		
 		/usr/bin/* rix,
-		/usr/share/dbus-1/system.d/org.freedesktop.PolicyKit1.conf r,
-		/usr/lib/gnome-online-accounts/goa-daemon ix,
-		/usr/share/dbus-1/services/ r,
-		/usr/share/zoneinfo/Etc/GMT+12 r,
-		/usr/share/desktop-directories/X-GNOME-Utilities.directory r,
-		/usr/share/applications/org.gnome.baobab.desktop r,
-		/usr/lib/** r,
+		/usr/lib/** rmix,
+		/usr/share/** r,
 		/var/lib/gdm3/.config/pulse/cookie rk,
 		/tmp/** rw,
 	
 	}
 	
 	profile usrsbinprofile flags=(complain){
+		/dev/null r,		
 		/etc/default/locale r,
-				/usr/share/cups/mime/command.types r,
-		/usr/share/xsessions/ubuntu.desktop r,	
+		/etc/cups/** rwix,
+		/proc/[0-9]*/cgroup r,
+		/proc/[0-9]*/fd/ r,
+		/run/systemd/** r,
+		/usr/lib/** rix,
+		/usr/share/** r,
+		
+
 	}
 	
 	profile usrlibprofile flags=(complain){
 		/dev/bus/usb/ r,
 		/dev/null wr,
 		/dev/rfkill w,
+		/etc/fonts/** r,
 		/etc/locale.alias r,
 		/etc/ld.so.cache r,
-		/etc/sane.d/dell1600n_net.conf r,
+		/etc/sane.d/** r,
+		
+		/home/abhishek/.local/share/tracker/data/tracker-store.journal w,
 		/home/abhishek/** rk,
 		/lib/x86_64-linux-gnu/ld-2.29.so r,
 		/lib/x86_64-linux-gnu/libc-2.29.so rm,
@@ -223,7 +229,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/usr/lib/** rmix,
 		/usr/src/** r,
 		/usr/share/** r,
-		/var/lib/** r,
+		/var/lib/** rk,
 		/tmp/** rwix,		
 		
 		
