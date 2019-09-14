@@ -48,7 +48,7 @@ def group_data_by_app(final_data):
 
 
         elif data['operation'] == "capable":
-            if ("capable " + data['capname']) not in group_data[appname]:
+            if ("capability " + data['capname']) not in group_data[appname]:
                 group_data[appname].append("capability " + data['capname']  )
 
         elif data['operation'] == "signal":
