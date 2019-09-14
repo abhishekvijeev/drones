@@ -124,7 +124,6 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/proc/sys/kernel/* r,
 		/proc/filesystems r,
 	    	/sys/kernel/security/apparmor/.replace w,
-		/usr/bin/* rix,
 		/sbin/* rix,		
 		/sys/** r,
 		/run/** rwix,
@@ -192,7 +191,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/proc/[0-9]*/oom_score_adj w,
 		/run/** rwix,
 		
-		/usr/bin/* rix,
+
 		/sbin/* rcx -> sbinprofile,
 		/sys/** r,
 		/usr/bin/** rmcx -> usrsbinprofile,
