@@ -652,13 +652,21 @@ static int apparmor_inode_alloc_security(struct inode *inode)
 	char *curr_domain = NULL;
 	curr_label = __begin_current_label_crit_section();
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-	__end_current_label_crit_section(curr_label);
-
 	if(curr_domain)
 	{
 		printk(KERN_INFO "apparmor_inode_alloc_security (%s)\n", current->comm);
-		inode->i_security = curr_label;
-		
+		inode->i_security = aa_get_label(curr_label);
+	}
+
+	__end_current_label_crit_section(curr_label);
+}
+
+static void inode_free_security(struct inode *inode)
+{
+	if(inode->i_security)
+	{
+		struct aa_label *inode_label = (struct aa_label *)inode->i_security;
+		aa_put_label(inode_label);
 	}
 }
 
@@ -2135,6 +2143,7 @@ static struct security_hook_list apparmor_hooks[] __lsm_ro_after_init = {
 	LSM_HOOK_INIT(inode_getattr, apparmor_inode_getattr),
 
 	LSM_HOOK_INIT(inode_alloc_security, apparmor_inode_alloc_security),
+	LSM_HOOK_INIT(inode_free_security, apparmor_inode_free_security),
 
 	
 
