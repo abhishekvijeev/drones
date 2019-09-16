@@ -2013,18 +2013,6 @@ static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 
 	if(curr_domain != NULL)
 	{
-		// curr_domain_len = strlen(curr_domain);
-		// msg_label = kzalloc(curr_domain_len + 2, GFP_KERNEL);
-		
-		// if (!msg_label)
-		// 	return -ENOMEM;
-
-		// strncpy(msg_label, curr_domain, curr_domain_len);
-
-		// msg->security = msg_label;
-
-		// printk(KERN_INFO "msg_msg_alloc_security: attached label %s to message from process %s\n", (char *)msg->security, current->comm);
-
 		msg->security = aa_get_label(curr_label);
 		printk(KERN_INFO "msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
 
@@ -2040,7 +2028,6 @@ static void apparmor_msg_msg_free_security(struct msg_msg *msg)
 	if(msg->security)
 	{
 		printk(KERN_INFO "msg_msg_free_security: current = %s, msg_label = %s\n", current->comm, (char *)msg->security);
-		// kzfree(msg->security);
 	}
 }
 
@@ -2055,11 +2042,8 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 				struct task_struct *target, long type,
 				int mode)
 {	
-	if(!msg->security)
-	{
-		printk(KERN_INFO "msg_queue_msgrcv: msg label not set for message to process %s\n", target->comm);
-	}
-	else
+	
+	if (msg->security)
 	{
 		
 		char *target_domain = NULL;
@@ -2082,11 +2066,17 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 		if(err != 0)
 		{
 			printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label -> hname, target->comm);
+			aa_put_label(target_label);
+			aa_put_label(sender_label);
 			return -EPERM;
 		}
 
 		aa_put_label(target_label);
 		aa_put_label(sender_label);
+	}
+	else
+	{
+		printk(KERN_INFO "msg_queue_msgrcv: msg label not set for message to process %s\n", target->comm);
 	}
 
 	
