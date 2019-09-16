@@ -645,6 +645,25 @@ static int apparmor_inode_getattr(const struct path *path)
 	return common_perm_cond(OP_GETATTR, path, AA_MAY_GETATTR);
 }
 
+static int apparmor_inode_alloc_security(struct inode *inode)
+{
+	struct aa_profile *profile;
+	struct aa_label *curr_label;
+	char *curr_domain = NULL;
+	curr_label = __begin_current_label_crit_section();
+	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	__end_current_label_crit_section(curr_label);
+
+	if(curr_domain)
+	{
+		printk(KERN_INFO "apparmor_inode_alloc_security (%s)\n", current->comm);
+		inode->i_security = curr_label;
+		
+	}
+}
+
+
+
 static int apparmor_file_open(struct file *file)
 {
 	struct aa_file_ctx *fctx = file_ctx(file);
@@ -2114,6 +2133,12 @@ static struct security_hook_list apparmor_hooks[] __lsm_ro_after_init = {
 	LSM_HOOK_INIT(path_chown, apparmor_path_chown),
 	LSM_HOOK_INIT(path_truncate, apparmor_path_truncate),
 	LSM_HOOK_INIT(inode_getattr, apparmor_inode_getattr),
+
+	LSM_HOOK_INIT(inode_alloc_security, apparmor_inode_alloc_security),
+
+	
+
+
 
 	LSM_HOOK_INIT(file_open, apparmor_file_open),
 	LSM_HOOK_INIT(file_receive, apparmor_file_receive),
