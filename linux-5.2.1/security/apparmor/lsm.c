@@ -661,7 +661,7 @@ static int apparmor_inode_alloc_security(struct inode *inode)
 	__end_current_label_crit_section(curr_label);
 }
 
-static void inode_free_security(struct inode *inode)
+static void apparmor_inode_free_security(struct inode *inode)
 {
 	if(inode->i_security)
 	{
