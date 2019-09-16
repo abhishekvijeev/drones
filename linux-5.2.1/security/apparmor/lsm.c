@@ -303,10 +303,7 @@ static int apparmor_inode_read_flow(struct inode *inode)
 		if (sender_label != NULL)
 		{
 			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
-			if (allow)
-			{
-				break;
-			}
+			
 		}
 		printk (KERN_INFO "apparmor_inode_read_flow: current process %s is reading from file %s, allowed %d\n", current->comm, sender_label->hname, allow);
 
@@ -338,10 +335,7 @@ static int apparmor_inode_write_flow(struct inode *inode)
 			fn_for_each (inode_label, profile, apparmor_getlabel_domain(profile, &inode_domain));
 		
 			fn_for_each (curr_label, profile, apparmor_check_for_flow(profile, inode_domain, &allow));
-			if (allow)
-			{
-				break;
-			}
+			
 		}
 		printk (KERN_INFO "apparmor_inode_write_flow: current process %s is writing to file %s, allowed %d\n", current->comm, inode_label->hname, allow);
 
@@ -741,7 +735,7 @@ static void apparmor_inode_free_security(struct inode *inode)
 
 static int apparmor_file_open(struct file *file)
 {
-	if(apparmor_inode_read_flow(file) < 0)
+	if(apparmor_inode_read_flow(file->f_inode) < 0)
 		return -EPERM;
 
 	struct aa_file_ctx *fctx = file_ctx(file);
