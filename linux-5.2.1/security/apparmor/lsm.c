@@ -735,8 +735,8 @@ static void apparmor_inode_free_security(struct inode *inode)
 
 static int apparmor_file_open(struct file *file)
 {
-	if(apparmor_inode_read_flow(file->f_inode) < 0)
-		return -EPERM;
+	// if(apparmor_inode_read_flow(file->f_inode) < 0)
+	// 	return -EPERM;
 
 	struct aa_file_ctx *fctx = file_ctx(file);
 	struct aa_label *label;
@@ -813,14 +813,14 @@ static int apparmor_file_receive(struct file *file)
 
 static int apparmor_file_permission(struct file *file, int mask)
 {
-	if ( (mask == AA_MAY_WRITE) && (apparmor_inode_write_flow(file->f_inode) < 0) )
-		return -EPERM;
-	if ( (mask == AA_MAY_BE_READ) && (apparmor_inode_read_flow(file->f_inode) < 0) )
-		return -EPERM;
-	if ( (mask == AA_MAY_APPEND) && 
-		((apparmor_inode_read_flow(file->f_inode) < 0) || (apparmor_inode_write_flow(file->f_inode) < 0) )
-		)
-		return -EPERM;
+	// if ( (mask == AA_MAY_WRITE) && (apparmor_inode_write_flow(file->f_inode) < 0) )
+	// 	return -EPERM;
+	// if ( (mask == AA_MAY_BE_READ) && (apparmor_inode_read_flow(file->f_inode) < 0) )
+	// 	return -EPERM;
+	// if ( (mask == AA_MAY_APPEND) && 
+	// 	((apparmor_inode_read_flow(file->f_inode) < 0) || (apparmor_inode_write_flow(file->f_inode) < 0) )
+	// 	)
+	// 	return -EPERM;
 	
 
 
