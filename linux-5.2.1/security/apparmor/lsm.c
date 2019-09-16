@@ -288,6 +288,72 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 }
 
 
+static int apparmor_inode_read_flow(struct inode *inode)
+{
+	struct aa_profile *profile;
+	struct aa_label *curr_label, *sender_label;
+	char *curr_domain = NULL;
+	bool allow = false;
+	curr_label = __begin_current_label_crit_section();
+	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	
+	if(curr_domain)
+	{
+		sender_label = (struct aa_label *)inode->i_security;
+		if (sender_label != NULL)
+		{
+			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
+			if (allow)
+			{
+				break;
+			}
+		}
+		printk (KERN_INFO "apparmor_inode_read_flow: current process %s is reading from file %s, allowed %d\n", current->comm, sender_label->hname, allow);
+
+		__end_current_label_crit_section(curr_label);
+		if (!allow)
+			return -EPERM;
+		
+	}
+	return 0;
+	
+}
+
+static int apparmor_inode_write_flow(struct inode *inode)
+{
+	struct aa_profile *profile;
+	struct aa_label *curr_label, *inode_label;
+	char *curr_domain = NULL;
+	bool allow = false;
+	curr_label = __begin_current_label_crit_section();
+	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	
+	if(curr_domain)
+	{
+		inode_label = (struct aa_label *)inode->i_security;
+		
+		if (inode_label != NULL)
+		{
+			char *inode_domain = NULL;
+			fn_for_each (inode_label, profile, apparmor_getlabel_domain(profile, &inode_domain));
+		
+			fn_for_each (curr_label, profile, apparmor_check_for_flow(profile, inode_domain, &allow));
+			if (allow)
+			{
+				break;
+			}
+		}
+		printk (KERN_INFO "apparmor_inode_write_flow: current process %s is writing to file %s, allowed %d\n", current->comm, inode_label->hname, allow);
+
+		__end_current_label_crit_section(curr_label);
+		if (!allow)
+			return -EPERM;
+	}
+	return 0;
+	
+}
+
+
 
 /*
  * LSM hook functions
@@ -672,8 +738,12 @@ static void apparmor_inode_free_security(struct inode *inode)
 
 
 
+
 static int apparmor_file_open(struct file *file)
 {
+	if(apparmor_inode_read_flow(file) < 0)
+		return -EPERM;
+
 	struct aa_file_ctx *fctx = file_ctx(file);
 	struct aa_label *label;
 	int error = 0;
@@ -736,6 +806,7 @@ static int common_file_perm(const char *op, struct file *file, u32 mask)
 
 	label = __begin_current_label_crit_section();
 	error = aa_file_perm(op, label, file, mask);
+
 	__end_current_label_crit_section(label);
 
 	return error;
@@ -748,6 +819,17 @@ static int apparmor_file_receive(struct file *file)
 
 static int apparmor_file_permission(struct file *file, int mask)
 {
+	if ( (mask == AA_MAY_WRITE) && (apparmor_inode_write_flow(file->f_inode) < 0) )
+		return -EPERM;
+	if ( (mask == AA_MAY_BE_READ) && (apparmor_inode_read_flow(file->f_inode) < 0) )
+		return -EPERM;
+	if ( (mask == AA_MAY_APPEND) && 
+		((apparmor_inode_read_flow(file->f_inode) < 0) || (apparmor_inode_write_flow(file->f_inode) < 0) )
+		)
+		return -EPERM;
+	
+
+
 	return common_file_perm(OP_FPERM, file, mask);
 }
 
@@ -2157,6 +2239,10 @@ static struct security_hook_list apparmor_hooks[] __lsm_ro_after_init = {
 	LSM_HOOK_INIT(mmap_file, apparmor_mmap_file),
 	LSM_HOOK_INIT(file_mprotect, apparmor_file_mprotect),
 	LSM_HOOK_INIT(file_lock, apparmor_file_lock),
+
+
+
+
 
 	LSM_HOOK_INIT(getprocattr, apparmor_getprocattr),
 	LSM_HOOK_INIT(setprocattr, apparmor_setprocattr),
