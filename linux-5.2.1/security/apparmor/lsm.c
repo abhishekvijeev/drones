@@ -350,6 +350,16 @@ static int apparmor_inode_write_flow(struct inode *inode)
 					ret = 1;
 				
 			}
+			if (allow)
+			{
+				//decrease the ref count for previous label,
+				aa_put_label(inode_label);
+				//update the inode label with new process
+				inode->i_security = aa_get_label(curr_label);
+				printk (KERN_INFO "apparmor_inode_write_flow: label updated\n");
+				
+			}
+			
 			printk (KERN_INFO "apparmor_inode_write_flow: current process %s is writing to file %s, allowed %d\n", current->comm, inode_label->hname, allow);
 				
 		}
