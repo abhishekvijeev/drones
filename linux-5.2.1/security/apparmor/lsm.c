@@ -344,21 +344,25 @@ static int apparmor_inode_write_flow(struct inode *inode)
 			{
 				char *inode_domain = NULL;
 				fn_for_each (inode_label, profile, apparmor_getlabel_domain(profile, &inode_domain));
-			
-				fn_for_each (curr_label, profile, apparmor_check_for_flow(profile, inode_domain, &allow));
-				if (!allow)
-					ret = 1;
-				
-				//only if the owner is writing to the file, update the policy
-				if (allow && strcmp(curr_domain, inode_label->domain) == 0)
+
+				if (inode_domain != NULL)
 				{
-					//decrease the ref count for previous label,
-					aa_put_label(inode_label);
-					//update the inode label with new process
-					inode->i_security = aa_get_label(curr_label);
-					printk (KERN_INFO "apparmor_inode_write_flow: label updated\n");
+					fn_for_each (curr_label, profile, apparmor_check_for_flow(profile, inode_domain, &allow));
+					if (!allow)
+						ret = 1;
 					
+					//only if the owner is writing to the file, update the policy
+					if (allow && strcmp(curr_domain, inode_domain) == 0)
+					{
+						//decrease the ref count for previous label,
+						aa_put_label(inode_label);
+						//update the inode label with new process
+						inode->i_security = aa_get_label(curr_label);
+						printk (KERN_INFO "apparmor_inode_write_flow: label updated\n");
+						
+					}
 				}
+				
 				
 			}
 			
