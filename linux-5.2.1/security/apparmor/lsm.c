@@ -854,24 +854,38 @@ static int apparmor_file_receive(struct file *file)
 
 static int apparmor_file_permission(struct file *file, int mask)
 {
+	struct aa_label *label;
+	label = __begin_current_label_crit_section();
+	if (!unconfined(label)) 
+	{
+		printk (KERN_INFO "apparmor_file_permission1: process %s, mask value %d\n", current->comm, mask);
+	}
+	__end_current_label_crit_section(label);
+
+
+
+
+
 	if ( (mask == AA_MAY_WRITE) && (apparmor_inode_write_flow(file->f_inode) < 0) )
 	{
-		printk (KERN_INFO "apparmor_file_permission1: mask value %d\n", mask);
 		return -EPERM;
 	}
 	else if ( (mask == AA_MAY_BE_READ) && (apparmor_inode_read_flow(file->f_inode) < 0) )
 	{
-		printk (KERN_INFO "apparmor_file_permission2: mask value %d\n", mask);
 		return -EPERM;
 	}
 	else if ( (mask == AA_MAY_APPEND) && 
 		((apparmor_inode_read_flow(file->f_inode) < 0) || (apparmor_inode_write_flow(file->f_inode) < 0) )
 		)
 	{
-		printk (KERN_INFO "apparmor_file_permission3: mask value %d\n", mask);
 		return -EPERM;
 	}
 
+
+
+
+
+	
 	return common_file_perm(OP_FPERM, file, mask);
 }
 
