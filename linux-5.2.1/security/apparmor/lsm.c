@@ -776,8 +776,23 @@ static void apparmor_inode_free_security(struct inode *inode)
 
 static int apparmor_file_open(struct file *file)
 {
-	if(apparmor_inode_read_flow(file->f_inode) < 0)
-		return -EPERM;
+	// if(apparmor_inode_read_flow(file->f_inode) < 0)
+	// 	return -EPERM;
+
+	struct aa_profile *profile;
+	struct aa_label *curr_label;
+	char *curr_domain = NULL;
+	curr_label = __begin_current_label_crit_section();
+	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	if(curr_domain)
+	{
+		printk(KERN_INFO "apparmor_file_open (%s)\n", current->comm);
+		dumpstack();
+	}
+
+	__end_current_label_crit_section(curr_label);
+
+	
 
 	struct aa_file_ctx *fctx = file_ctx(file);
 	struct aa_label *label;
@@ -854,32 +869,37 @@ static int apparmor_file_receive(struct file *file)
 
 static int apparmor_file_permission(struct file *file, int mask)
 {
-	struct aa_label *label;
-	label = __begin_current_label_crit_section();
-	if (!unconfined(label)) 
+	struct aa_profile *profile;
+	struct aa_label *curr_label;
+	char *curr_domain = NULL;
+	curr_label = __begin_current_label_crit_section();
+	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	if(curr_domain)
 	{
-		printk (KERN_INFO "apparmor_file_permission1: process %s, mask value %d\n", current->comm, mask);
+		printk(KERN_INFO "apparmor_file_permission (%s), mask = %d\n", current->comm, mask);
+		dumpstack();
 	}
-	__end_current_label_crit_section(label);
+
+	__end_current_label_crit_section(curr_label);
 
 
 
 
 
-	if ( (mask == AA_MAY_WRITE) && (apparmor_inode_write_flow(file->f_inode) < 0) )
-	{
-		return -EPERM;
-	}
-	else if ( (mask == AA_MAY_BE_READ) && (apparmor_inode_read_flow(file->f_inode) < 0) )
-	{
-		return -EPERM;
-	}
-	else if ( (mask == AA_MAY_APPEND) && 
-		((apparmor_inode_read_flow(file->f_inode) < 0) || (apparmor_inode_write_flow(file->f_inode) < 0) )
-		)
-	{
-		return -EPERM;
-	}
+	// if ( (mask == AA_MAY_WRITE) && (apparmor_inode_write_flow(file->f_inode) < 0) )
+	// {
+	// 	return -EPERM;
+	// }
+	// else if ( (mask == AA_MAY_READ) && (apparmor_inode_read_flow(file->f_inode) < 0) )
+	// {
+	// 	return -EPERM;
+	// }
+	// else if ( (mask == AA_MAY_APPEND) && 
+	// 	((apparmor_inode_read_flow(file->f_inode) < 0) || (apparmor_inode_write_flow(file->f_inode) < 0) )
+	// 	)
+	// {
+	// 	return -EPERM;
+	// }
 
 
 
