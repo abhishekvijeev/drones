@@ -786,7 +786,7 @@ static int apparmor_file_open(struct file *file)
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 	if(curr_domain)
 	{
-		printk(KERN_INFO "apparmor_file_open (%s): file_name = %s\n", current->comm, file->name);
+		printk(KERN_INFO "apparmor_file_open (%s): file_name = %s\n", current->comm, file->f_path.dentry->d_iname);
 		dump_stack();
 	}
 
@@ -876,7 +876,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 	if(curr_domain)
 	{
-		printk(KERN_INFO "apparmor_file_permission (%s): file_name = %s, mask = %d\n", current->comm, file->name, mask);
+		printk(KERN_INFO "apparmor_file_permission (%s): file_name = %s, mask = %d\n", current->comm, file->f_path.dentry->d_iname, mask);
 		dump_stack();
 	}
 
