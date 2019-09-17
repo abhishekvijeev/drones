@@ -787,7 +787,7 @@ static int apparmor_file_open(struct file *file)
 	if(curr_domain)
 	{
 		printk(KERN_INFO "apparmor_file_open (%s)\n", current->comm);
-		dumpstack();
+		dump_stack();
 	}
 
 	__end_current_label_crit_section(curr_label);
@@ -877,7 +877,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 	if(curr_domain)
 	{
 		printk(KERN_INFO "apparmor_file_permission (%s), mask = %d\n", current->comm, mask);
-		dumpstack();
+		dump_stack();
 	}
 
 	__end_current_label_crit_section(curr_label);
