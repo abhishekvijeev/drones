@@ -891,7 +891,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 	__end_current_label_crit_section(curr_label);
 
 	// Obtain the dentry of the inode since the xattr API requires one
-	// dentry = d_find_alias(inode);
+	dentry = d_find_alias(inode);
 	// if (!dentry)
 	// 	dentry = d_find_any_alias(inode);
 	// if(!dentry)
