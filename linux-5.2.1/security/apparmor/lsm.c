@@ -894,10 +894,10 @@ static int apparmor_file_permission(struct file *file, int mask)
 	dentry = d_find_alias(inode);
 	if (!dentry)
 		dentry = d_find_any_alias(inode);
-	if(!dentry)
-	{
-		printk(KERN_INFO "apparmor_file_permission (%s): could not find dentry for file %s\n", current->comm, file->f_path.dentry->d_iname);
-	}
+	// if(!dentry)
+	// {
+	// 	printk(KERN_INFO "apparmor_file_permission (%s): could not find dentry for file %s\n", current->comm, file->f_path.dentry->d_iname);
+	// }
 
 	// inode = file->f_inode;
 	// len = INITCONTEXTLEN;
