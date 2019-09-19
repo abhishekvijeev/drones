@@ -876,12 +876,12 @@ static int apparmor_file_permission(struct file *file, int mask)
 	struct aa_label *curr_label;
 	char *curr_domain = NULL;
 	struct dentry *dentry = file->f_path.dentry;
-	struct inode *inode = file->f_path.dentry->inode;
+	struct inode *inode = file->f_path.dentry->d_inode;
 	char *context;
 	int len = 0;
 	int rc = 0;
-	int uid = inode->i_uid;
-	int euid = current->cred->euid;
+	uid_t uid = inode->i_uid->val;
+	uid_t euid = current->cred->euid->val;
 
 	curr_label = __begin_current_label_crit_section();
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
