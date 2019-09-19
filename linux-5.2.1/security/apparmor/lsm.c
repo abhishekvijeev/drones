@@ -913,41 +913,41 @@ static int apparmor_file_permission(struct file *file, int mask)
 		if(apparmor_ioctl_debug)
 			printk(KERN_INFO "apparmor_file_permission(%s): dentry not NULL\n", current->comm);
 
-		// len = INITCONTEXTLEN;
-		// context = kmalloc(len + 1, GFP_NOFS);
-		// rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, context, len);
-		// if (rc == -ERANGE) 
-		// {
-		// 	kfree(context);
+		len = INITCONTEXTLEN;
+		context = kmalloc(len + 1, GFP_NOFS);
+		rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, context, len);
+		if (rc == -ERANGE) 
+		{
+			kfree(context);
 
-		// 	/* Need a larger buffer.  Query for the right size. */
-		// 	rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, NULL, 0);
-		// 	if (rc < 0)
-		// 		return rc;
+			/* Need a larger buffer.  Query for the right size. */
+			rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, NULL, 0);
+			if (rc < 0)
+				return rc;
 
-		// 	len = rc;
-		// 	context = kmalloc(len + 1, GFP_NOFS);
-		// 	if (!context)
-		// 		return -ENOMEM;
+			len = rc;
+			context = kmalloc(len + 1, GFP_NOFS);
+			if (!context)
+				return -ENOMEM;
 
-		// 	context[len] = '\0';
-		// 	rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR,
-		// 				context, len);
-		// }
-		// if (rc < 0) 
-		// {
-		// 	kfree(context);
-		// 	if (rc != -ENODATA) 
-		// 	{
-		// 		printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d for dev=%s ino=%ld file=%s\n", current->comm, -rc, inode->i_sb->s_id, inode->i_ino, file->f_path.dentry->d_iname);
-		// 		return rc;
-		// 	}
-		// }
+			context[len] = '\0';
+			rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR,
+						context, len);
+		}
+		if (rc < 0) 
+		{
+			kfree(context);
+			if (rc != -ENODATA) 
+			{
+				printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d for dev=%s ino=%ld file=%s\n", current->comm, -rc, inode->i_sb->s_id, inode->i_ino, file->f_path.dentry->d_iname);
+				return rc;
+			}
+		}
 
-		// if(apparmor_ioctl_debug)
-		// {
-		// 	printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d\n", current->comm, rc);
-		// }
+		if(apparmor_ioctl_debug)
+		{
+			printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d\n", current->comm, rc);
+		}
 	}
 	
 
