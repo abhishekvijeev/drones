@@ -885,11 +885,6 @@ static int apparmor_file_permission(struct file *file, int mask)
 
 	curr_label = __begin_current_label_crit_section();
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-	if(curr_domain)
-	{
-		printk(KERN_INFO "apparmor_file_permission (%s): file_name = %s, mask = %d\n", current->comm, file->f_path.dentry->d_iname, mask);
-		// dump_stack();
-	}
 	__end_current_label_crit_section(curr_label);
 
 	// Obtain the dentry of the inode since the xattr API requires one
@@ -914,13 +909,14 @@ static int apparmor_file_permission(struct file *file, int mask)
 		context = kmalloc(len + 1, GFP_NOFS);
 		rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, context, len);
 
-		if(rc == -ENODATA)
+		if(rc == -ENODATA || rc == -EOPNOTSUPP)
 		{
 			return 0;
 		}
-		else if(curr_domain)
+		// else if(curr_domain)
+		else if(apparmor_ioctl_debug)
 		{
-			printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d\n", current->comm, rc);
+			printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d for file_name = %s, mask = %d\n", current->comm, rc, file->f_path.dentry->d_iname, mask);
 		}
 
 		// if (rc == -ERANGE) 
