@@ -986,18 +986,6 @@ static int apparmor_file_permission(struct file *file, int mask)
 			context = kmalloc(len + 1, GFP_NOFS);
 			rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, context, len);
 
-			if(rc == -ENODATA || rc == -EOPNOTSUPP)
-			{
-				if(curr_domain)
-					printk(KERN_INFO "apparmor_file_permission (%s):  getxattr [%s] returned %d for file_name = %s, mask = %d\n", current->comm, XATTR_NAME_APPARMOR, rc, file->f_path.dentry->d_iname, mask);
-				return 0;
-			}
-			// else if(curr_domain)
-			else
-			{
-				printk(KERN_INFO "apparmor_file_permission (%s):  getxattr [%s] returned %d for file_name = %s, mask = %d\n", current->comm, XATTR_NAME_APPARMOR, rc, file->f_path.dentry->d_iname, mask);
-			}
-
 			if(curr_domain)
 			{
 				if(mask == AA_MAY_READ)
