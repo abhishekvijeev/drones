@@ -891,7 +891,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 	__end_current_label_crit_section(curr_label);
 
 	// Obtain the dentry of the inode since the xattr API requires one
-	dentry = d_find_alias(inode);
+	// dentry = d_find_alias(inode);
 	// if (!dentry)
 	// 	dentry = d_find_any_alias(inode);
 	// if(!dentry)
@@ -899,44 +899,50 @@ static int apparmor_file_permission(struct file *file, int mask)
 	// 	printk(KERN_INFO "apparmor_file_permission (%s): could not find dentry for file %s\n", current->comm, file->f_path.dentry->d_iname);
 	// }
 
-	// inode = file->f_inode;
-	// len = INITCONTEXTLEN;
-	// context = kmalloc(len + 1, GFP_NOFS);
+	dentry = file->f_path.dentry;
 	
-	// // Code to retrieve xattr borrowed from SELinux hooks.c - function inode_doinit_use_xattr()
-	// rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, context, len);
-	// if (rc == -ERANGE) 
-	// {
-	// 	kfree(context);
-
-	// 	/* Need a larger buffer.  Query for the right size. */
-	// 	rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, NULL, 0);
-	// 	if (rc < 0)
-	// 		return rc;
-
-	// 	len = rc;
-	// 	context = kmalloc(len + 1, GFP_NOFS);
-	// 	if (!context)
-	// 		return -ENOMEM;
-
-	// 	context[len] = '\0';
-	// 	rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR,
-	// 				context, len);
-	// }
-	// if (rc < 0) 
-	// {
-	// 	kfree(context);
-	// 	if (rc != -ENODATA) 
-	// 	{
-	// 		printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d for dev=%s ino=%ld file=%s\n", current->comm, -rc, inode->i_sb->s_id, inode->i_ino, file->f_path.dentry->d_iname);
-	// 		return rc;
-	// 	}
-	// }
-
-	if(apparmor_ioctl_debug)
+	
+	if(dentry != NULL)
 	{
-		printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d\n", current->comm, rc);
+		// Code to retrieve xattr borrowed from SELinux hooks.c - function inode_doinit_use_xattr()
+		inode = file->f_inode;
+		len = INITCONTEXTLEN;
+		context = kmalloc(len + 1, GFP_NOFS);
+		rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, context, len);
+		if (rc == -ERANGE) 
+		{
+			kfree(context);
+
+			/* Need a larger buffer.  Query for the right size. */
+			rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, NULL, 0);
+			if (rc < 0)
+				return rc;
+
+			len = rc;
+			context = kmalloc(len + 1, GFP_NOFS);
+			if (!context)
+				return -ENOMEM;
+
+			context[len] = '\0';
+			rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR,
+						context, len);
+		}
+		if (rc < 0) 
+		{
+			kfree(context);
+			if (rc != -ENODATA) 
+			{
+				printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d for dev=%s ino=%ld file=%s\n", current->comm, -rc, inode->i_sb->s_id, inode->i_ino, file->f_path.dentry->d_iname);
+				return rc;
+			}
+		}
+
+		if(apparmor_ioctl_debug)
+		{
+			printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d\n", current->comm, rc);
+		}
 	}
+	
 
 
 
