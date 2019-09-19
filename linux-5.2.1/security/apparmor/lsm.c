@@ -911,10 +911,12 @@ static int apparmor_file_permission(struct file *file, int mask)
 
 		if(rc == -ENODATA || rc == -EOPNOTSUPP)
 		{
+			if(curr_domain)
+				printk(KERN_INFO "apparmor_file_permission (%s):  getxattr [%s] returned %d for file_name = %s, mask = %d\n", current->comm, XATTR_NAME_APPARMOR, rc, file->f_path.dentry->d_iname, mask);
 			return 0;
 		}
 		// else if(curr_domain)
-		else if(apparmor_ioctl_debug)
+		else
 		{
 			printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d for file_name = %s, mask = %d\n", current->comm, rc, file->f_path.dentry->d_iname, mask);
 		}
