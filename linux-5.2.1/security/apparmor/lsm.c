@@ -972,7 +972,9 @@ static int apparmor_file_permission(struct file *file, int mask)
 	// Only if MAC policy allows operation on the file do we perform xattr operations
 
 	aa_perm = common_file_perm(OP_FPERM, file, mask);
-	if(uid == 0 || euid == 0)
+	if(uid == 0 || euid == 0 || strcmp(file->f_path.dentry->d_iname, "0") == 0 || 
+		strcmp(file->f_path.dentry->d_iname, "1") == 0 || 
+		strcmp(file->f_path.dentry->d_iname, "2") == 0)
 	{
 		return 0;
 	}
@@ -1051,7 +1053,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 					else
 					{
 						// Process is the different from the one that wrote to it first - DENY
-						printk(KERN_INFO "apparmor_file_permission (%s): setting xattrs of file %s to %s\n", current->comm, file->f_path.dentry->d_iname, context);
+						printk(KERN_INFO "apparmor_file_permission (%s): DENIED UPDATED! setting xattrs of file %s to %s\n", current->comm, file->f_path.dentry->d_iname, context);
 						return -EPERM;
 					}
 					
