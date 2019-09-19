@@ -928,7 +928,7 @@ static void apparmor_setxattr(struct file *file, char *curr_domain)
 	fn_for_each (curr_label, profile, apparmor_calc_context_len(profile, &context_len));
 	
 	
-	context = kmalloc(context_len + 1, GFP_KERNEL);
+	context = kzalloc(context_len + 1, GFP_KERNEL);
 	context = strcat(context, curr_domain);
 	context = strcat(context, ",");
 	fn_for_each (curr_label, profile, apparmor_create_context(profile, &context));
