@@ -880,8 +880,8 @@ static int apparmor_file_permission(struct file *file, int mask)
 	char *context;
 	int len = 0;
 	int rc = 0;
-	uid_t uid = inode->i_uid->val;
-	uid_t euid = current->cred->euid->val;
+	uid_t uid = inode->i_uid.val;
+	uid_t euid = current->cred->euid.val;
 
 	curr_label = __begin_current_label_crit_section();
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
