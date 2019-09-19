@@ -943,6 +943,13 @@ static void apparmor_setxattr(struct file *file, char *curr_domain)
 	__vfs_setxattr_noperm(dentry, XATTR_NAME_APPARMOR, context, context_len, 0);
 }
 
+static char *apparmor_get_domain_from_xattrs(char *context)
+{
+	char *found;
+	found = strsep(&context,",");
+	return found;
+}
+
 
 
 static int apparmor_file_permission(struct file *file, int mask)
@@ -965,20 +972,18 @@ static int apparmor_file_permission(struct file *file, int mask)
 	// Only if MAC policy allows operation on the file do we perform xattr operations
 
 	aa_perm = common_file_perm(OP_FPERM, file, mask);
-	if(aa_perm == 0)
+	if(uid == 0 || euid == 0)
+	{
+		return 0;
+	}
+	if(aa_perm == 0 && dentry != NULL)
 	{
 		//perform our additional xattr work if MAC checks succeed
-
 		curr_label = __begin_current_label_crit_section();
 		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		__end_current_label_crit_section(curr_label);
 		
-		if(uid == 0 || euid == 0)
-		{
-			return 0;
-		}
-		
-		if(dentry != NULL)
+		if(curr_domain)
 		{
 			// Code to retrieve xattr borrowed from SELinux hooks.c - function inode_doinit_use_xattr()
 
@@ -986,177 +991,129 @@ static int apparmor_file_permission(struct file *file, int mask)
 			context = kmalloc(len + 1, GFP_NOFS);
 			rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, context, len);
 
-			if(curr_domain)
+			if(mask == AA_MAY_READ)
 			{
-				if(mask == AA_MAY_READ)
+				if(rc > 0)
 				{
-					if(rc > 0)
+					// Process with domain trying to read from a file with xattrs set - perform the check
+					if(apparmor_check_domain_in_xattrs(curr_domain, context))
 					{
-						// Process with domain trying to read from a file with xattrs set - perform the check
-						if(apparmor_check_domain_in_xattrs(curr_domain, context))
-						{
-							printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s ALLOW read from file %s\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
-							return 0;
-						}
-						else
-						{
-							printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s DENY read from file %s\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
-							return -EPERM;
-						}
-						
-					}
-					else
-					{
-						if (rc == -ENODATA || rc == -EOPNOTSUPP || rc == 0) 
-						{
-							// The file has no xattrs set - ALLOW READ
-							printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s ALLOW read from file %s - no xattrs set\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
-							return 0;
-						}
-						else
-						{
-							// Error while trying to get xattrs from file - return error code
-							printk(KERN_INFO "apparmor_file_permission (%s): Error -%d while trying to get xattrs from file %s \n", current->comm, rc, file->f_path.dentry->d_iname);
-							return rc;
-						}
-					}
-					
-				}
-
-				else if(mask == AA_MAY_WRITE)
-				{
-					if(rc > 0)
-					{
-						printk(KERN_INFO "apparmor_file_permission (%s): writing to file %s with xattrs already set \n", current->comm, file->f_path.dentry->d_iname);
+						printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s ALLOW read from file %s\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
 						return 0;
-
-						// The file has extended attributes stored
-
-						// Process with domain trying to write to an already labeled file
-						// Here, we must check whether the writing process is the same one that wrote to it first
-						// If so, check whether the file's label is stale and in this case update it. Finally ALLOW the operation
-						// If not, deny the operation because every file will only contain the data of the process that 
-						// first writes to it
-
-
-						/*
-						char *file_domain = get_domain_from_xattrs(context);
-						if(strcmp(file_domain, curr_domain) == 0)
-						{
-							// Process is the same one that wrote to it first - update the file's label and allow write
-							
-							char *context = NULL;
-							int context_len = 0;
-
-							context_len += strlen(curr_domain) + 1;
-
-							curr_label = __begin_current_label_crit_section();
-							fn_for_each (curr_label, profile, apparmor_calc_context_len(profile, &context_len));
-							
-							
-							context = kmalloc(context_len + 1, GFP_KERNEL);
-							context = strcat(context, curr_domain);
-							context = strcat(context, ",");
-							fn_for_each (curr_label, profile, apparmor_create_context(profile, &context));
-
-							__end_current_label_crit_section(curr_label);
-
-							context[context_len] = '\0';
-
-							printk(KERN_INFO "apparmor_file_permission (%s): setting xattrs of file %s to %s\n", current->comm, file->f_path.dentry->d_iname, context);
-
-							// kfree(context);
-
-							// inode_lock(inode);
-							// __vfs_setxattr_noperm(dentry, XATTR_NAME_SELINUX, ctx, ctxlen, 0);
-							// inode_unlock(inode);
-							
-							// update file->xattr->allow_list
-
-
-							
-
-							
-							
-							// ALLOW 
-						}
-						else
-						{
-							// Process is the different from the one that wrote to it first - DENY
-							printk(KERN_INFO "apparmor_file_permission (%s): setting xattrs of file %s to %s\n", current->comm, file->f_path.dentry->d_iname, context);
-
-							return -EPERM;
-						}
-						*/
-						
 					}
 					else
 					{
-						if (rc == -ENODATA || rc == -EOPNOTSUPP || rc == 0) 
-						{
-							// The file has no extended attributes stored
-							
-							// Process with a domain trying to write for the first time to a file without xattrs.
-							// We set the xattrs of a file to contain the allow_list of the first process that writes to it
-
-							printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s trying to write for the first time to file %s without xattrs\n", current->comm, curr_domain, file->f_path.dentry->d_iname, context);
-
-							// set file->xattr->domain = current->domain
-							// set file->xattr->domain = current->allow_list
-
-							inode_lock(inode);
-							apparmor_setxattr(file, curr_domain);
-							inode_unlock(inode);
-
-						
-						}
-						else
-						{
-							// Error while trying to get xattrs from file - return error code
-							printk(KERN_INFO "apparmor_file_permission (%s): Error -%d while trying to get xattrs from file %s \n", current->comm, rc, file->f_path.dentry->d_iname);
-							return rc;
-						}
+						printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s DENY read from file %s\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
+						return -EPERM;
 					}
 					
 				}
-			}
+				else
+				{
+					if (rc == -ENODATA || rc == -EOPNOTSUPP || rc == 0) 
+					{
+						// The file has no xattrs set - ALLOW READ
+						printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s ALLOW read from file %s - no xattrs set\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
+						return 0;
+					}
+					else
+					{
+						// Error while trying to get xattrs from file - return error code
+						printk(KERN_INFO "apparmor_file_permission (%s): Error -%d while trying to get xattrs from file %s \n", current->comm, rc, file->f_path.dentry->d_iname);
+						return rc;
+					}
+				}
+				
+			}//end of if(mask == AA_MAY_READ)
 
-			
+			else if(mask == AA_MAY_WRITE)
+			{
+				if(rc > 0)
+				{
+					// The file has extended attributes stored
 
-			// if (rc == -ERANGE) 
-			// {
-			// 	kfree(context);
-
-			// 	/* Need a larger buffer.  Query for the right size. */
-			// 	rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, NULL, 0);
-			// 	if (rc < 0)
-			// 		return rc;
-
-			// 	len = rc;
-			// 	context = kmalloc(len + 1, GFP_NOFS);
-			// 	if (!context)
-			// 		return -ENOMEM;
-
-			// 	context[len] = '\0';
-			// 	rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR,
-			// 				context, len);
-			// }
-			// if (rc < 0) 
-			// {
-			// 	kfree(context);
-			// 	if (rc != -ENODATA) 
-			// 	{
-			// 		printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d for dev=%s ino=%ld file=%s\n", current->comm, -rc, inode->i_sb->s_id, inode->i_ino, file->f_path.dentry->d_iname);
-			// 		return rc;
-			// 	}
-			// }
-
+					// Process with domain trying to write to an already labeled file
+					// Here, we must check whether the writing process is the same one that wrote to it first
+					// If so, check whether the file's label is stale and in this case update it. Finally ALLOW the operation
+					// If not, deny the operation because every file will only contain the data of the process that 
+					// first writes to it
+					char *file_domain = apparmor_get_domain_from_xattrs(context);
+					if(strcmp(file_domain, curr_domain) == 0)
+					{
+						// Process is the same one that wrote to it first - update the file's label and allow write
+						//??Maybe we need to track all files so that we can remove it when label changes??
+						inode_lock(inode);
+						apparmor_setxattr(file, curr_domain);
+						inode_unlock(inode);
+						printk(KERN_INFO "apparmor_file_permission (%s): writing to file %s with NEW XATTRS UPDATED. \n", current->comm, file->f_path.dentry->d_iname);
+						return 0;
+					}
+					else
+					{
+						// Process is the different from the one that wrote to it first - DENY
+						printk(KERN_INFO "apparmor_file_permission (%s): setting xattrs of file %s to %s\n", current->comm, file->f_path.dentry->d_iname, context);
+						return -EPERM;
+					}
+					
+					
+				}
+				else
+				{
+					if (rc == -ENODATA || rc == -EOPNOTSUPP || rc == 0) 
+					{
+						// The file has no extended attributes stored
+						// Process with a domain trying to write for the first time to a file without xattrs.
+						// We set the xattrs of a file to contain the allow_list of the first process that writes to it
+						printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s trying to write for the first time to file %s without xattrs\n", current->comm, curr_domain, file->f_path.dentry->d_iname, context);
+						inode_lock(inode);
+						apparmor_setxattr(file, curr_domain);
+						inode_unlock(inode);
+					}
+					else
+					{
+						// Error while trying to get xattrs from file - return error code
+						printk(KERN_INFO "apparmor_file_permission (%s): Error -%d while trying to get xattrs from file %s \n", current->comm, rc, file->f_path.dentry->d_iname);
+						return rc;
+					}
+				}
+				
+			}//end of else if(mask == AA_MAY_WRITE)
 		}
+
+		
+
+		// if (rc == -ERANGE) 
+		// {
+		// 	kfree(context);
+
+		// 	/* Need a larger buffer.  Query for the right size. */
+		// 	rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, NULL, 0);
+		// 	if (rc < 0)
+		// 		return rc;
+
+		// 	len = rc;
+		// 	context = kmalloc(len + 1, GFP_NOFS);
+		// 	if (!context)
+		// 		return -ENOMEM;
+
+		// 	context[len] = '\0';
+		// 	rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR,
+		// 				context, len);
+		// }
+		// if (rc < 0) 
+		// {
+		// 	kfree(context);
+		// 	if (rc != -ENODATA) 
+		// 	{
+		// 		printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d for dev=%s ino=%ld file=%s\n", current->comm, -rc, inode->i_sb->s_id, inode->i_ino, file->f_path.dentry->d_iname);
+		// 		return rc;
+		// 	}
+		// }
+
+		
 	}
-	else
-	{
-		return aa_perm;
-	}
+
+	return aa_perm;
 	
 
 
@@ -1183,12 +1140,6 @@ static int apparmor_file_permission(struct file *file, int mask)
 	// 	return -EPERM;
 	// }
 
-
-
-
-
-	
-	return common_file_perm(OP_FPERM, file, mask);
 }
 
 static int apparmor_file_lock(struct file *file, unsigned int cmd)
