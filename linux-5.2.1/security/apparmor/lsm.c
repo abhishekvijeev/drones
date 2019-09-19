@@ -887,7 +887,7 @@ bool apparmor_check_domain_in_xattrs(char *domain, char *xattr_buf)
 	return present;
 }
 
-static void apparmor_calc_context_len(struct aa_profile *profile, int *context_len)
+static int apparmor_calc_context_len(struct aa_profile *profile, int *context_len)
 {
 	struct ListOfDomains *iterator;
 	if (profile->allow_net_domains)
@@ -897,9 +897,10 @@ static void apparmor_calc_context_len(struct aa_profile *profile, int *context_l
 			*context_len += strlen(iterator->domain) + 1;
 		}
 	}
+	return 0;
 }
 
-static void apparmor_create_context(struct aa_profile *profile, char **context)
+static int apparmor_create_context(struct aa_profile *profile, char **context)
 {
 	struct ListOfDomains *iterator;
 	if (profile->allow_net_domains)
@@ -910,6 +911,7 @@ static void apparmor_create_context(struct aa_profile *profile, char **context)
 			*context = strcat(*context, ",");
 		}
 	}
+	return 0;
 }
 
 static void apparmor_setxattr(struct file *file, char *curr_domain)
