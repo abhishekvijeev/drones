@@ -1,0 +1,2 @@
+to run:
+./filter.sh {filename of the dmesg log}
