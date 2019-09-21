@@ -52,22 +52,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 
 	
 
-    capability audit_read,
-    capability audit_write, 
-    capability chown,
-    capability dac_override,
-    capability dac_read_search,
-    capability kill,
-    capability mknod,
-    capability net_admin,
-    capability setuid,
-    capability sys_admin,
-    capability sys_boot,
-    capability sys_module,
-    capability sys_ptrace,
-    capability sys_resource,
-    capability sys_time,
-    capability sys_tty_config,	
+    capability,	
 
 	/dev/** rw,
     /etc/** r,
@@ -115,20 +100,22 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	}
 	
 	profile sbinprofile flags=(complain){
-		/bin/* cx -> binprofile,		
+		capability,
+		/bin/* ix,		
 		capability,
 		/dev/null rw,
+		/dev/** rw,
 		/etc/** r,
 		/lib/** rm,
 		/proc/[0-9]*/** r,
-		/proc/sys/kernel/* r,
-		/proc/filesystems r,
+		/proc/sys/** r,
+		/proc/* r,
 	    	/sys/kernel/security/apparmor/.replace w,
 		/sbin/* rix,		
 		/sys/** r,
 		/run/** rwix,
-		/usr/bin/** rmcx -> usrsbinprofile,
-		/usr/lib/** rmcx -> usrlibprofile,
+		/usr/bin/** rmix,
+		/usr/lib/** rmix,
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
@@ -155,20 +142,22 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	}
 
 	profile binprofile flags=(complain){
+		capability,
 		/opt/VBoxGuestAdditions-5.2.16/src/vboxguest-5.2.16/vboxguest/include/iprt/latin1.h r,
 		/bin/** rix,
 		/dev/null rw,
+		/dev/** rw,
 		/etc/** r,
 		/home/abhishek/.oh-my-zsh/** r,
 		/lib/** rm,
 		/proc/[0-9]*/** r,
-		/proc/sys/kernel/* r,
-		/proc/filesystems r,
-		/sbin/* rcx -> sbinprofile,		
+		/proc/sys/** r,
+		/proc/* r,
+		/sbin/* rix,		
 		/sys/** r,
 		/run/** rwix,
-		/usr/bin/** rmcx -> usrsbinprofile,
-		/usr/lib/** rmcx -> usrlibprofile,
+		/usr/bin/** rmix,
+		/usr/lib/** rmix,
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
@@ -176,26 +165,29 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	}
 	
 	profile usrbinprofile flags=(complain){
-		/bin/* cx -> binprofile,		
+		capability,
+		/bin/* ix,		
 		/dev/shm/ r,
 		/dev/urandom r,
 		/dev/null rw,
+		/dev/** rw,
 
 		/etc/** r,
 		/home/abhishek/** rk,
 	
 		/lib/** rm,
-				
-		/proc/[0-9]*/** r,
-		/proc/sys/kernel/* r,
+		
 		/proc/[0-9]*/oom_score_adj w,
+		/proc/[0-9]*/** r,
+		/proc/sys/** r,
+		/proc/* r,
 		/run/** rwix,
 		
 
-		/sbin/* rcx -> sbinprofile,
+		/sbin/* rix,
 		/sys/** r,
-		/usr/bin/** rmcx -> usrsbinprofile,
-		/usr/lib/** rmcx -> usrlibprofile,
+		/usr/bin/** rmix,
+		/usr/lib/** rmix,
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
@@ -204,21 +196,23 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	}
 	
 	profile usrsbinprofile flags=(complain){
-		/bin/* cx -> binprofile,		
-		/dev/null rw,		
+		capability,
+		/bin/* ix,		
+		/dev/null rw,
+		/dev/** rw,		
 		/etc/cups/** rwix,
 		/etc/** r,
 		
 		/lib/** rm,
 		/proc/[0-9]*/** r,
-		/proc/filesystems r,
-		/proc/sys/kernel/* r,
+		/proc/* r,
+		/proc/sys/** r,
 
 		/run/** rwix,
-		/sbin/* rcx -> sbinprofile,
+		/sbin/* rix,
 		/sys/** r,
 		/usr/bin/** rmix,
-		/usr/lib/** rmcx -> usrlibprofile,
+		/usr/lib/** rmix,
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
@@ -227,10 +221,12 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	}
 	
 	profile usrlibprofile flags=(complain){
-		/bin/* cx -> binprofile,		
+		capability,
+		/bin/* ix,		
 		/dev/bus/usb/ r,
 		/dev/null wr,
-		/dev/rfkill w,
+		/dev/** rw,
+		
 		/etc/** r,
 		
 		/home/abhishek/.local/share/tracker/data/tracker-store.journal w,
@@ -238,14 +234,13 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/lib/** rm,
 		
 		/proc/[0-9]*/** r,
-		/proc/filesystems r,
-		/proc/sys/kernel/* r,
-		/proc/version r,
+		/proc/* r,
+		/proc/sys/** r,
 				
 		/run/** rwix,
-		/sbin/* rcx -> sbinprofile,
+		/sbin/* rix,
 		/sys/** r,
-		/usr/bin/** rmcx -> usrsbinprofile,
+		/usr/bin/** rmix,
 		/usr/lib/** rmix,
 		/usr/src/** r,
 		/usr/share/** r,
