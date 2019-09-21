@@ -17,14 +17,14 @@ esac
 exit 0
 '
 
-python3 helper.py /bin binprofile
-python3 helper.py /etc binprofile
-python3 helper.py /lib binprofile
+python3 defaultprofilegenerator_helper.py /bin 
+python3 defaultprofilegenerator_helper.py /etc 
+python3 defaultprofilegenerator_helper.py /lib 
 
-python3 helper.py /sbin sbinprofile
+python3 defaultprofilegenerator_helper.py /sbin 
 
-python3 helper.py /usr/bin usrbinprofile
-python3 helper.py /usr/lib usrlibprofile
-python3 helper.py /usr/sbin usrsbinprofile
-python3 helper.py /usr/share usrsbinprofile
-python3 helper.py /opt usrsbinprofile
+python3 defaultprofilegenerator_helper.py /usr/bin 
+python3 defaultprofilegenerator_helper.py /usr/lib 
+python3 defaultprofilegenerator_helper.py /usr/sbin 
+python3 defaultprofilegenerator_helper.py /usr/share 
+python3 defaultprofilegenerator_helper.py /opt 

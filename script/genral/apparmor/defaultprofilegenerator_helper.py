@@ -28,19 +28,22 @@ def appendslash(path):
     return path
 
 def make_apparmor_profile():
-    if len(sys.argv) <= 2:
-        print("Argv 1 should contain path\nArgv 2 should contain profilename")
+    if len(sys.argv) <= 1:
+        print("Argv 1 should contain path")
         exit()
 
     path = sys.argv[1]
-    profilename = sys.argv[2]
     if os.path.exists(path):
         path = appendslash(path) 
         for (root,dirs,files) in os.walk(path, topdown=True):
             for filename in files:
                 f = appendslash(root) + filename 
                 if not os.path.islink(f) and os.access(f, os.X_OK):
-                    print (f, "rcx ->", profilename , ",")
+                    tmp = "rix ,"
+                    if (f == "/bin/mount") or (f == "/sbin/apparmor_parser") or (f == "/bin/mountpoint"):
+                        tmp = " rux ,"
+
+                    print (f, tmp)
 
 
         
