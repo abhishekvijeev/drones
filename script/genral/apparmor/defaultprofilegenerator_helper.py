@@ -39,6 +39,8 @@ def make_apparmor_profile():
             for filename in files:
                 f = appendslash(root) + filename 
                 if not os.path.islink(f) and os.access(f, os.X_OK):
+                    if "[" in f:
+                        continue
                     tmp = "rix ,"
                     if (f == "/bin/mount") or (f == "/sbin/apparmor_parser") or (f == "/bin/mountpoint"):
                         tmp = " rux ,"
