@@ -65,7 +65,8 @@ def group_data_by_app(final_data):
                 if put_data not in group_data[appname]:
                     group_data[appname].append(put_data)
             else:
-                group_data[appname].append(data)
+                if data not in group_data[appname]:
+                    group_data[appname].append(data)
 
 
 
