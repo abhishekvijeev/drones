@@ -13,42 +13,23 @@ esac
 
 PROFILE="profile init-systemd /lib/systemd/** flags=(complain) 
 {
-	/bin/*  cx -> binprofile,
+	/bin/*  rcx -> binprofile,
 	
-	/etc/init.d/network-manager cx -> networkmanager,
+	/etc/init.d/network-manager rcx -> binprofile,
 
-	/lib/netplan/generate cx -> netplan,
-	/lib/systemd/systemd-journald cx -> systemdjournal,
+	/lib/netplan/generate rcx -> binprofile,
+	/lib/systemd/systemd-journald rcx -> systemdjournal,
 
 
-	/sbin/* cx ->  sbinprofile,	
+	/sbin/* rcx ->  sbinprofile,	
 
-	/usr/bin/* cx -> usrbinprofile,
+	/usr/bin/* rcx -> usrbinprofile,
 
-	/usr/lib/colord/colord-sane cx -> usrlibprofile,
-	/usr/lib/gcc/x86_64-linux-gnu/8/cc1 cx -> usrlibprofile,
-	/usr/lib/gnome-online-accounts/goa-daemon cx -> usrlibprofile,
-	/usr/lib/gnome-session/gnome-session-binary cx -> usrlibprofile,
-	/usr/lib/gnome-settings-daemon/gsd-media-keys cx -> usrlibprofile,
-	/usr/lib/gnome-settings-daemon/gsd-rfkill cx -> usrlibprofile,
-	/usr/lib/gnome-settings-daemon/gsd-wacom cx -> usrlibprofile,
-	/usr/lib/gvfs/gvfsd cx -> usrlibprofile,
-	/usr/lib/gvfs/gvfsd-burn cx -> usrlibprofile,
-	/usr/lib/gvfs/gvfs-goa-volume-monitor cx -> usrlibprofile,
-	/usr/lib/ibus/ibus-x11 cx -> usrlibprofile,
-	/usr/lib/snapd/snapd cx -> usrlibprofile,
-	/usr/lib/systemd/system-environment-generators/snapd-env-generator cx -> usrlibprofile,
-	/usr/lib/tracker/tracker-miner-apps cx -> usrlibprofile,
-	/usr/lib/tracker/tracker-extract cx -> usrlibprofile,
-	/usr/lib/tracker/tracker-miner-fs cx -> usrlibprofile,
-	/usr/lib/tracker/tracker-store cx -> usrlibprofile,
-	/usr/lib/udisks2/udisksd cx -> usrlibprofile,
-	/usr/lib/x86_64-linux-gnu/glib-2.0/gio-launch-desktop cx -> usrlibprofile,
-	/usr/lib/xorg/Xorg cx -> usrlibprofile,
-
+	/usr/lib/** rcx -> usrlibprofile,
+	
 	/usr/libexec/** rcx -> usrlibexecprofile,
 	
-	/usr/sbin/* cx -> usrsbinprofile,
+	/usr/sbin/* rcx -> usrsbinprofile,
 
 	
 
@@ -69,10 +50,9 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
     /run/** rwcx -> run_default,
     signal, 
     /sys/** rwcx -> sys_default,
-	/snap/** r,
+    /snap/** r,
 	umount,
     /usr/ r,
-    # /{,usr/}{,s}bin/** rmwcx -> default_profile,
     /usr/lib/x86_64-linux-gnu/**    rm,
     /usr/** rw,
     /var/** rw,
@@ -91,13 +71,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	}
 
 	
-	profile netplan flags=(complain){
-		/dev/null wr,
-		/etc/ld.so.cache r,
-		/lib/** rm,
-		/usr/lib/** rm,
 
-	}
 	
 	profile sbinprofile flags=(complain){
 		capability,
@@ -119,17 +93,12 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
+		/var/log/** rw,
 		/tmp/** rwix,	
 		
 	}
 
-	profile NetworkManager flags=(complain){
-		capability,
-		/etc/hosts r,
-		/proc/sys/net/ipv6/conf/enp0s3/accept_ra w,
-		/usr/lib/** rm,
 
-	}
 
 	profile systemd_journal flags=(complain){
 		ptrace,
@@ -161,6 +130,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
+		/var/log/** rw,
 		/tmp/** rwix,	
 	}
 	
@@ -191,6 +161,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
+		/var/log/** rw,
 		/tmp/** rwix,	
 	
 	}
@@ -216,6 +187,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
+		/var/log/** rw,
 		/tmp/** rwix,	
 
 	}
@@ -245,6 +217,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
+		/var/log/** rw,
 		/tmp/** rwix,		
 		
 		
