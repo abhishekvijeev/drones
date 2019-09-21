@@ -15,7 +15,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 {
 	/bin/*  rcx -> binprofile,
 	
-	/etc/init.d/network-manager rcx -> binprofile,
+	/etc/init.d/* rcx -> binprofile,
 
 	/lib/netplan/generate rcx -> binprofile,
 	/lib/systemd/systemd-journald rcx -> systemdjournal,
@@ -24,10 +24,11 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	/sbin/* rcx ->  sbinprofile,	
 
 	/usr/bin/* rcx -> usrbinprofile,
+	
 
 	/usr/lib/** rcx -> usrlibprofile,
 	
-	/usr/libexec/** rcx -> usrlibexecprofile,
+	/usr/libexec/** rcx -> usrlibprofile,
 	
 	/usr/sbin/* rcx -> usrsbinprofile,
 
@@ -35,12 +36,12 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 
     capability,	
 
-	/dev/** rw,
+	/dev/** rwk,
     /etc/** r,
 
 	/lib/console-setup/keyboard-setup.sh    rmix,   
     /lib/systemd/** rix,
-    /lib/** rm,
+    /lib/** rmcx -> usrlibprofile,
    
     mount, 
    
@@ -51,13 +52,14 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
     signal, 
     /sys/** rwcx -> sys_default,
     /snap/** r,
+    /run/** rwkix,
 	umount,
     /usr/ r,
     /usr/lib/x86_64-linux-gnu/**    rm,
     /usr/** rw,
     /var/** rw,
     /tmp/** rw,
-
+    / r,
 	profile run_default flags=(complain){
   
     }
@@ -75,10 +77,14 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	
 	profile sbinprofile flags=(complain){
 		capability,
+		ptrace,
+		mount,
+		signal,
+		
 		/bin/* ix,		
 		capability,
 		/dev/null rw,
-		/dev/** rw,
+		/dev/** rwk,
 		/etc/** r,
 		/lib/** rm,
 		/proc/[0-9]*/** r,
@@ -87,9 +93,10 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	    	/sys/kernel/security/apparmor/.replace w,
 		/sbin/* rix,		
 		/sys/** r,
-		/run/** rwix,
+		/run/** rwkix,
 		/usr/bin/** rmix,
 		/usr/lib/** rmix,
+		/usr/sbin/** rmix,
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
@@ -106,16 +113,18 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		capability,
 	}
 
-	profile usrlibexecprofile flags=(complain){
-		/usr/lib/** rm,
-	}
+
 
 	profile binprofile flags=(complain){
 		capability,
+		ptrace,
+		mount,
+		signal,
+		
 		/opt/VBoxGuestAdditions-5.2.16/src/vboxguest-5.2.16/vboxguest/include/iprt/latin1.h r,
 		/bin/** rix,
 		/dev/null rw,
-		/dev/** rw,
+		/dev/** rwk,
 		/etc/** r,
 		/home/abhishek/.oh-my-zsh/** r,
 		/lib/** rm,
@@ -124,9 +133,10 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/proc/* r,
 		/sbin/* rix,		
 		/sys/** r,
-		/run/** rwix,
+		/run/** rwkix,
 		/usr/bin/** rmix,
 		/usr/lib/** rmix,
+		/usr/sbin/** rmix,
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
@@ -136,11 +146,15 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	
 	profile usrbinprofile flags=(complain){
 		capability,
+		ptrace,
+		mount,
+		signal,
+		
 		/bin/* ix,		
 		/dev/shm/ r,
 		/dev/urandom r,
 		/dev/null rw,
-		/dev/** rw,
+		/dev/** rwk,
 
 		/etc/** r,
 		/home/abhishek/** rk,
@@ -151,13 +165,14 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/proc/[0-9]*/** r,
 		/proc/sys/** r,
 		/proc/* r,
-		/run/** rwix,
+		/run/** rwkix,
 		
 
 		/sbin/* rix,
 		/sys/** r,
 		/usr/bin/** rmix,
 		/usr/lib/** rmix,
+		/usr/sbin/** rmix,
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
@@ -168,9 +183,13 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	
 	profile usrsbinprofile flags=(complain){
 		capability,
+		ptrace,
+		mount,
+		signal,
+		
 		/bin/* ix,		
 		/dev/null rw,
-		/dev/** rw,		
+		/dev/** rwk,		
 		/etc/cups/** rwix,
 		/etc/** r,
 		
@@ -179,11 +198,12 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/proc/* r,
 		/proc/sys/** r,
 
-		/run/** rwix,
+		/run/** rwkix,
 		/sbin/* rix,
 		/sys/** r,
 		/usr/bin/** rmix,
 		/usr/lib/** rmix,
+		/usr/sbin/** rmix,
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
@@ -194,10 +214,13 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	
 	profile usrlibprofile flags=(complain){
 		capability,
+		ptrace,
+		mount,
+		signal,
 		/bin/* ix,		
 		/dev/bus/usb/ r,
 		/dev/null wr,
-		/dev/** rw,
+		/dev/** rwk,
 		
 		/etc/** r,
 		
@@ -209,11 +232,12 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/proc/* r,
 		/proc/sys/** r,
 				
-		/run/** rwix,
+		/run/** rwkix,
 		/sbin/* rix,
 		/sys/** r,
 		/usr/bin/** rmix,
 		/usr/lib/** rmix,
+		/usr/sbin/** rmix,
 		/usr/src/** r,
 		/usr/share/** r,
 		/var/lib/** rk,
