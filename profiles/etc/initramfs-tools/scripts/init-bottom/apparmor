@@ -17,9 +17,8 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	
 	/etc/init.d/* rcx -> binprofile,
 
-	/lib/netplan/generate rcx -> binprofile,
-	/lib/systemd/systemd-journald rcx -> systemdjournal,
-
+	/lib/netplan/* rcx -> binprofile,
+	
 
 	/sbin/* rcx ->  sbinprofile,	
 
@@ -36,12 +35,11 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 
     capability,	
 
-	/dev/** rwk,
+    /dev/** rwk,
     /etc/** r,
 
-	/lib/console-setup/keyboard-setup.sh    rmix,   
+    /lib/console-setup/*    rmix,   
     /lib/systemd/** rix,
-    /lib/** rmcx -> usrlibprofile,
    
     mount, 
    
@@ -52,15 +50,14 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
     signal, 
     /sys/** rwcx -> sys_default,
     /snap/** r,
-    /run/** rwkix,
-	umount,
+    umount,
     /usr/ r,
     /usr/lib/x86_64-linux-gnu/**    rm,
     /usr/** rw,
     /var/** rw,
     /tmp/** rw,
     / r,
-	profile run_default flags=(complain){
+    profile run_default flags=(complain){
   
     }
   
