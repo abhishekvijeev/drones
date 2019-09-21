@@ -1,0 +1,255 @@
+#!/bin/sh
+PREREQ=""
+prereqs()
+{
+        echo "$PREREQ"
+}
+case $1 in
+prereqs)
+        prereqs
+        exit 0
+        ;;
+esac
+
+PROFILE="profile init-systemd /lib/systemd/** flags=(complain) 
+{
+	/bin/*  rcx -> binprofile,
+	
+	/etc/init.d/network-manager rcx -> binprofile,
+
+	/lib/netplan/generate rcx -> binprofile,
+	/lib/systemd/systemd-journald rcx -> systemdjournal,
+
+
+	/sbin/* rcx ->  sbinprofile,	
+
+	/usr/bin/* rcx -> usrbinprofile,
+
+	/usr/lib/** rcx -> usrlibprofile,
+	
+	/usr/libexec/** rcx -> usrlibprofile,
+	
+	/usr/sbin/* rcx -> usrsbinprofile,
+
+	
+
+    capability,	
+
+	/dev/** rw,
+    /etc/** r,
+
+	/lib/console-setup/keyboard-setup.sh    rmix,   
+    /lib/systemd/** rix,
+    /lib/** rm,
+   
+    mount, 
+   
+    /proc/** rw,
+    ptrace, 
+  
+    /run/** rwcx -> run_default,
+    signal, 
+    /sys/** rwcx -> sys_default,
+    /snap/** r,
+	umount,
+    /usr/ r,
+    /usr/lib/x86_64-linux-gnu/**    rm,
+    /usr/** rw,
+    /var/** rw,
+    /tmp/** rw,
+
+	profile run_default flags=(complain){
+  
+    }
+  
+    profile sys_default flags=(complain){
+   
+    }
+       
+    profile default_profile flags=(complain){
+
+	}
+
+	
+
+	
+	profile sbinprofile flags=(complain){
+		capability,
+		ptrace,
+		mount,
+		signal,
+		
+		/bin/* ix,		
+		capability,
+		/dev/null rw,
+		/dev/** rw,
+		/etc/** r,
+		/lib/** rm,
+		/proc/[0-9]*/** r,
+		/proc/sys/** r,
+		/proc/* r,
+	    	/sys/kernel/security/apparmor/.replace w,
+		/sbin/* rix,		
+		/sys/** r,
+		/run/** rwix,
+		/usr/bin/** rmix,
+		/usr/lib/** rmix,
+		/usr/src/** r,
+		/usr/share/** r,
+		/var/lib/** rk,
+		/var/log/** rw,
+		/tmp/** rwix,	
+		
+	}
+
+
+
+	profile systemd_journal flags=(complain){
+		ptrace,
+		signal,
+		capability,
+	}
+
+
+
+	profile binprofile flags=(complain){
+		capability,
+		ptrace,
+		mount,
+		signal,
+		
+		/opt/VBoxGuestAdditions-5.2.16/src/vboxguest-5.2.16/vboxguest/include/iprt/latin1.h r,
+		/bin/** rix,
+		/dev/null rw,
+		/dev/** rw,
+		/etc/** r,
+		/home/abhishek/.oh-my-zsh/** r,
+		/lib/** rm,
+		/proc/[0-9]*/** r,
+		/proc/sys/** r,
+		/proc/* r,
+		/sbin/* rix,		
+		/sys/** r,
+		/run/** rwix,
+		/usr/bin/** rmix,
+		/usr/lib/** rmix,
+		/usr/src/** r,
+		/usr/share/** r,
+		/var/lib/** rk,
+		/var/log/** rw,
+		/tmp/** rwix,	
+	}
+	
+	profile usrbinprofile flags=(complain){
+		capability,
+		ptrace,
+		mount,
+		signal,
+		
+		/bin/* ix,		
+		/dev/shm/ r,
+		/dev/urandom r,
+		/dev/null rw,
+		/dev/** rw,
+
+		/etc/** r,
+		/home/abhishek/** rk,
+	
+		/lib/** rm,
+		
+		/proc/[0-9]*/oom_score_adj w,
+		/proc/[0-9]*/** r,
+		/proc/sys/** r,
+		/proc/* r,
+		/run/** rwix,
+		
+
+		/sbin/* rix,
+		/sys/** r,
+		/usr/bin/** rmix,
+		/usr/lib/** rmix,
+		/usr/src/** r,
+		/usr/share/** r,
+		/var/lib/** rk,
+		/var/log/** rw,
+		/tmp/** rwix,	
+	
+	}
+	
+	profile usrsbinprofile flags=(complain){
+		capability,
+		ptrace,
+		mount,
+		signal,
+		
+		/bin/* ix,		
+		/dev/null rw,
+		/dev/** rw,		
+		/etc/cups/** rwix,
+		/etc/** r,
+		
+		/lib/** rm,
+		/proc/[0-9]*/** r,
+		/proc/* r,
+		/proc/sys/** r,
+
+		/run/** rwix,
+		/sbin/* rix,
+		/sys/** r,
+		/usr/bin/** rmix,
+		/usr/lib/** rmix,
+		/usr/src/** r,
+		/usr/share/** r,
+		/var/lib/** rk,
+		/var/log/** rw,
+		/tmp/** rwix,	
+
+	}
+	
+	profile usrlibprofile flags=(complain){
+		capability,
+		ptrace,
+		mount,
+		signal,
+		/bin/* ix,		
+		/dev/bus/usb/ r,
+		/dev/null wr,
+		/dev/** rw,
+		
+		/etc/** r,
+		
+		/home/abhishek/.local/share/tracker/data/tracker-store.journal w,
+		/home/abhishek/** rk,
+		/lib/** rm,
+		
+		/proc/[0-9]*/** r,
+		/proc/* r,
+		/proc/sys/** r,
+				
+		/run/** rwix,
+		/sbin/* rix,
+		/sys/** r,
+		/usr/bin/** rmix,
+		/usr/lib/** rmix,
+		/usr/src/** r,
+		/usr/share/** r,
+		/var/lib/** rk,
+		/var/log/** rw,
+		/tmp/** rwix,		
+		
+		
+	}
+
+
+
+}"
+
+mount -t securityfs none /sys/kernel/security
+#echo "profile init-systemd /lib/systemd/** flags=(complain) {/lib/systemd/* ix, /{,usr/}{,s}bin/* pix, /opt/** Px,}" | /sbin/apparmor_parser -a
+#echo "profile init-upstart /sbin/upstart flags=(complain) {}" | /sbin/apparmor_parser -a
+
+echo "$PROFILE" | /sbin/apparmor_parser -a
+#echo "profile init-upstart /sbin/upstart flags=(complain) {}" | /sbin/apparmor_parser -a
+
+read -p "Enter a name: " name
+echo "Hi, $name"
