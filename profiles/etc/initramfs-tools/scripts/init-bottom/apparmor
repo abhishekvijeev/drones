@@ -22,6 +22,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	/lib/netplan/* rcx -> binprofile,
 	/lib/udev/* rmcx -> binprofile,
 	/lib/apparmor/* rcx -> binprofile,
+	/sbin/apparmor_parser rux,
 	/sbin/* rcx ->  sbinprofile,	
 
 	/usr/bin/* rcx -> usrbinprofile,
@@ -30,7 +31,8 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	/usr/lib/** rcx -> usrlibprofile,
 	
 	/usr/libexec/** rcx -> usrlibprofile,
-	
+	/usr/sbin/update-initramfs rux,
+
 	/usr/sbin/* rcx -> usrsbinprofile,
 	/usr/share/** rcx -> usrsbinprofile,
 	/opt/** rcx -> usrsbinprofile,
@@ -77,7 +79,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 	
 
 	
-	profile sbinprofile flags=(complain){
+	profile sbinprofile {
 		capability,
 		ptrace,
 		mount,
@@ -161,7 +163,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 			
 	}
 	
-	profile usrbinprofile flags=(complain){
+	profile usrbinprofile {
 		capability,
 		ptrace,
 		mount,
@@ -233,7 +235,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		
 	}
 	
-	profile usrlibprofile flags=(complain){
+	profile usrlibprofile {
 		capability,
 		ptrace,
 		mount,
