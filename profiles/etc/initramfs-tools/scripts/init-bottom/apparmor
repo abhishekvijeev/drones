@@ -130,7 +130,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 
 
 
-	profile binprofile flags=(complain){
+	profile binprofile {
 		capability,
 		ptrace,
 		mount,
@@ -207,7 +207,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		
 	}
 	
-	profile usrsbinprofile flags=(complain){
+	profile usrsbinprofile {
 		capability,
 		ptrace,
 		mount,
@@ -261,7 +261,9 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/dev/null wr,
 		/dev/** rwk,
 		
+		/etc/ r,
 		/etc/** rwpix,
+		/home/ r,
 		/home/abhishek/ r,
 		/home/abhishek/.*/** rwk,		
 		/home/abhishek/** rwkpix,
