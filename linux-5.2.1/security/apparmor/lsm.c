@@ -111,8 +111,8 @@ static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_
 	{
 		list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
 		{
-			// printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
-			if (iterator->ip_addr == check_ip_addr)
+			printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
+			if (iterator->ip_addr == check_ip_addr || iterator->ip_addr == 0)
 			{
 				*allow = true;
 				break;
