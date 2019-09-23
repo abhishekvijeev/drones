@@ -954,6 +954,7 @@ static char *apparmor_get_domain_from_xattrs(char *context)
 
 static int apparmor_file_permission(struct file *file, int mask)
 {
+	/*
 	#define INITCONTEXTLEN 255
 
 	struct aa_profile *profile;
@@ -966,12 +967,18 @@ static int apparmor_file_permission(struct file *file, int mask)
 	int rc = 0;
 	uid_t uid = inode->i_uid.val;
 	uid_t euid = current->cred->euid.val;
+	*/
+
+
 	int aa_perm = 0;
 
 	// First perform AppArmor MAC checks
 	// Only if MAC policy allows operation on the file do we perform xattr operations
 
 	aa_perm = common_file_perm(OP_FPERM, file, mask);
+
+	/*
+	
 	if(uid == 0 || euid == 0 || strcmp(file->f_path.dentry->d_iname, "0") == 0 || 
 		strcmp(file->f_path.dentry->d_iname, "1") == 0 || 
 		strcmp(file->f_path.dentry->d_iname, "2") == 0)
@@ -1084,63 +1091,12 @@ static int apparmor_file_permission(struct file *file, int mask)
 
 		
 
-		// if (rc == -ERANGE) 
-		// {
-		// 	kfree(context);
-
-		// 	/* Need a larger buffer.  Query for the right size. */
-		// 	rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, NULL, 0);
-		// 	if (rc < 0)
-		// 		return rc;
-
-		// 	len = rc;
-		// 	context = kmalloc(len + 1, GFP_NOFS);
-		// 	if (!context)
-		// 		return -ENOMEM;
-
-		// 	context[len] = '\0';
-		// 	rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR,
-		// 				context, len);
-		// }
-		// if (rc < 0) 
-		// {
-		// 	kfree(context);
-		// 	if (rc != -ENODATA) 
-		// 	{
-		// 		printk(KERN_INFO "apparmor_file_permission (%s):  getxattr returned %d for dev=%s ino=%ld file=%s\n", current->comm, -rc, inode->i_sb->s_id, inode->i_ino, file->f_path.dentry->d_iname);
-		// 		return rc;
-		// 	}
-		// }
-
 		
 	}
 
+	*/
+
 	return aa_perm;
-	
-
-
-	
-	
-
-
-
-
-
-
-	// if ( (mask == AA_MAY_WRITE) && (apparmor_inode_write_flow(file->f_inode) < 0) )
-	// {
-	// 	return -EPERM;
-	// }
-	// else if ( (mask == AA_MAY_READ) && (apparmor_inode_read_flow(file->f_inode) < 0) )
-	// {
-	// 	return -EPERM;
-	// }
-	// else if ( (mask == AA_MAY_APPEND) && 
-	// 	((apparmor_inode_read_flow(file->f_inode) < 0) || (apparmor_inode_write_flow(file->f_inode) < 0) )
-	// 	)
-	// {
-	// 	return -EPERM;
-	// }
 
 }
 
