@@ -749,27 +749,29 @@ static int apparmor_inode_getattr(const struct path *path)
 
 static int apparmor_inode_alloc_security(struct inode *inode)
 {
-	struct aa_profile *profile;
-	struct aa_label *curr_label;
-	char *curr_domain = NULL;
-	curr_label = __begin_current_label_crit_section();
-	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-	if(curr_domain)
-	{
-		printk(KERN_INFO "apparmor_inode_alloc_security (%s)\n", current->comm);
-		inode->i_security = aa_get_label(curr_label);
-	}
+	// struct aa_profile *profile;
+	// struct aa_label *curr_label;
+	// char *curr_domain = NULL;
+	// curr_label = __begin_current_label_crit_section();
+	// fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	// if(curr_domain)
+	// {
+	// 	printk(KERN_INFO "apparmor_inode_alloc_security (%s)\n", current->comm);
+	// 	inode->i_security = aa_get_label(curr_label);
+	// }
 
-	__end_current_label_crit_section(curr_label);
+	// __end_current_label_crit_section(curr_label);
+
+	return 0;
 }
 
 static void apparmor_inode_free_security(struct inode *inode)
 {
-	if(inode->i_security)
-	{
-		struct aa_label *inode_label = (struct aa_label *)inode->i_security;
-		aa_put_label(inode_label);
-	}
+	// if(inode->i_security)
+	// {
+	// 	struct aa_label *inode_label = (struct aa_label *)inode->i_security;
+	// 	aa_put_label(inode_label);
+	// }
 }
 
 
@@ -777,24 +779,6 @@ static void apparmor_inode_free_security(struct inode *inode)
 
 static int apparmor_file_open(struct file *file)
 {
-	// if(apparmor_inode_read_flow(file->f_inode) < 0)
-	// 	return -EPERM;
-
-	struct aa_profile *profile;
-	struct aa_label *curr_label;
-	char *curr_domain = NULL;
-	curr_label = __begin_current_label_crit_section();
-	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-	if(curr_domain)
-	{
-		printk(KERN_INFO "apparmor_file_open (%s): file_name = %s\n", current->comm, file->f_path.dentry->d_iname);
-		// dump_stack();
-	}
-
-	__end_current_label_crit_section(curr_label);
-
-	
-
 	struct aa_file_ctx *fctx = file_ctx(file);
 	struct aa_label *label;
 	int error = 0;
