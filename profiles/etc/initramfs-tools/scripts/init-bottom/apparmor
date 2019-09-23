@@ -215,7 +215,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/etc/** rwkix,
 		/home/abhishek/ r,
 		/home/abhishek/.*/** rwlk,
-		/home/abhishek/** rwmlk,
+		/home/abhishek/** rwmlkpix,
 		/lib/** rmix,
 		/opt/** rmix,
 		/proc/ r,
@@ -224,6 +224,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/proc/sys/** rw,
 
 		/run/** rwkix,
+		/sbin/apparmor_parser rux,
 		/sbin/* rix,
 		/snap/** rmix,
 		/sys/bus/** rw,
@@ -262,6 +263,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 				
 		/run/** rwkpix,
 		/sbin/ r,
+		/sbin/apparmor_parser rux,
 		/sbin/* rpix,
 		/snap/** rmpix,
 		/sys/bus/** rw,
