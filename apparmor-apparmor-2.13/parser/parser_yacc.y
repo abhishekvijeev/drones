@@ -1340,10 +1340,17 @@ rules: rules allow_ip_rule
 	{
 		if($1->allowed_ip_addrs == NULL)
 		{
+			// List of allowed IP addrs is empty - this is the only case where address 0 must be added
 			$1->allowed_ip_addrs = $2;
 		}
 		else
 		{
+			// List of allowed IP addrs is not empty
+			// If incoming node's IP address or the existing list's head's IP address is 0, raise error
+			if($2->addr.s_addr == 0 || $1->allowed_ip_addrs->addr.s_addr == 0)
+			{
+				yyerror(_("IP Address 0.0.0.0 can be specified only once. If specified, the list of allowed IP addresses cannot contain any more"));
+			}
 			$2->next = $1->allowed_ip_addrs;
 			$1->allowed_ip_addrs = $2;
 		}
