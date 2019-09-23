@@ -938,7 +938,7 @@ static char *apparmor_get_domain_from_xattrs(char *context)
 
 static int apparmor_file_permission(struct file *file, int mask)
 {
-	/*
+	
 	#define INITCONTEXTLEN 255
 
 	struct aa_profile *profile;
@@ -951,7 +951,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 	int rc = 0;
 	uid_t uid = inode->i_uid.val;
 	uid_t euid = current->cred->euid.val;
-	*/
+	
 
 
 	int aa_perm = 0;
@@ -961,7 +961,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 
 	aa_perm = common_file_perm(OP_FPERM, file, mask);
 
-	/*
+	
 	
 	if(uid == 0 || euid == 0 || strcmp(file->f_path.dentry->d_iname, "0") == 0 || 
 		strcmp(file->f_path.dentry->d_iname, "1") == 0 || 
@@ -1078,7 +1078,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 		
 	}
 
-	*/
+	
 
 	return aa_perm;
 
