@@ -13,6 +13,7 @@ esac
 
 PROFILE="profile init-systemd /lib/systemd/** flags=(complain) 
 {
+	/bin/mount rux,
 	/bin/*  rcx -> binprofile,
 	
 	/etc/init.d/* rcx -> binprofile,
@@ -27,14 +28,18 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 
 	/usr/bin/* rcx -> usrbinprofile,
 	
-
+	/usr/lib/upower/upowerd rix,
+	/usr/lib/geoclue-2.0/geoclue rix,
 	/usr/lib/** rcx -> usrlibprofile,
 	
 	/usr/libexec/** rcx -> usrlibprofile,
+	/usr/sbin/ModemManager rix,
+	/usr/sbin/irqbalance rix,
 	/usr/sbin/update-initramfs rux,
 
 	/usr/sbin/* rcx -> usrsbinprofile,
 	/usr/share/** rcx -> usrsbinprofile,
+	/var/log/dmesg w,
 	/opt/** rcx -> usrsbinprofile,
 	
 
@@ -207,15 +212,18 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		ptrace,
 		mount,
 		signal,
-		/ r,
+		/ r,	
+		/bin/ r,
 		/bin/* rix,
 		/dev/ r,		
 		/dev/null rw,
 		/dev/** rwk,		
 		/etc/** rwkix,
+		/home/ r,
 		/home/abhishek/ r,
 		/home/abhishek/.*/** rwlk,
 		/home/abhishek/** rwmlkpix,
+		/lib32/ld-2.29.so rix,
 		/lib/** rmix,
 		/opt/** rmix,
 		/proc/ r,
@@ -224,6 +232,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/proc/sys/** rw,
 
 		/run/** rwkix,
+		/sbin/ r,
 		/sbin/apparmor_parser rux,
 		/sbin/* rix,
 		/snap/** rmix,
