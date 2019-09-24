@@ -39,7 +39,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 
 	/usr/sbin/* rcx -> usrsbinprofile,
 	/usr/share/** rcx -> usrsbinprofile,
-	/var/log/dmesg w,
+
 	/opt/** rcx -> usrsbinprofile,
 	
 
@@ -230,7 +230,7 @@ PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 		/proc/[0-9]*/** rw,
 		/proc/* r,
 		/proc/sys/** rw,
-
+		
 		/run/** rwkix,
 		/sbin/ r,
 		/sbin/apparmor_parser rux,
