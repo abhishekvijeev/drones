@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import glob, os 
-from stat import *
+
  
 def run(cmd):
     print("Executing",cmd)
@@ -22,11 +22,27 @@ def getallfiles():
 
 
 
-files = getallfiles()
-for f in files:
-	# filename = f.split('/')[-1]
-	# print(filename)
-    if (os.path.islink(f)):
-	    print(f,  oct(os.stat(f)[ST_MODE]), "Link file")
-    else:
-        print(f,  oct(os.stat(f)[ST_MODE]))
+
+
+def make_apparmor_profile():
+    if len(sys.argv) <= 2:
+        print("Argv 1 should contain path\nArgv 2 should contain profilename")
+        exit()
+
+    path = sys.argv[1]
+    profilename = sys.argv[2]
+    if os.path.exists(path):
+        if path[len(path)-1] != "/":
+            path = path + "/"
+        files = [f for f in glob.glob(path + "**", recursive=True)]
+        for f in files:
+            if f == path:
+                continue
+            
+            if not os.path.islink(f) and os.access(f, os.X_OK):
+                print (f, "->", profilename)
+                
+        
+
+
+make_apparmor_profile()
