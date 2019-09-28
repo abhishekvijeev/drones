@@ -40,7 +40,7 @@ def make_apparmor_profile():
                 continue
             
             if not os.path.islink(f) and os.access(f, os.X_OK):
-                print (f, "rix ->", profilename)
+                print (f, "rcx ->", profilename , ",")
                 
         
 
