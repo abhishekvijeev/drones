@@ -1,2 +1,6 @@
 to run:
 ./filter.sh {filename of the dmesg log}
+
+
+to run bootprocess
+./bootprocess.sh {filterlog from ./filter.sh}
