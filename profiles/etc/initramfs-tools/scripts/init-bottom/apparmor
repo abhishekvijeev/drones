@@ -11,286 +11,109 @@ prereqs)
         ;;
 esac
 
-PROFILE="profile init-systemd /lib/systemd/** flags=(complain) 
+PROFILE="profile init-systemd /lib/systemd/** flags=(complain)
 {
 	/bin/mount rux,
-	/bin/*  rcx -> binprofile,
-	
-	/etc/init.d/* rcx -> binprofile,
-	/etc/network/** rcx -> binprofile,
-	/etc/console-setup/* rcx -> binprofile,
-	/etc/ppp/** rcx -> binprofile,
-	/lib/netplan/* rcx -> binprofile,
-	/lib/udev/* rmcx -> binprofile,
-	/lib/apparmor/* rcx -> binprofile,
 	/sbin/apparmor_parser rux,
-	/sbin/* rcx ->  sbinprofile,	
 
-	/usr/bin/* rcx -> usrbinprofile,
+	/etc/init.d/kdump-tools rcx -> bootprocesses ,
+	/lib/apparmor/apparmor.systemd rcx -> bootprocesses ,
+	/lib/netplan/generate   rcx -> bootprocesses ,
+
+	/lib/systemd/systemd rcx -> bootprocesses ,
+	/lib/systemd/systemd-udevd   rcx -> bootprocesses ,
+	/opt/VBoxGuestAdditions-5.2.16/init/vboxadd rcx -> bootprocesses ,
+	/sbin/ifup rcx -> bootprocesses ,
+	/sbin/plymouthd   rcx -> bootprocesses ,
 	
-	/usr/lib/upower/upowerd rix,
-	/usr/lib/geoclue-2.0/geoclue rix,
-	/usr/lib/** rcx -> usrlibprofile,
+	/usr/bin/dbus-daemon   rcx -> bootprocesses ,
+	/usr/bin/networkd-dispatcher   rcx -> bootprocesses ,
+	/usr/bin/snap   rcx -> bootprocesses ,
+	/usr/lib/colord/colord   rcx -> bootprocesses ,
+	/usr/lib/packagekit/packagekitd rcx -> bootprocesses ,
+	/usr/lib/snapd/snapd rcx -> bootprocesses ,
+	/usr/lib/NetworkManager/nm-dispatcher   rcx -> bootprocesses ,
+	/usr/lib/accountsservice/accounts-daemon   rcx -> bootprocesses ,
+	/usr/lib/policykit-1/polkitd   rcx -> bootprocesses ,
+	/usr/lib/systemd/system-environment-generators/snapd-env-generator   rcx -> bootprocesses ,
+	/usr/lib/udisks2/udisksd   rcx -> bootprocesses ,
+
+	/usr/sbin/NetworkManager   rcx -> bootprocesses ,
+	/usr/sbin/cupsd   rcx -> bootprocesses ,
+	/usr/sbin/gdm3 rcx -> bootprocesses ,
+	/usr/sbin/rsyslogd   rcx -> bootprocesses ,
+	/usr/share/unattended-upgrades/unattended-upgrade-shutdown   rcx -> bootprocesses ,
 	
-	/usr/libexec/** rcx -> usrlibprofile,
-	/usr/sbin/ModemManager rix,
-	/usr/sbin/irqbalance rix,
-	/usr/sbin/update-initramfs rux,
-
-	/usr/sbin/* rcx -> usrsbinprofile,
-	/usr/share/** rcx -> usrsbinprofile,
-
-	/opt/** rcx -> usrsbinprofile,
+	capability,	
+	/lib/console-setup/*    rmix,
+	/lib/ufw/* rmix,   
+	/lib/systemd/** rix,
 	
-
-    capability,	
-
-    /dev/** rwk,
-    /etc/** r,
-
-    /lib/console-setup/*    rmix,
-    /lib/ufw/* rmix,   
-    
-    /lib/systemd/** rix,
-    /lib/** rm,
-    mount, 
-   
-    /proc/** rw,
-    ptrace, 
-  
-    /run/** rwkcx -> run_default,
-    signal, 
-    /sys/** rwcx -> sys_default,
-    /snap/** r,
-    umount,
-    /usr/ r,
-    /usr/lib/x86_64-linux-gnu/**    rm,
-    /usr/** rw,
-    /var/** rwk,
-    /tmp/** rw,
-    / r,
-    profile run_default flags=(complain){
-  
-    }
-  
-    profile sys_default flags=(complain){
-   
-    }
-       
-    profile default_profile flags=(complain){
-
-	}
-
+	mount, 
+	ptrace, 
+	signal, 
+	umount,
+	/ r,
+	/** rwmk,
 	
-
-	
-	profile sbinprofile {
+	profile bootprocesses flags=(complain){
 		capability,
 		ptrace,
 		mount,
 		signal,
+		/bin/cp   rix ,
+		/bin/dash rix ,
+		/bin/grep   rix ,
+		/bin/sed   rix ,
+		/bin/run-parts rix ,
+		/etc/gdm3/Xsession rix ,
+		/etc/network/if-pre-up.d/wireless-tools   rix ,
+		/etc/NetworkManager/dispatcher.d/01-ifupdown   rix ,		
+		/opt/VBoxGuestAdditions-5.2.16/src/vboxguest-5.2.16/build_in_tmp   rix ,
+		/sbin/iwconfig   rix ,
+		/snap/core/7713/usr/lib/snapd/snapd   rix ,
+		/usr/bin/Xorg rix ,
+		/usr/bin/dpkg   rix ,
+		/usr/bin/env rix ,
+		/usr/bin/find   rix ,
+		/usr/bin/gnome-session rix ,
+		/usr/bin/gnome-shell   rix ,
+		/usr/bin/gnome-software   rix ,
+		/usr/bin/im-launch rix ,
+		/usr/bin/ionice rix ,
+		/usr/bin/make rix ,
+		/usr/bin/nice rix ,
+		/usr/bin/ssh-agent rix ,
+		/usr/bin/update-notifier   rix ,
+		/usr/bin/update-notifier rix ,
+		/usr/bin/x86_64-linux-gnu-gcc-8   rix ,
+		/usr/bin/x86_64-linux-gnu-gcc-8 rix ,
+		/usr/bin/x86_64-linux-gnu-ld.bfd   rix ,
+		/usr/lib/cnf-update-db   rix ,
+		/usr/lib/gcc/x86_64-linux-gnu/8/collect2   rix ,
+		/usr/lib/gcc/x86_64-linux-gnu/8/collect2 rix ,
+		/usr/lib/gdm3/gdm-session-worker   rix ,
+		/usr/lib/gdm3/gdm-session-worker rix ,
+		/usr/lib/gdm3/gdm-wayland-session rix ,
+		/usr/lib/gdm3/gdm-x-session rix ,
+		/usr/lib/gnome-session/gnome-session-binary   rix ,
+		/usr/lib/gnome-session/gnome-session-binary rix ,
+		/usr/lib/gvfs/gvfsd   rix ,
+		/usr/lib/tracker/tracker-miner-apps   rix ,
+		/usr/lib/tracker/tracker-store   rix ,
+		/usr/lib/update-notifier/apt_check.py   rix ,
+		/usr/lib/x86_64-linux-gnu/glib-2.0/gio-launch-desktop rix ,
+		/usr/lib/xorg/Xorg   rix ,
+		/usr/lib/xorg/Xorg.wrap rix ,
+		/usr/sbin/kdump-config rix ,
 		
-		/bin/* rpix,		
-		capability,
-		/dev/ r,
-		/dev/null rw,
-		/dev/** rwk,
-		/etc/** rwpix,
-		/home/abhishek/ r,
-		/home/abhishek/.*/** rwk,
-		/home/abhishek/** rwkpix,
-		/lib/** rmpix,
-		/opt/** rmpix,
-		/proc/ r,
-		/proc/[0-9]*/** rw,
-		/proc/sys/** rw,
-		/proc/* r,
-	    	/sys/kernel/security/apparmor/.replace w,
-		/sbin/* rpix,
-		/snap/** rmpix,
-		/sys/kernel/security/apparmor/** rw,	
-		/sys/bus/** rw,	
-		/sys/** r,
-		/swapfile r,
-		/swapfile wr,
-		/run/** rwkpix,
-		/usr/** rmpix,
-		/var/** rwk,
-		/tmp/** rwpix,	
+		/usr/share/apport/apport-checkreports   rix ,
+		
+		/** rwmkl,
 		
 	}
 
-
-
-	profile systemd_journal flags=(complain){
-		ptrace,
-		signal,
-		capability,
-	}
-
-
-
-	profile binprofile {
-		capability,
-		ptrace,
-		mount,
-		signal,
-		/ r,
-		/bin/** rix,
-		/boot/ r,
-		/boot/** rwix,
-		/dev/ r,
-		/dev/null rw,
-		/dev/** rwk,
-		/etc/** rwkix,
-		/home/ r,
-		/home/abhishek/ r,
-		/home/abhishek/.*/** rwk,
-		/home/abhishek/** rwk,
-		/lib/** rmix,
-		/opt/** rmix,
-		/proc/ r,
-		/proc/[0-9]*/** rw,
-		/proc/sys/** rw,
-		/proc/* r,
-		/sbin/* rix,	
-		/snap/** rmix,
-		/srv/ r,
-		/sys/bus/** rw,
-		/sys/module/** rw,	
-		/sys/** rw,
-		/run/** rwkix,
-		/usr/** rmix,
-		/var/ r,
-		/var/** rwkix,
-		/tmp/ r,
-		/tmp/** rwix,	
-			
-	}
 	
-	profile usrbinprofile {
-		capability,
-		ptrace,
-		mount,
-		signal,
-		
-		/bin/* rpix,
-		/boot/grub/* rwpix,		
-		/dev/ r,		
-		/dev/null rw,
-		/dev/** rwk,
-
-		/etc/** rwpix,
-		/home/abhishek/ r,
-		/home/abhishek/.*/** rwk,
-		/home/abhishek/** rwkpix,
-	
-		/lib/** rmpix,
-		/opt/** rmpix,
-		/proc/ r,
-		/proc/[0-9]*/oom_score_adj w,
-		/proc/[0-9]*/** rw,
-		/proc/sys/** rw,
-		/proc/mtrr w,
-		/proc/* r,
-		/run/** rwkpix,
-		
-
-		/sbin/* rpix,
-		/snap/** rmpix,
-		/sys/bus/** rw,
-		/sys/** r,
-		/usr/** rmpix,
-		/var/** rwlkpix,
-		/tmp/ r,
-		/tmp/** rwpix,	
-		
-	}
-	
-	profile usrsbinprofile {
-		capability,
-		ptrace,
-		mount,
-		signal,
-		/ r,
-		/boot/** rwl,	
-		/bin/ r,
-		/bin/* rix,
-		/dev/ r,		
-		/dev/null rw,
-		/dev/** rwk,
-		/etc/ r,		
-		/etc/** rwkix,
-		/home/ r,
-		/home/abhishek/ r,
-		/home/abhishek/.*/** rwlk,
-		/home/abhishek/** rwmlkpix,
-		/lib32/ld-2.29.so rix,
-		/lib/ r,
-		/lib/** rmix,
-		/opt/** rmix,
-		/proc/ r,
-		/proc/[0-9]*/** rw,
-		/proc/* r,
-		/proc/sys/** rw,
-		
-		/run/** rwkix,
-		/sbin/ r,
-		/sbin/apparmor_parser rux,
-		/sbin/* rix,
-		/snap/** rmix,
-		/sys/bus/** rw,
-		/sys/** r,
-		/usr/** rmix,
-		/var/** rwlkix,
-		/tmp/ r,
-		/tmp/** rwix,	
-		
-	}
-	
-	profile usrlibprofile {
-		capability,
-		ptrace,
-		mount,
-		umount,
-		signal,
-		/bin/ r,
-		/bin/* rpix,
-		/dev/ r,		
-		/dev/bus/usb/ r,
-		/dev/null wr,
-		/dev/** rwk,
-		
-		/etc/ r,
-		/etc/** rwpix,
-		/home/ r,
-		/home/abhishek/ r,
-		/home/abhishek/.*/** rwk,		
-		/home/abhishek/** rwkpix,
-		
-		/lib/** rmpix,
-		/opt/** rmpix,
-		/proc/ r,
-		/proc/[0-9]*/** rw,
-		/proc/* r,
-		/proc/sys/** rw,
-				
-		/run/** rwkpix,
-		/sbin/ r,
-		/sbin/apparmor_parser rux,
-		/sbin/* rpix,
-		/snap/** rmpix,
-		/sys/bus/** rw,
-		/sys/** r,
-		/usr/** rmpix,
-		/var/** rwkpix,
-		/tmp/ r,		
-		/tmp/** rwpix,		
-		
-	}
-
-
-
 }"
 
 mount -t securityfs none /sys/kernel/security

@@ -97,16 +97,19 @@ for data in input_data.split("\\n")[1:]:
         if data not in remaining:
             remaining.append(data)
         continue
-    
-    data = data.split("init-systemd//null-")[1:] 
-    final_data = data[0].split("//null-")
-    val = final_data[0].split("\\n'}")[0] + " rcx -> bootprocesses ,"
-    if val not in initsystemd:
-        initsystemd.append(val)
-    for item in sorted(final_data[1:]):
-        val = item.split("\\n'}")[0] + " rix ,"
-        if val not in bootprocesses:
-            bootprocesses.append(val)
+    try:
+        data = data.split("init-systemd//null-")[1:] 
+        final_data = data[0].split("//null-")
+        val = final_data[0].split("\\n'}")[0] + " rcx -> bootprocesses ,"
+        if val not in initsystemd:
+            initsystemd.append(val)
+        for item in sorted(final_data[1:]):
+            val = item.split("\\n'}")[0] + " rix ,"
+            if val not in bootprocesses:
+                bootprocesses.append(val)
+    except:
+        print("ERROR: ", data)
+        pass
 
 print("InitSystemd:")
 for data in sorted(initsystemd):
