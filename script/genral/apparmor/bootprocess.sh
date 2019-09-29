@@ -10,7 +10,6 @@ VALUE=""
 
 while IFS= read -r line
 do
-   VALUE="$VALUE  \n  $line"
+	python3 bootprocess_helper.py "$line"
 done < <(printf '%s\n' "$OUTPUT")
 
-python3 bootprocess_helper.py "$VALUE"
