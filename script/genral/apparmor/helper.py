@@ -22,7 +22,10 @@ def getallfiles():
 
 
 
-
+def appendslash(path):
+    if path[len(path)-1] != "/":
+        path = path + "/"
+    return path
 
 def make_apparmor_profile():
     if len(sys.argv) <= 2:
@@ -32,16 +35,14 @@ def make_apparmor_profile():
     path = sys.argv[1]
     profilename = sys.argv[2]
     if os.path.exists(path):
-        if path[len(path)-1] != "/":
-            path = path + "/"
-        files = [f for f in glob.glob(path + "**", recursive=True)]
-        for f in files:
-            if f == path:
-                continue
-            
-            if not os.path.islink(f) and os.access(f, os.X_OK):
-                print (f, "rcx ->", profilename , ",")
-                
+        path = appendslash(path) 
+        for (root,dirs,files) in os.walk(path, topdown=True):
+            for filename in files:
+                f = appendslash(root) + filename 
+                if not os.path.islink(f) and os.access(f, os.X_OK):
+                    print (f, "rcx ->", profilename , ",")
+
+
         
 
 
