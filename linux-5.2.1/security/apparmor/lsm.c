@@ -975,7 +975,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 		char *tmppath = kzalloc(300, GFP_KERNEL);
 		if (tmppath != NULL)
 		{
-			char *fullpath = dentry_path_raw(filp->f_path.dentry,tmppath,300);
+			char *fullpath = dentry_path_raw(dentry, tmppath, 300);
 			if (mask == AA_MAY_EXEC)
 				printk (KERN_INFO "[GRAPH_GEN] Process %s, exec, %s/%s\n", current->comm, fullpath, dentry->d_iname);
 			else if (mask ==  AA_MAY_WRITE)
