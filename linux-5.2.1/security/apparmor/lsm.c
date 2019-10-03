@@ -962,6 +962,66 @@ static int apparmor_file_permission(struct file *file, int mask)
 	aa_perm = common_file_perm(OP_FPERM, file, mask);
 
 	
+	char *tmppage = (char*)__get_free_page(GFP_TEMPORARY);
+	char *fullpath = d_path(&file->f_path, tmppage, PAGE_SIZE);
+	if (IS_ERR(fullpath)) {
+        printk(KERN_INFO "apparmor_file_permission error in getting directory: %d\n", (int)fullpath);
+        free_page((unsigned long)tmppage);
+    }
+
+	switch(mask)
+	{
+		case AA_MAY_EXEC:
+			if (!IS_ERR(fullpath))
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, exec, %s/%s\n", current->comm, fullpath, file->f_path.dentry->d_iname);
+			break;
+		case AA_MAY_WRITE:
+			if (!IS_ERR(fullpath))
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, write, %s/%s\n", current->comm, fullpath, file->f_path.dentry->d_iname);
+			break;
+		case AA_MAY_READ:
+			if (!IS_ERR(fullpath))
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, read, %s/%s\n", current->comm, fullpath, file->f_path.dentry->d_iname);
+			break;
+		case AA_MAY_APPEND:
+			break;
+		case AA_MAY_CREATE:
+			break;
+		case AA_MAY_DELETE:
+			break;
+		case AA_MAY_RENAME:
+			break;
+		case AA_MAY_CHMOD:
+			break;
+		case AA_MAY_CHOWN:
+			break;
+		case AA_MAY_CHGRP:
+			break;
+		case AA_EXEC_MMAP:
+			break;
+		case AA_MAY_MPROT:
+			break;
+		case AA_MAY_LINK:
+			break;
+		case AA_MAY_SNAPSHOT:
+			break;
+		case AA_MAY_SETATTR:
+			break;
+		case AA_MAY_GETATTR:
+			break;
+		case AA_MAY_SETCRED:
+			break;
+		case AA_MAY_GETCRED:
+			break;
+		default:
+			if (!IS_ERR(fullpath))
+			{
+				free_page((unsigned long)tmppage);
+			}
+			break;
+		
+	}
+	
 	
 	if(uid == 0 || euid == 0 || strcmp(file->f_path.dentry->d_iname, "0") == 0 || 
 		strcmp(file->f_path.dentry->d_iname, "1") == 0 || 
