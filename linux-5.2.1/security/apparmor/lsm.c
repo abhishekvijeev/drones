@@ -262,6 +262,7 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 				fn_for_each (receiver_label, profile, apparmor_getlabel_domain(profile, &receiver_domain));
 				if (receiver_domain != NULL && sender_label != NULL)
 				{
+					printk (KERN_INFO "[GRAPH_GEN] Process %s, network, %s\n", sender_label->hname, receiver_label->hname);
 					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, receiver_domain, &allow));
 					if (allow == 0)
 						err = 1;
@@ -977,19 +978,19 @@ static int apparmor_file_permission(struct file *file, int mask)
 		{
 			char *fullpath = dentry_path_raw(dentry, tmppath, 300);
 			if (mask == AA_MAY_EXEC)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, exec, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, exec, %s\n", current->comm, fullpath);
 			else if (mask ==  AA_MAY_WRITE)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, write, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, write, %s\n", current->comm, fullpath);
 			else if (mask ==  AA_MAY_READ)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, read, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, read, %s\n", current->comm, fullpath);
 			else if (mask ==  AA_MAY_APPEND)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, append, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, append, %s\n", current->comm, fullpath);
 			else if (mask ==  AA_MAY_CREATE)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, create, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, create, %s\n", current->comm, fullpath);
 			else if (mask ==  AA_MAY_DELETE)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, delete, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, delete, %s\n", current->comm, fullpath);
 			else if (mask ==  AA_MAY_RENAME)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, rename, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, rename, %s\n", current->comm, fullpath);
 			
 			kzfree(tmppath);
 		}
@@ -1861,6 +1862,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 					socket_recvmsg_inside_sender:
 					if(sender_label != NULL)
 					{
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, network, %s\n", sender_label->hname, current->comm);
 						//add sender & receiver label to cache
 						int ret = apparmor_tsk_container_add(label, current->pid);
 
@@ -1872,7 +1874,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 					if (sender_flag == false)
 						aa_put_label(sender_label);
 					
-					printk (KERN_INFO "apparmor_socket_recvmsg (%s): Match is %d for flow from %s(pid = %d) to %s(pid = %d)\n", current->comm, allow, sender->comm, sender_pid, current->comm, current->pid);
+					printk (KERN_INFO "apparmor_socket_recvmsg (%s): Match is %d for flow from %s(pid = %d) to %s(pid = %d)\n", current->comm, allow, sender_label->hname, sender_pid, current->comm, current->pid);
 				} //end of if (curr_domain != NULL)
 				else
 				{
@@ -2374,6 +2376,8 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 			}
 			iterator = list_next_entry (iterator, domain_list);
 		}
+		//TODO: check if all domains present in shared memory can write to current process
+
 		if (apparmor_check_domain_present(curr_domain, perm_security_list) == 0)
 		{
 			if (apparmor_shm_add_domain(curr_domain, perm_security_list) < 0)
@@ -2454,11 +2458,16 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 
 		if(err != 0)
 		{
-			printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label -> hname, target->comm);
+			printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, target->comm);
 			aa_put_label(target_label);
 			aa_put_label(sender_label);
 			return -EPERM;
 		}
+		else
+		{
+			printk (KERN_INFO "[GRAPH_GEN] Process %s, msgqueue, %s\n", sender_label->hname, target->comm);
+		}
+		
 
 		aa_put_label(target_label);
 		aa_put_label(sender_label);
