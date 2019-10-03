@@ -1010,16 +1010,12 @@ static int apparmor_file_permission(struct file *file, int mask)
 				case AA_MAY_GETCRED:
 					break;
 				default:
-					kfree(tmppage);
 					break;
 				
 			}	
 		}
-		else 
-		{
-			printk(KERN_INFO "apparmor_file_permission error in getting directory: %d\n", (int)fullpath);
-			kfree(tmppage);
-		}
+		
+		kfree(tmppage);
 
 	}
 	else
