@@ -972,20 +972,27 @@ static int apparmor_file_permission(struct file *file, int mask)
 
 	if (dentry != NULL)
 	{
-		if (mask == AA_MAY_EXEC)
-			printk (KERN_INFO "[GRAPH_GEN] Process %s, exec, %s\n", current->comm, dentry->d_iname);
-		else if (mask ==  AA_MAY_WRITE)
-			printk (KERN_INFO "[GRAPH_GEN] Process %s, write, %s\n", current->comm, dentry->d_iname);
-		else if (mask ==  AA_MAY_READ)
-			printk (KERN_INFO "[GRAPH_GEN] Process %s, read, %s\n", current->comm, dentry->d_iname);
-		else if (mask ==  AA_MAY_APPEND)
-			printk (KERN_INFO "[GRAPH_GEN] Process %s, append, %s\n", current->comm, dentry->d_iname);
-		else if (mask ==  AA_MAY_CREATE)
-			printk (KERN_INFO "[GRAPH_GEN] Process %s, create, %s\n", current->comm, dentry->d_iname);
-		else if (mask ==  AA_MAY_DELETE)
-			printk (KERN_INFO "[GRAPH_GEN] Process %s, delete, %s\n", current->comm, dentry->d_iname);
-		else if (mask ==  AA_MAY_RENAME)
-			printk (KERN_INFO "[GRAPH_GEN] Process %s, rename, %s\n", current->comm, dentry->d_iname);
+		char *tmppath = kzalloc(300, GFP_KERNEL);
+		if (tmppath != NULL)
+		{
+			char *fullpath = dentry_path_raw(filp->f_path.dentry,tmppath,300);
+			if (mask == AA_MAY_EXEC)
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, exec, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+			else if (mask ==  AA_MAY_WRITE)
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, write, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+			else if (mask ==  AA_MAY_READ)
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, read, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+			else if (mask ==  AA_MAY_APPEND)
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, append, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+			else if (mask ==  AA_MAY_CREATE)
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, create, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+			else if (mask ==  AA_MAY_DELETE)
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, delete, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+			else if (mask ==  AA_MAY_RENAME)
+				printk (KERN_INFO "[GRAPH_GEN] Process %s, rename, %s/%s\n", current->comm, fullpath, dentry->d_iname);
+			
+			kzfree(tmppath);
+		}
 		
 	}
 	
