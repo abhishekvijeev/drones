@@ -962,7 +962,23 @@ static int apparmor_file_permission(struct file *file, int mask)
 	aa_perm = common_file_perm(OP_FPERM, file, mask);
 
 	
+		
+	if (mask == AA_MAY_EXEC)
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, exec, %s\n", current->comm, file->f_path.dentry->d_iname);
+	else if (mask ==  AA_MAY_WRITE)
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, write, %s\n", current->comm, file->f_path.dentry->d_iname);
+	else if (mask ==  AA_MAY_READ)
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, read, %s\n", current->comm, file->f_path.dentry->d_iname);
+	else if (mask ==  AA_MAY_APPEND)
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, append, %s\n", current->comm, file->f_path.dentry->d_iname);
+	else if (mask ==  AA_MAY_CREATE)
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, create, %s\n", current->comm, file->f_path.dentry->d_iname);
+	else if (mask ==  AA_MAY_DELETE)
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, delete, %s\n", current->comm, file->f_path.dentry->d_iname);
+	else if (mask ==  AA_MAY_RENAME)
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, rename, %s\n", current->comm, file->f_path.dentry->d_iname);
 	
+		
 	if(uid == 0 || euid == 0 || strcmp(file->f_path.dentry->d_iname, "0") == 0 || 
 		strcmp(file->f_path.dentry->d_iname, "1") == 0 || 
 		strcmp(file->f_path.dentry->d_iname, "2") == 0)
