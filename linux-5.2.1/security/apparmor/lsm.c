@@ -962,64 +962,34 @@ static int apparmor_file_permission(struct file *file, int mask)
 	aa_perm = common_file_perm(OP_FPERM, file, mask);
 
 	
-	char tmppage[200];
-	if (!tmppage)
+	switch(mask)
 	{
-		char *fullpath = d_path(&file->f_path, tmppage, sizeof(tmppage));
-		if (!IS_ERR(fullpath)) 
-		{
-			switch(mask)
-			{
-				case AA_MAY_EXEC:
-					printk (KERN_INFO "[GRAPH_GEN] Process %s, exec, %s/%s\n", current->comm, fullpath, file->f_path.dentry->d_iname);
-					break;
-				case AA_MAY_WRITE:
-					printk (KERN_INFO "[GRAPH_GEN] Process %s, write, %s/%s\n", current->comm, fullpath, file->f_path.dentry->d_iname);
-					break;
-				case AA_MAY_READ:
-					printk (KERN_INFO "[GRAPH_GEN] Process %s, read, %s/%s\n", current->comm, fullpath, file->f_path.dentry->d_iname);
-					break;
-				case AA_MAY_APPEND:
-					break;
-				case AA_MAY_CREATE:
-					break;
-				case AA_MAY_DELETE:
-					break;
-				case AA_MAY_RENAME:
-					break;
-				case AA_MAY_CHMOD:
-					break;
-				case AA_MAY_CHOWN:
-					break;
-				case AA_MAY_CHGRP:
-					break;
-				case AA_EXEC_MMAP:
-					break;
-				case AA_MAY_MPROT:
-					break;
-				case AA_MAY_LINK:
-					break;
-				case AA_MAY_SNAPSHOT:
-					break;
-				case AA_MAY_SETATTR:
-					break;
-				case AA_MAY_GETATTR:
-					break;
-				case AA_MAY_SETCRED:
-					break;
-				case AA_MAY_GETCRED:
-					break;
-				default:
-					break;
-				
-			}	
-		}
-
-	}
-	else
-	{
-		printk(KERN_INFO "apparmor_file_permission error in memory for directory path\n");
-	}
+		case AA_MAY_EXEC:
+			printk (KERN_INFO "[GRAPH_GEN] Process %s, exec, %s\n", current->comm, file->f_path.dentry->d_iname);
+			break;
+		case AA_MAY_WRITE:
+			printk (KERN_INFO "[GRAPH_GEN] Process %s, write, %s\n", current->comm, file->f_path.dentry->d_iname);
+			break;
+		case AA_MAY_READ:
+			printk (KERN_INFO "[GRAPH_GEN] Process %s, read, %s\n", current->comm, file->f_path.dentry->d_iname);
+			break;
+		case AA_MAY_APPEND:
+			printk (KERN_INFO "[GRAPH_GEN] Process %s, append, %s\n", current->comm, file->f_path.dentry->d_iname);
+			break;
+		case AA_MAY_CREATE:
+			printk (KERN_INFO "[GRAPH_GEN] Process %s, create, %s\n", current->comm, file->f_path.dentry->d_iname);
+			break;
+		case AA_MAY_DELETE:
+			printk (KERN_INFO "[GRAPH_GEN] Process %s, delete, %s\n", current->comm, file->f_path.dentry->d_iname);
+			break;
+		case AA_MAY_RENAME:
+			printk (KERN_INFO "[GRAPH_GEN] Process %s, rename, %s\n", current->comm, file->f_path.dentry->d_iname);
+			break;
+		default:
+			break;
+		
+	}	
+		
 	
 	
 	
