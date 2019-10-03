@@ -962,10 +962,10 @@ static int apparmor_file_permission(struct file *file, int mask)
 	aa_perm = common_file_perm(OP_FPERM, file, mask);
 
 	
-	char *tmppage = kmalloc(PAGE_SIZE-100, GFP_KERNEL);
+	char tmppage[200];
 	if (!tmppage)
 	{
-		char *fullpath = d_path(&file->f_path, tmppage, PAGE_SIZE);
+		char *fullpath = d_path(&file->f_path, tmppage, sizeof(tmppage));
 		if (!IS_ERR(fullpath)) 
 		{
 			switch(mask)
@@ -1014,8 +1014,6 @@ static int apparmor_file_permission(struct file *file, int mask)
 				
 			}	
 		}
-		
-		kfree(tmppage);
 
 	}
 	else
