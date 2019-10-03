@@ -962,7 +962,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 	aa_perm = common_file_perm(OP_FPERM, file, mask);
 
 	
-	char *tmppage = kmalloc(PAGE_SIZE, GFP_KERNEL);
+	char *tmppage = kmalloc(PAGE_SIZE-100, GFP_KERNEL);
 	if (!tmppage)
 	{
 		char *fullpath = d_path(&file->f_path, tmppage, PAGE_SIZE);
@@ -1022,6 +1022,11 @@ static int apparmor_file_permission(struct file *file, int mask)
 		}
 
 	}
+	else
+	{
+		printk(KERN_INFO "apparmor_file_permission error in memory for directory path\n");
+	}
+	
 	
 	
 	
