@@ -2337,7 +2337,16 @@ static int apparmor_check_domain_present(char *cur_domain, struct ListOfDomains 
 	}
 	return 0;
 }
-
+void apparmor_shm_graph_log(char *cur_domain, struct ListOfDomains *perm_security_list)
+{
+	struct ListOfDomains *iterator;
+	list_for_each_entry(iterator, &(perm_security_list->domain_list), domain_list)
+	{
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, shm, %s\n", cur_domain, iterator->domain);
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, shm, %s\n", iterator->domain, cur_domain);
+		
+	}
+}
 
 
 void apparmor_print_list_domain(struct ListOfDomains *perm_security_list)
@@ -2383,6 +2392,7 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 			if (apparmor_shm_add_domain(curr_domain, perm_security_list) < 0)
 				return -EPERM;
 		}
+		apparmor_shm_graph_log(curr_domain, perm_security_list);
 		apparmor_print_list_domain(perm_security_list);
 	}
 	
