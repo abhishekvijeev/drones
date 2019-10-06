@@ -1862,7 +1862,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 					socket_recvmsg_inside_sender:
 					if(sender_label != NULL)
 					{
-						printk (KERN_INFO "[GRAPH_GEN] Process %s, network, %s\n", sender_label->hname, current->comm);
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, network, %s\n", sender_label->hname, label->hname);
 						//add sender & receiver label to cache
 						int ret = apparmor_tsk_container_add(label, current->pid);
 
@@ -2475,7 +2475,7 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 		}
 		else
 		{
-			printk (KERN_INFO "[GRAPH_GEN] Process %s, msgqueue, %s\n", sender_label->hname, target->comm);
+			printk (KERN_INFO "[GRAPH_GEN] Process %s, msgqueue, %s\n", sender_label->hname, target_label->hname);
 		}
 		
 

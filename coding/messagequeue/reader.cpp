@@ -29,7 +29,7 @@ void createfile()
 
 int main() 
 { 
-	createfile();
+	//createfile();
     key_t key; 
     int msgid; 
   
