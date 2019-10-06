@@ -1682,7 +1682,12 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 
 					fn_for_each (cl, profile, apparmor_domain_declassify(profile, daddr, &allow));
 					if(allow)
+					{
 						ret_val = 1;
+						label = aa_get_label(ctx->label);
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, network, %pi4\n", label->hname, &daddr);
+						aa_put_label(ctx->label);
+					}
 					printk(KERN_INFO "apparmor_socket_sendmsg (%s): Domain declassification for message from process %s(pid = %d) to address %pi4, flow is %d\n", current->comm, current->comm, current->pid, &daddr, allow);
 				}
 				if (ret_val == 0)
@@ -1875,12 +1880,14 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 						aa_put_label(sender_label);
 					
 					printk (KERN_INFO "apparmor_socket_recvmsg (%s): Match is %d for flow from %s(pid = %d) to %s(pid = %d)\n", current->comm, allow, sender_label->hname, sender_pid, current->comm, current->pid);
+					goto out_of_if;
 				} //end of if (curr_domain != NULL)
 				else
 				{
 					printk (KERN_INFO "apparmor_socket_recvmsg (%s): Error in finding task struct for sender pid: %d, current pid: %d\n", current->comm, sender_pid, current->pid);
 				}
-				
+				//this is added so that if cache is used, not to take else statement
+				out_of_if:
 				aa_put_label(ctx->label);
 				
 			}//end of if(sock->sk->sk_family == AF_INET && sock->type == SOCK_DGRAM)
