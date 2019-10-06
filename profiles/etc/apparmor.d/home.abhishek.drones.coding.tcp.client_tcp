@@ -1,0 +1,10 @@
+# Last Modified: Sun Oct  6 12:06:47 2019
+#include <tunables/global>
+
+/home/abhishek/drones/coding/tcp/client_tcp {
+  #include <abstractions/base>
+
+  /home/abhishek/drones/coding/tcp/client_tcp mr,
+  /lib/x86_64-linux-gnu/ld-*.so mr,
+
+}

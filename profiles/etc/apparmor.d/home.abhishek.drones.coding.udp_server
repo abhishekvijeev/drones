@@ -1,0 +1,14 @@
+# Last Modified: Sun Oct  6 12:05:33 2019
+#include <tunables/global>
+
+/home/abhishek/drones/coding/udp_server {
+  #include <abstractions/base>
+
+#  dte_domain udp_server,
+#  dte_net_domain udp_server,
+#  dte_net_domain udp_client,
+
+  /home/abhishek/drones/coding/udp_server mr,
+  /lib/x86_64-linux-gnu/ld-*.so mr,
+
+}

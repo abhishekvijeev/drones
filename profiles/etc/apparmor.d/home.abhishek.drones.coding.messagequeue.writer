@@ -1,0 +1,15 @@
+# Last Modified: Sun Oct  6 12:09:20 2019
+#include <tunables/global>
+
+/home/abhishek/drones/coding/messagequeue/writer {
+  #include <abstractions/base>
+
+#  dte_domain writer,
+#  dte_net_domain writer,
+ # dte_net_domain reader,
+
+  /home/abhishek/drones/coding/messagequeue/writer mr,
+  /lib/x86_64-linux-gnu/ld-*.so mr,
+  owner /home/*/drones/coding/messagequeue/text.txt w,
+
+}

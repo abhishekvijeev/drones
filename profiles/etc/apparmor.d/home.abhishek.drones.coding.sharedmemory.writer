@@ -1,0 +1,10 @@
+# Last Modified: Sun Oct  6 12:10:03 2019
+#include <tunables/global>
+
+/home/abhishek/drones/coding/sharedmemory/writer {
+  #include <abstractions/base>
+
+  /home/abhishek/drones/coding/sharedmemory/writer mr,
+  /lib/x86_64-linux-gnu/ld-*.so mr,
+
+}
