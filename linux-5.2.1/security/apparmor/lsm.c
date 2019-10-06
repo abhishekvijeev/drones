@@ -971,31 +971,31 @@ static int apparmor_file_permission(struct file *file, int mask)
 		return 0;
 	}
 
-	if (dentry != NULL)
-	{
-		char *tmppath = kzalloc(300, GFP_KERNEL);
-		if (tmppath != NULL)
-		{
-			char *fullpath = dentry_path_raw(dentry, tmppath, 300);
-			if (mask == AA_MAY_EXEC)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, exec, %s\n", current->comm, fullpath);
-			else if (mask ==  AA_MAY_WRITE)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, write, %s\n", current->comm, fullpath);
-			else if (mask ==  AA_MAY_READ)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, read, %s\n", current->comm, fullpath);
-			else if (mask ==  AA_MAY_APPEND)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, append, %s\n", current->comm, fullpath);
-			else if (mask ==  AA_MAY_CREATE)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, create, %s\n", current->comm, fullpath);
-			else if (mask ==  AA_MAY_DELETE)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, delete, %s\n", current->comm, fullpath);
-			else if (mask ==  AA_MAY_RENAME)
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, rename, %s\n", current->comm, fullpath);
+	// if (dentry != NULL)
+	// {
+	// 	char *tmppath = kzalloc(300, GFP_KERNEL);
+	// 	if (tmppath != NULL)
+	// 	{
+	// 		char *fullpath = dentry_path_raw(dentry, tmppath, 300);
+	// 		if (mask == AA_MAY_EXEC)
+	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, exec, %s\n", current->comm, fullpath);
+	// 		else if (mask ==  AA_MAY_WRITE)
+	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, write, %s\n", current->comm, fullpath);
+	// 		else if (mask ==  AA_MAY_READ)
+	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, read, %s\n", current->comm, fullpath);
+	// 		else if (mask ==  AA_MAY_APPEND)
+	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, append, %s\n", current->comm, fullpath);
+	// 		else if (mask ==  AA_MAY_CREATE)
+	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, create, %s\n", current->comm, fullpath);
+	// 		else if (mask ==  AA_MAY_DELETE)
+	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, delete, %s\n", current->comm, fullpath);
+	// 		else if (mask ==  AA_MAY_RENAME)
+	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, rename, %s\n", current->comm, fullpath);
 			
-			kzfree(tmppath);
-		}
+	// 		kzfree(tmppath);
+	// 	}
 		
-	}
+	// }
 	
 	
 
