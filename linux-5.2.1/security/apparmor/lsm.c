@@ -255,10 +255,12 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 			fn_for_each (receiver_label, profile, apparmor_getlabel_domain(profile, &receiver_domain));
 			if (receiver_domain != NULL)
 			{
-				printk (KERN_INFO "[GRAPH_GEN] Process %s, ipc, %s\n", sender_label->hname, receiver_label->hname);
 				fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, receiver_domain, &allow));
 				if (allow == 0)
 					err = 1;
+				else
+					printk (KERN_INFO "[GRAPH_GEN] Process %s, ipc, %s\n", sender_label->hname, receiver_label->hname);
+				
 			}
 			
 			printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_label->hname, receiver_pid, sender_label->hname, sender_pid, allow);
@@ -1756,13 +1758,15 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				{
 					if (sender_pid != current->pid )
 					{
-						printk (KERN_INFO "[GRAPH_GEN] Process %s, ipc, %s\n", sender_label->hname, curr_label->hname);
 						//add sender & receiver label to cache
 						int ret = apparmor_tsk_container_add(curr_label, current->pid);
 
 						fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
 						if (allow == 0)
 							error = 0;
+						else
+							printk (KERN_INFO "[GRAPH_GEN] Process %s, ipc, %s\n", sender_label->hname, curr_label->hname);
+						
 						printk (KERN_INFO "apparmor_socket_recvmsg (%s): Match is %d for flow from %s(pid = %d) to %s(pid = %d)\n", current->comm, allow, sender_label->hname, sender_pid, current->comm, current->pid);
 					}
 					
@@ -2274,7 +2278,24 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 
 static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 {
-	printk(KERN_INFO "msg_msg_alloc_security: current = %s\n", current->comm);
+	// printk(KERN_INFO "msg_msg_alloc_security: current = %s\n", current->comm);
+	
+	return 0;
+}
+
+static void apparmor_msg_msg_free_security(struct msg_msg *msg)
+{	
+	// if(msg->security)
+	// {
+	// 	aa_put_label((struct aa_label *)msg->security);
+	// 	printk(KERN_INFO "msg_msg_free_security: current = %s, msg_label = %s\n", current->comm, (char *)msg->security);
+	// }
+}
+
+static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg *msg,
+				int msqflg)
+{
+	printk(KERN_INFO "msg_queue_msgsnd: current = %s\n", current->comm);
 	struct aa_profile *profile;
 	struct aa_label *curr_label;
 	char *curr_domain = NULL;
@@ -2291,24 +2312,7 @@ static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 		printk(KERN_INFO "msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
 
 	}
-
 	__end_current_label_crit_section(curr_label);
-
-	return 0;
-}
-
-static void apparmor_msg_msg_free_security(struct msg_msg *msg)
-{	
-	if(msg->security)
-	{
-		printk(KERN_INFO "msg_msg_free_security: current = %s, msg_label = %s\n", current->comm, (char *)msg->security);
-	}
-}
-
-static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg *msg,
-				int msqflg)
-{
-	printk(KERN_INFO "msg_queue_msgsnd: current = %s\n", current->comm);
 	return 0;
 }
 
@@ -2316,7 +2320,7 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 				struct task_struct *target, long type,
 				int mode)
 {	
-	
+	int err = 0;
 	if (msg->security)
 	{
 		
@@ -2325,33 +2329,37 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 		struct aa_label *target_label = aa_get_task_label(target);
 		struct aa_label *sender_label = (struct aa_label *)msg->security;
 		bool allow = false;
-		int err = 0;
-
-		printk(KERN_INFO "msg_queue_msgrcv: msg_sender_label: %s, target = %s\n", sender_label->hname, target->comm);
-
-		fn_for_each (target_label, profile, apparmor_getlabel_domain(profile, &target_domain));
-		if (target_domain != NULL)
+		
+		
+		if (target_label != NULL && sender_label != NULL)
 		{
-			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, target_domain, &allow));
-			if (allow == 0)
-				err = 1;
+			printk(KERN_INFO "msg_queue_msgrcv: msg_sender_label: %s, target = %s\n", sender_label->hname, target->comm);
+			fn_for_each (target_label, profile, apparmor_getlabel_domain(profile, &target_domain));
+			if (target_domain != NULL)
+			{
+				fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, target_domain, &allow));
+				if (allow == 0)
+					err = 1;
+				else
+					printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, target_label->hname);
+			}
 		}	
-
+		
 		if(err != 0)
 		{
-			printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, target->comm);
-			aa_put_label(target_label);
-			aa_put_label(sender_label);
+			printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, target_label->hname);
 			return -EPERM;
 		}
-		else
-		{
-			printk (KERN_INFO "[GRAPH_GEN] Process %s, msgqueue, %s\n", sender_label->hname, target_label->hname);
-		}
-		
 
-		aa_put_label(target_label);
-		aa_put_label(sender_label);
+		if (target_label != NULL)
+			aa_put_label(target_label);
+		
+		if (sender_label != NULL)
+			aa_put_label(sender_label);
+		
+			
+
+		
 	}
 	else
 	{
@@ -2359,8 +2367,10 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 	}
 
 	
-
-	return 0;
+	if (err != 0)
+		return -EPERM;
+	else
+		return 0;
 }
 
 /*
