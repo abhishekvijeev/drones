@@ -1786,7 +1786,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	}
 	
 
-	aa_out_label(curr_label);
+	aa_put_label(curr_label);
 	__end_current_label_crit_section(cl);
 	if (error == 0)
 	{
