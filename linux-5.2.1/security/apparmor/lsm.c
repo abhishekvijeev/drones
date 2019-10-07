@@ -232,8 +232,7 @@ static struct aa_label *apparmor_socket_label_compare_helper(__u32 pid)
 static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 {
 	struct aa_profile *profile;
-	struct task_struct *sender, *receiver;
-	bool allow = false, sender_flag = false, receiver_flag = false;		
+	bool allow = false;		
 	struct aa_label *sender_label, *receiver_label;
 	char *receiver_domain = NULL;
 	int err = 0;
@@ -843,7 +842,7 @@ bool apparmor_check_domain_in_xattrs(char *domain, char *xattr_buf)
 {
 	bool present = false;
 
-	char *string,*found;
+	char *found;
 
     while( (found = strsep(&xattr_buf,",")) != NULL )
 	{
@@ -1559,8 +1558,11 @@ static int aa_sock_msg_perm(const char *op, u32 request, struct socket *sock,
 			 aa_sk_perm(op, request, sock->sk));
 }
 
-static int apparmor_extract_daddr(struct msghdr *msg)
+static int apparmor_extract_daddr(struct msghdr *msg, struct sock *sk)
 {
+	struct inet_sock *inet;
+	inet = inet_sk(sk);
+				
 	u32 daddr = 0;
 	DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
 	if (usin) 
@@ -1592,8 +1594,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				   struct msghdr *msg, int size)
 {
 	struct sock *sk = sock->sk;
-    struct inet_sock *inet;
-	struct aa_label *curr_label, *curr_sock_label;
+    struct aa_label *curr_label, *curr_sock_label;
 	bool allow = false;
 	struct aa_label *cl;
 	struct aa_profile *profile;
@@ -1625,16 +1626,15 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			printk (KERN_INFO "apparmor_socket_sendmsg (%s): current_pid = %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
 			if(sk->sk_family == AF_INET)
 			{   
-				inet = inet_sk(sk);
 				int ret_val = 0;
 			
-				int tmp = apparmor_extract_daddr(msg);
+				int tmp = apparmor_extract_daddr(msg, sk);
 				if (tmp > 0)
 					daddr = tmp;
 				else
 				{
 					printk (KERN_INFO "apparmor_socket_sendmsg: unable to get destination address\n");
-					goto sendmsg_out:
+					goto sendmsg_out;
 				}
 				
 				// 1. Check if packet destination is localhost
@@ -1692,7 +1692,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 		
 	}
 	
-	aa_out_label(curr_label);
+	aa_put_label(curr_label);
 	__end_current_label_crit_section(cl);
 	if (error == 0)
 	{
@@ -2145,23 +2145,9 @@ static void apparmor_shm_free_security(struct kern_ipc_perm *perm)
 }
 static int apparmor_shm_alloc_security(struct kern_ipc_perm *perm)
 {
-	// struct aa_profile *profile;
-	// struct aa_label *curr_label;
-	// char *curr_domain = NULL;
-	// curr_label = aa_get_current_label();
-	// fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-	// if (curr_domain != NULL)
-	// {
-	// 	perm->security = aa_get_label(curr_label);
-	// 	printk(KERN_INFO "apparmor_shm_alloc_security (%s): key: %d\n", current->comm, perm->key);
-	
-	// }
-	// aa_put_label(curr_label);
-
 	struct aa_profile *profile;
 	struct aa_label *curr_label;
 	char *curr_domain = NULL;
-	int curr_domain_len = 0;
 	curr_label = __begin_current_label_crit_section();
 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 	__end_current_label_crit_section(curr_label);
@@ -2259,7 +2245,7 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 
 	if(curr_domain != NULL && perm_security_list != NULL)
 	{
-		struct ListOfDomains *iterator, *tmp;
+		struct ListOfDomains *iterator;
 		iterator = list_first_entry(&(perm_security_list->domain_list), typeof(*iterator), domain_list);
 		while((&iterator->domain_list) != &(perm_security_list->domain_list))
 		{
