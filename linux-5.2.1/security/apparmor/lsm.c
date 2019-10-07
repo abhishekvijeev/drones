@@ -2347,7 +2347,7 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 					// 	printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, curr_label->hname);
 					// }
 					// else
-					// 	printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, curr_label->hname);
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, curr_label->hname);
 				}
 
 			}	
