@@ -2307,8 +2307,12 @@ static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg 
 		if(curr_domain != NULL)
 		{
 			struct aa_label *tmp = kzalloc(sizeof(curr_label), GFP_KERNEL);
-			tmp = memcpy(tmp, curr_label, sizeof(curr_label));
-			msg->security = tmp;
+			if (tmp)
+			{
+				memcpy((void *)tmp, (void *)curr_label, sizeof(curr_label));
+				msg->security = tmp;
+				
+			}
 			printk(KERN_INFO "msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
 
 		}
@@ -2334,9 +2338,10 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if(curr_domain != NULL)
 		{
-			if (msg->security)
+			void *tmp_security = msg->security;
+			if (tmp_security != NULL)
 			{
-				struct aa_label *sender_label = (struct aa_label *)msg->security;
+				struct aa_label *sender_label = (struct aa_label *)tmp_security;
 				bool allow = false;
 				if (sender_label != NULL)
 				{
