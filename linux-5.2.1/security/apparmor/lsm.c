@@ -2308,11 +2308,13 @@ static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg 
 		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if(curr_domain != NULL)
 		{
-			struct aa_label *tmp = kmalloc(sizeof(curr_label), GFP_KERNEL);
+			int *tmp = kmalloc(sizeof(int), GFP_KERNEL);
 			if (tmp)
 			{
-				memcpy((void *)tmp, (void *)curr_label, sizeof(curr_label));
+				*tmp = current->pid;
 				msg->security = tmp;
+				apparmor_tsk_container_add(curr_label, current->pid);
+				
 			}
 			printk(KERN_INFO "msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
 
@@ -2330,7 +2332,7 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 	int err = 0;
 
 	struct aa_profile *profile;
-	struct aa_label *curr_label;
+	struct aa_label *curr_label, *sender_label;
 	char *curr_domain = NULL;
 	char *msg_label = NULL;
 	curr_label = aa_get_task_label(current);
@@ -2342,7 +2344,8 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 			void *tmp_security = msg->security;
 			if (tmp_security != NULL)
 			{
-				struct aa_label *sender_label = (struct aa_label *)tmp_security;
+				int *pid = (int *) tmp_security;
+				sender_label = apparmor_tsk_container_get(*pid);
 				bool allow = false;
 				if (sender_label != NULL)
 				{
@@ -2354,8 +2357,9 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 					}
 					else
 						printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, curr_label->hname);
+					aa_put_label(sender_label);
 				}
-
+				kfree(msg->security);
 			}	
 		}
 		aa_put_label(curr_label);
