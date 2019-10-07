@@ -2285,13 +2285,10 @@ static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 
 static void apparmor_msg_msg_free_security(struct msg_msg *msg)
 {	
-	if(msg->security)
-	{
-		struct aa_label *tmp = (struct aa_label *)msg->security;
-		printk(KERN_INFO "msg_msg_free_security: current = %s, ", current->comm);
-		printk (KERN_INFO " label name %s\n", tmp->hname);
-		kfree(msg->security);
-	}
+	// if(msg->security)
+	// {
+	// 	printk(KERN_INFO "msg_msg_free_security: current = %s, ", current->comm);
+	// }
 }
 
 static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg *msg,
@@ -2308,7 +2305,7 @@ static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg 
 		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if(curr_domain != NULL)
 		{
-			int *tmp = kmalloc(sizeof(int), GFP_KERNEL);
+			int *tmp = kzalloc(sizeof(int), GFP_KERNEL);
 			if (tmp)
 			{
 				*tmp = current->pid;
@@ -2345,21 +2342,22 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 			if (tmp_security != NULL)
 			{
 				int *pid = (int *) tmp_security;
-				sender_label = apparmor_tsk_container_get(*pid);
-				bool allow = false;
-				if (sender_label != NULL)
-				{
-					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
-					if (allow == 0)
-					{
-						err = 1;
-						printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, curr_label->hname);
-					}
-					else
-						printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, curr_label->hname);
-					aa_put_label(sender_label);
-				}
-				kfree(msg->security);
+				printk (KERN_INFO "msg_queue_msgrcv: pid value %d\n", *pid);
+				// sender_label = apparmor_tsk_container_get(*pid);
+				// bool allow = false;
+				// if (sender_label != NULL)
+				// {
+				// 	fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
+				// 	if (allow == 0)
+				// 	{
+				// 		err = 1;
+				// 		printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, curr_label->hname);
+				// 	}
+				// 	else
+				// 		printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, curr_label->hname);
+				// 	aa_put_label(sender_label);
+				// }
+				kzfree(msg->security);
 			}	
 		}
 		aa_put_label(curr_label);
