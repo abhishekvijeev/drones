@@ -1728,11 +1728,11 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 
 		//get the domain from current process label and not from socket's label, coz socket's can be passed
 		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-		
+		curr_sock_label->recv_pid = current->pid;
+
 		if (curr_domain != NULL && curr_sock_label->pid != 0)
 		{
 			printk (KERN_INFO "apparmor_socket_recvmsg (%s): current_pid %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
-			curr_sock_label->recv_pid = current->pid;
 			
 			if(sock->sk->sk_family == AF_INET)
 			{
