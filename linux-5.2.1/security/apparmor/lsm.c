@@ -2300,7 +2300,6 @@ static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg 
 	struct aa_label *curr_label;
 	char *curr_domain = NULL;
 	char *msg_label = NULL;
-	int curr_domain_len = 0;
 	curr_label = aa_get_task_label(current);
 	if (curr_label != NULL)
 	{
@@ -2322,53 +2321,39 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 				int mode)
 {	
 	int err = 0;
-	if (msg->security)
+
+	struct aa_profile *profile;
+	struct aa_label *curr_label;
+	char *curr_domain = NULL;
+	char *msg_label = NULL;
+	curr_label = aa_get_task_label(current);
+	if (curr_label != NULL)
 	{
-		
-		char *target_domain = NULL;
-		struct aa_profile *profile;
-		struct aa_label *target_label = aa_get_task_label(target);
-		struct aa_label *sender_label = (struct aa_label *)msg->security;
-		bool allow = false;
-		
-		
-		if (target_label != NULL && sender_label != NULL)
+		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+		if(curr_domain != NULL)
 		{
-			printk(KERN_INFO "msg_queue_msgrcv: msg_sender_label: %s, target = %s\n", sender_label->hname, target->comm);
-			fn_for_each (target_label, profile, apparmor_getlabel_domain(profile, &target_domain));
-			if (target_domain != NULL)
+			if (msg->security)
 			{
-				fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, target_domain, &allow));
-				if (allow == 0)
-					err = 1;
-				else
-					printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, target_label->hname);
-			}
+				struct aa_label *sender_label = (struct aa_label *)msg->security;
+				bool allow = false;
+				if (sender_label != NULL)
+				{
+					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
+					if (allow == 0)
+					{
+						err = 1;
+						printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, curr_label->hname);
+					}
+					else
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, curr_label->hname);
+					
+					aa_put_label(sender_label);
+				}
 
-			if(err != 0)
-			{
-				printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, target_label->hname);
-				return -EPERM;
-			}
-		}	
-		
-		
-
-		if (target_label != NULL)
-			aa_put_label(target_label);
-		
-		if (sender_label != NULL)
-			aa_put_label(sender_label);
-		
-			
-
-		
+			}	
+		}
+		aa_put_label(curr_label);
 	}
-	else
-	{
-		printk(KERN_INFO "msg_queue_msgrcv: msg label not set for message to process %s\n", target->comm);
-	}
-
 	
 	if (err != 0)
 		return -EPERM;
