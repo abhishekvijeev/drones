@@ -2301,18 +2301,19 @@ static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg 
 	char *curr_domain = NULL;
 	char *msg_label = NULL;
 	int curr_domain_len = 0;
-	curr_label = __begin_current_label_crit_section();
-
-	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-	
-
-	if(curr_domain != NULL)
+	curr_label = aa_get_task_label(current);
+	if (curr_label != NULL)
 	{
-		msg->security = aa_get_label(curr_label);
-		printk(KERN_INFO "msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
+		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+		if(curr_domain != NULL)
+		{
+			msg->security = aa_get_label(curr_label);
+			printk(KERN_INFO "msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
 
+		}
+		aa_put_label(curr_label);
 	}
-	__end_current_label_crit_section(curr_label);
+	
 	return 0;
 }
 
@@ -2343,13 +2344,15 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 				else
 					printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, target_label->hname);
 			}
+
+			if(err != 0)
+			{
+				printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, target_label->hname);
+				return -EPERM;
+			}
 		}	
 		
-		if(err != 0)
-		{
-			printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, target_label->hname);
-			return -EPERM;
-		}
+		
 
 		if (target_label != NULL)
 			aa_put_label(target_label);
