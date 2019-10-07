@@ -2340,14 +2340,14 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 				bool allow = false;
 				if (sender_label != NULL)
 				{
-					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
-					if (allow == 0)
-					{
-						err = 1;
-						printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, curr_label->hname);
-					}
-					else
-						printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, curr_label->hname);
+					// fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
+					// if (allow == 0)
+					// {
+					// 	err = 1;
+					// 	printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, curr_label->hname);
+					// }
+					// else
+					// 	printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, curr_label->hname);
 				}
 
 			}	
