@@ -2285,11 +2285,13 @@ static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 
 static void apparmor_msg_msg_free_security(struct msg_msg *msg)
 {	
-	// if(msg->security)
-	// {
-	// 	aa_put_label((struct aa_label *)msg->security);
-	// 	printk(KERN_INFO "msg_msg_free_security: current = %s, msg_label = %s\n", current->comm, (char *)msg->security);
-	// }
+	if(msg->security)
+	{
+		struct aa_label *tmp = (struct aa_label *)msg->security;
+		printk(KERN_INFO "msg_msg_free_security: current = %s, ", current->comm);
+		printk (KERN_INFO " label name %s\n", tmp->hname);
+		kfree(msg->security);
+	}
 }
 
 static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg *msg,
@@ -2306,12 +2308,11 @@ static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg 
 		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if(curr_domain != NULL)
 		{
-			struct aa_label *tmp = kzalloc(sizeof(curr_label), GFP_KERNEL);
+			struct aa_label *tmp = kmalloc(sizeof(curr_label), GFP_KERNEL);
 			if (tmp)
 			{
 				memcpy((void *)tmp, (void *)curr_label, sizeof(curr_label));
 				msg->security = tmp;
-				
 			}
 			printk(KERN_INFO "msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
 
@@ -2345,13 +2346,13 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 				bool allow = false;
 				if (sender_label != NULL)
 				{
-					// fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
-					// if (allow == 0)
-					// {
-					// 	err = 1;
-					// 	printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, curr_label->hname);
-					// }
-					// else
+					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
+					if (allow == 0)
+					{
+						err = 1;
+						printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, curr_label->hname);
+					}
+					else
 						printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, curr_label->hname);
 				}
 
