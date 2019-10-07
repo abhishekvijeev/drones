@@ -2306,7 +2306,7 @@ static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg 
 		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if(curr_domain != NULL)
 		{
-			struct aa_label *tmp = kmalloc(sizeof(curr_label), GFP_KERNEL);
+			struct aa_label *tmp = kzalloc(sizeof(curr_label), GFP_KERNEL);
 			tmp = memcpy(tmp, curr_label, sizeof(curr_label));
 			msg->security = tmp;
 			printk(KERN_INFO "msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
