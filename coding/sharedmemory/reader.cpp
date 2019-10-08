@@ -37,7 +37,7 @@ int main()
     char *str = (char*) addr;
   
     printf("Data read from memory: %s\n",str); 
-      
+ 	/*     
 	string s;
 	cin >> s;
 
@@ -53,6 +53,7 @@ int main()
     }
 	//string s;
     //cin >> s;	
+	*/
     // destroy the shared memory 
     if(shmctl(shmid,IPC_RMID,NULL) == -1)
     {

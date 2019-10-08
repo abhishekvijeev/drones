@@ -259,7 +259,7 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 				if (allow == 0)
 					err = 1;
 				else
-					printk (KERN_INFO "[GRAPH_GEN] Process %s, ipc, %s\n", sender_label->hname, receiver_label->hname);
+					printk (KERN_INFO "[GRAPH_GEN] Process %s, socket_ipc, %s\n", sender_label->hname, receiver_label->hname);
 				
 			}
 			
@@ -957,32 +957,6 @@ static int apparmor_file_permission(struct file *file, int mask)
 		return 0;
 	}
 
-	// if (dentry != NULL)
-	// {
-	// 	char *tmppath = kzalloc(300, GFP_KERNEL);
-	// 	if (tmppath != NULL)
-	// 	{
-	// 		char *fullpath = dentry_path_raw(dentry, tmppath, 300);
-	// 		if (mask == AA_MAY_EXEC)
-	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, exec, %s\n", current->comm, fullpath);
-	// 		else if (mask ==  AA_MAY_WRITE)
-	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, write, %s\n", current->comm, fullpath);
-	// 		else if (mask ==  AA_MAY_READ)
-	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, read, %s\n", current->comm, fullpath);
-	// 		else if (mask ==  AA_MAY_APPEND)
-	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, append, %s\n", current->comm, fullpath);
-	// 		else if (mask ==  AA_MAY_CREATE)
-	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, create, %s\n", current->comm, fullpath);
-	// 		else if (mask ==  AA_MAY_DELETE)
-	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, delete, %s\n", current->comm, fullpath);
-	// 		else if (mask ==  AA_MAY_RENAME)
-	// 			printk (KERN_INFO "[GRAPH_GEN] Process %s, rename, %s\n", current->comm, fullpath);
-			
-	// 		kzfree(tmppath);
-	// 	}
-		
-	// }
-	
 	
 
 	if(aa_perm == 0 && dentry != NULL)
@@ -994,6 +968,31 @@ static int apparmor_file_permission(struct file *file, int mask)
 		
 		if(curr_domain)
 		{
+			if (dentry != NULL)
+			{
+				char *tmppath = kzalloc(300, GFP_KERNEL);
+				if (tmppath != NULL)
+				{
+					char *fullpath = dentry_path_raw(dentry, tmppath, 300);
+					if (mask == AA_MAY_EXEC)
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, exec_file, %s\n", current->comm, fullpath);
+					else if (mask ==  AA_MAY_WRITE)
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, write_file, %s\n", current->comm, fullpath);
+					else if (mask ==  AA_MAY_READ)
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, read_file, %s\n", current->comm, fullpath);
+					else if (mask ==  AA_MAY_APPEND)
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, append_file, %s\n", current->comm, fullpath);
+					else if (mask ==  AA_MAY_CREATE)
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, create_file, %s\n", current->comm, fullpath);
+					else if (mask ==  AA_MAY_DELETE)
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, delete_file, %s\n", current->comm, fullpath);
+					else if (mask ==  AA_MAY_RENAME)
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, rename_file, %s\n", current->comm, fullpath);
+					
+					kzfree(tmppath);
+				}
+				
+			}
 			// Code to retrieve xattr borrowed from SELinux hooks.c - function inode_doinit_use_xattr()
 
 			len = INITCONTEXTLEN;
@@ -1765,7 +1764,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 						if (allow == 0)
 							error = 0;
 						else
-							printk (KERN_INFO "[GRAPH_GEN] Process %s, ipc, %s\n", sender_label->hname, curr_label->hname);
+							printk (KERN_INFO "[GRAPH_GEN] Process %s, socket_ipc, %s\n", sender_label->hname, curr_label->hname);
 						
 						printk (KERN_INFO "apparmor_socket_recvmsg (%s): Match is %d for flow from %s(pid = %d) to %s(pid = %d)\n", current->comm, allow, sender_label->hname, sender_pid, current->comm, current->pid);
 					}
@@ -2217,8 +2216,8 @@ void apparmor_shm_graph_log(char *cur_domain, struct ListOfDomains *perm_securit
 	struct ListOfDomains *iterator;
 	list_for_each_entry(iterator, &(perm_security_list->domain_list), domain_list)
 	{
-		printk (KERN_INFO "[GRAPH_GEN] Process %s, shm, %s\n", cur_domain, iterator->domain);
-		printk (KERN_INFO "[GRAPH_GEN] Process %s, shm, %s\n", iterator->domain, cur_domain);
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, shm_ipc, %s\n", cur_domain, iterator->domain);
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, shm_ipc, %s\n", iterator->domain, cur_domain);
 		
 	}
 }

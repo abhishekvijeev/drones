@@ -48,7 +48,7 @@ int main()
     printf("Data written in memory: %s\n",str); 
    
 
-
+	/*
 	string s;
 	cin >> s;
 
@@ -60,7 +60,7 @@ int main()
      fgets(str, 30, stdin);
  
       printf("Data written in memory: %s\n",str);
-
+	*/
 
 
     //detach from shared memory  
