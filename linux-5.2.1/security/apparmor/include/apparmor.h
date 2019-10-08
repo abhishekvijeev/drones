@@ -73,6 +73,13 @@ extern bool aa_g_logsyscall;
 extern bool aa_g_paranoid_load;
 extern unsigned int aa_g_path_max;
 
+struct msg_security_struct {
+	u32 pid;	
+};
 
+static inline struct msg_security_struct *apparmor_msg_msg(const struct msg_msg *msg_msg)
+{
+	return msg_msg->security + apparmor_blob_sizes.lbs_msg_msg;
+}
 
 #endif /* __APPARMOR_H */
