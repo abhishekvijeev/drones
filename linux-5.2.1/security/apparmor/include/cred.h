@@ -185,6 +185,14 @@ static inline struct aa_ns *aa_get_current_ns(void)
 	return ns;
 }
 
+struct msg_security_struct {
+	u32 pid;	
+};
 
+static inline struct msg_security_struct *apparmor_msg_msg(
+						const struct msg_msg *msg_msg)
+{
+	return msg_msg->security + apparmor_blob_sizes.lbs_msg_msg;
+}
 
 #endif /* __AA_CONTEXT_H */
