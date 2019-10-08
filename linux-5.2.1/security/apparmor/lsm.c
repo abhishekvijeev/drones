@@ -2292,9 +2292,12 @@ static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 		{
 			// msg->pid = current->pid;
 			// apparmor_tsk_container_add(curr_label, current->pid);
-			struct msg_security_struct *msec;
-			msec = apparmor_msg_msg(msg);
-			msec->pid = current->pid;
+			// struct msg_security_struct *msec;
+			// msec = apparmor_msg_msg(msg);
+			// msec->pid = current->pid;
+			int *tmp = kmalloc(sizeof(int), GFP_KERNEL);
+			*tmp = current->pid;
+			msg->security = tmp;
 			apparmor_tsk_container_add(curr_label, current->pid);
 			printk(KERN_INFO "apparmor_msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
 
@@ -2337,24 +2340,29 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if(curr_domain != NULL)
 		{
-			struct msg_security_struct *msec;
-			msec = apparmor_msg_msg(msg);
-			int pid = msec->pid;
-			printk (KERN_INFO "msg_queue_msgrcv: pid value %d\n", pid);
-			sender_label = apparmor_tsk_container_get(pid);
-			bool allow = false;
-			if (sender_label != NULL)
+			// struct msg_security_struct *msec;
+			// msec = apparmor_msg_msg(msg);
+			int *tmp = (int *) (msg->security + sizeof(int));
+			if (tmp != NULL)
 			{
-				fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
-				if (allow == 0)
+				int pid = *tmp;
+				printk (KERN_INFO "msg_queue_msgrcv: pid value %d\n", pid);
+				sender_label = apparmor_tsk_container_get(pid);
+				bool allow = false;
+				if (sender_label != NULL)
 				{
-					err = 1;
-					printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, curr_label->hname);
+					fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, curr_domain, &allow));
+					if (allow == 0)
+					{
+						err = 1;
+						printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, curr_label->hname);
+					}
+					else
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, curr_label->hname);
+					aa_put_label(sender_label);
 				}
-				else
-					printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, curr_label->hname);
-				aa_put_label(sender_label);
 			}
+			
 			
 		}
 		aa_put_label(curr_label);
