@@ -2381,7 +2381,7 @@ struct lsm_blob_sizes apparmor_blob_sizes __lsm_ro_after_init = {
 	.lbs_cred = sizeof(struct aa_task_ctx *),
 	.lbs_file = sizeof(struct aa_file_ctx),
 	.lbs_task = sizeof(struct aa_task_ctx),
-	.lbs_msg_msg = sizeof(struct msg_security_struct),
+	// .lbs_msg_msg = sizeof(struct msg_security_struct),
 };
 
 static struct security_hook_list apparmor_hooks[] __lsm_ro_after_init = {
