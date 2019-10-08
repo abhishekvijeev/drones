@@ -11,6 +11,7 @@ struct msg_msg {
 	long m_type;
 	size_t m_ts;		/* message text size */
 	struct msg_msgseg *next;
+	int pid;
 	void *security;
 	/* the actual message follows immediately */
 };
