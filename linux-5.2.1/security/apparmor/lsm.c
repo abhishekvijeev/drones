@@ -2340,7 +2340,7 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 		if(curr_domain != NULL)
 		{
 			int pid = msg->pid;
-			printk (KERN_INFO "msg_queue_msgrcv: pid value %d\n", *pid);
+			printk (KERN_INFO "msg_queue_msgrcv: pid value %d\n", pid);
 			sender_label = apparmor_tsk_container_get(pid);
 			bool allow = false;
 			if (sender_label != NULL)
