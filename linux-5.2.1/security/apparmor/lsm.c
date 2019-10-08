@@ -2279,6 +2279,29 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 {
 	// printk(KERN_INFO "msg_msg_alloc_security: current = %s\n", current->comm);
+	printk(KERN_INFO "apparmor_msg_msg_alloc_security: current = %s\n", current->comm);
+	struct aa_profile *profile;
+	struct aa_label *curr_label;
+	char *curr_domain = NULL;
+	char *msg_label = NULL;
+	curr_label = aa_get_task_label(current);
+	if (curr_label != NULL)
+	{
+		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+		if(curr_domain != NULL)
+		{
+			// msg->pid = current->pid;
+			// apparmor_tsk_container_add(curr_label, current->pid);
+			struct msg_security_struct *msec;
+			msec = apparmor_msg_msg(msg);
+			msec->pid = current->pid;
+			apparmor_tsk_container_add(curr_label, current->pid);
+			printk(KERN_INFO "apparmor_msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
+
+		}
+		aa_put_label(curr_label);
+	}
+	
 	
 	return 0;
 }
@@ -2294,31 +2317,6 @@ static void apparmor_msg_msg_free_security(struct msg_msg *msg)
 static int apparmor_msg_queue_msgsnd(struct kern_ipc_perm *perm, struct msg_msg *msg,
 				int msqflg)
 {
-	printk(KERN_INFO "msg_queue_msgsnd: current = %s\n", current->comm);
-	struct aa_profile *profile;
-	struct aa_label *curr_label;
-	char *curr_domain = NULL;
-	char *msg_label = NULL;
-	curr_label = aa_get_task_label(current);
-	if (curr_label != NULL)
-	{
-		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-		if(curr_domain != NULL)
-		{
-			msg->pid = current->pid;
-			apparmor_tsk_container_add(curr_label, current->pid);
-			// int *tmp = kzalloc(sizeof(int), GFP_KERNEL);
-			// if (tmp)
-			// {
-			// 	*tmp = current->pid;
-			// 	msg->security = tmp;
-			// 	apparmor_tsk_container_add(curr_label, current->pid);
-			// }
-			printk(KERN_INFO "msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
-
-		}
-		aa_put_label(curr_label);
-	}
 	
 	return 0;
 }
@@ -2339,7 +2337,9 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 		fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
 		if(curr_domain != NULL)
 		{
-			int pid = msg->pid;
+			struct msg_security_struct *msec;
+			msec = apparmor_msg_msg(msg);
+			int pid = msec->pid;
 			printk (KERN_INFO "msg_queue_msgrcv: pid value %d\n", pid);
 			sender_label = apparmor_tsk_container_get(pid);
 			bool allow = false;
@@ -2373,6 +2373,7 @@ struct lsm_blob_sizes apparmor_blob_sizes __lsm_ro_after_init = {
 	.lbs_cred = sizeof(struct aa_task_ctx *),
 	.lbs_file = sizeof(struct aa_file_ctx),
 	.lbs_task = sizeof(struct aa_task_ctx),
+	.lbs_msg_msg = sizeof(struct msg_security_struct),
 };
 
 static struct security_hook_list apparmor_hooks[] __lsm_ro_after_init = {
