@@ -33,4 +33,14 @@ int aa_may_ptrace(struct aa_label *tracer, struct aa_label *tracee,
 		  u32 request);
 int aa_may_signal(struct aa_label *sender, struct aa_label *target, int sig);
 
+struct msg_security_struct {
+	u32 pid;	
+};
+
+static inline struct msg_security_struct *apparmor_msg_msg(const struct msg_msg *msg_msg)
+{
+	return msg_msg->security + apparmor_blob_sizes.lbs_msg_msg;
+}
+
+
 #endif /* __AA_IPC_H */
