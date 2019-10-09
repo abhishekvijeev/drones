@@ -4,6 +4,10 @@
 /home/abhishek/drones/coding/tcp/client_tcp {
   #include <abstractions/base>
 
+#  dte_domain client_tcp,
+#  dte_net_domain client_tcp,
+#  dte_net_domain server_tcp,
+
   /home/abhishek/drones/coding/tcp/client_tcp mr,
   /lib/x86_64-linux-gnu/ld-*.so mr,
 

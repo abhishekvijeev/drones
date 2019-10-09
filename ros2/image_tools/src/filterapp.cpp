@@ -63,7 +63,7 @@ mat_type2encoding(int mat_type)
 
 
 void convert_frame_to_message(
-  const cv::Mat & frame, size_t frame_id, sensor_msgs::msg::Image & msg)
+  const cv::Mat & frame, string frame_id, sensor_msgs::msg::Image & msg)
 {
   // copy cv information into ros message
   msg.height = frame.rows;
@@ -73,7 +73,7 @@ void convert_frame_to_message(
   size_t size = frame.step * frame.rows;
   msg.data.resize(size);
   memcpy(&msg.data[0], frame.data, size);
-  msg.header.frame_id = std::to_string(frame_id);
+  msg.header.frame_id = frame_id;
 }
 
 /// Convert a sensor_msgs::Image encoding type (stored as a string) to an OpenCV encoding type.
@@ -125,13 +125,13 @@ void show_image(
 
   cv::Mat cvframe = frame;
 
-  // blur(cvframe,cvframe,Size(20,20)); 
+  blur(cvframe,cvframe,Size(20,20)); 
   
 
   if (!cvframe.empty()) {
       
     // Convert to a ROS image
-    convert_frame_to_message(cvframe, 0, *msgpub);
+    convert_frame_to_message(cvframe, msg->header.frame_id, *msgpub);
     
     
     // Publish the image message and increment the frame_id.

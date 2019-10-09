@@ -4,6 +4,10 @@
 /home/abhishek/ros2_ws/build/demo_nodes_cpp/listener {
   #include <abstractions/base>
 
+#  dte_domain listener,
+#  dte_net_domain listener,
+#  dte_net_domain talker,
+
   /home/*/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_generator_c.so mr,
   /home/*/ros2_ws/build/libyaml_vendor/libyaml_install/lib/libyaml.so mr,
   /home/*/ros2_ws/build/rcl/librcl.so mr,

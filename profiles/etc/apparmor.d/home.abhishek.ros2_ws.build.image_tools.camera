@@ -1,13 +1,18 @@
-# Last Modified: Sun Oct  6 15:14:41 2019
+# Last Modified: Wed Oct  9 10:58:50 2019
 #include <tunables/global>
 
-/home/abhishek/ros2_ws/build/demo_nodes_cpp/talker {
+/home/abhishek/ros2_ws/build/image_tools/camera {
   #include <abstractions/base>
+  #include <abstractions/evince>
+  #include <abstractions/opencl-pocl>
+  #include <abstractions/ubuntu-browsers.d/plugins-common>
 
-#  dte_domain talker,
-#  dte_net_domain talker,
-#  dte_net_domain listener,
+#  dte_domain camera,
+#  dte_net_domain camera,
+#  dte_net_domain filterapp,
 
+  /dev/ r,
+  /dev/bus/usb/ r,
   /home/*/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_generator_c.so mr,
   /home/*/ros2_ws/build/libyaml_vendor/libyaml_install/lib/libyaml.so mr,
   /home/*/ros2_ws/build/rcl/librcl.so mr,
@@ -24,25 +29,49 @@
   /home/*/ros2_ws/build/rosidl_generator_c/librosidl_generator_c.so mr,
   /home/*/ros2_ws/build/rosidl_typesupport_c/librosidl_typesupport_c.so mr,
   /home/*/ros2_ws/build/rosidl_typesupport_cpp/librosidl_typesupport_cpp.so mr,
+  /home/*/ros2_ws/build/sensor_msgs/libsensor_msgs__rosidl_typesupport_cpp.so mr,
   /home/*/ros2_ws/build/std_msgs/libstd_msgs__rosidl_typesupport_cpp.so mr,
-  /home/abhishek/ros2_ws/build/demo_nodes_cpp/talker mr,
+  /home/abhishek/ros2_ws/build/image_tools/camera mr,
   /lib/x86_64-linux-gnu/ld-*.so mr,
+  /sys/block/ r,
+  /sys/bus/ r,
+  /sys/bus/usb/devices/ r,
+  /sys/class/ r,
+  /sys/class/scsi_generic/ r,
+  /sys/devices/pci0000:00/0000:00:06.0/usb2/2-0:1.0/uevent r,
+  /sys/devices/pci0000:00/0000:00:06.0/usb2/2-1/2-1:1.0/uevent r,
+  /sys/devices/pci0000:00/0000:00:06.0/usb2/2-1/busnum r,
+  /sys/devices/pci0000:00/0000:00:06.0/usb2/2-1/descriptors r,
+  /sys/devices/pci0000:00/0000:00:06.0/usb2/2-1/devnum r,
+  /sys/devices/pci0000:00/0000:00:06.0/usb2/2-1/speed r,
+  /sys/devices/pci0000:00/0000:00:06.0/usb2/2-1/uevent r,
+  /sys/devices/pci0000:00/0000:00:06.0/usb2/busnum r,
+  /sys/devices/pci0000:00/0000:00:06.0/usb2/descriptors r,
+  /sys/devices/pci0000:00/0000:00:06.0/usb2/devnum r,
+  /sys/devices/pci0000:00/0000:00:06.0/usb2/speed r,
+  /sys/devices/pci0000:00/0000:00:06.0/usb2/uevent r,
+  /sys/devices/pci0000:00/0000:00:0b.0/usb1/1-0:1.0/uevent r,
+  /sys/devices/pci0000:00/0000:00:0b.0/usb1/busnum r,
+  /sys/devices/pci0000:00/0000:00:0b.0/usb1/descriptors r,
+  /sys/devices/pci0000:00/0000:00:0b.0/usb1/devnum r,
+  /sys/devices/pci0000:00/0000:00:0b.0/usb1/speed r,
+  /sys/devices/pci0000:00/0000:00:0b.0/usb1/uevent r,
+  /sys/devices/system/node/ r,
+  /sys/devices/system/node/node0/meminfo r,
+  owner /home/*/feed.mp4 r,
   owner /home/*/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_typesupport_fastrtps_c.so mr,
   owner /home/*/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_typesupport_fastrtps_cpp.so mr,
+  owner /home/*/ros2_ws/build/geometry_msgs/libgeometry_msgs__rosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/rcl_interfaces/librcl_interfaces__rosidl_typesupport_fastrtps_c.so mr,
   owner /home/*/ros2_ws/build/rcl_interfaces/librcl_interfaces__rosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/rmw_fastrtps_cpp/librmw_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/rmw_fastrtps_shared_cpp/librmw_fastrtps_shared_cpp.so mr,
   owner /home/*/ros2_ws/build/rosidl_typesupport_fastrtps_c/librosidl_typesupport_fastrtps_c.so mr,
   owner /home/*/ros2_ws/build/rosidl_typesupport_fastrtps_cpp/librosidl_typesupport_fastrtps_cpp.so mr,
+  owner /home/*/ros2_ws/build/sensor_msgs/libsensor_msgs__rosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/std_msgs/libstd_msgs__rosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/install/fastcdr/lib/libfastcdr.so.1.0.9 mr,
   owner /home/*/ros2_ws/install/fastrtps/lib/libfastrtps.so.1.8.0 mr,
-  owner /home/*/sros2_demo/demo_keys/talker/cert.pem r,
-  owner /home/*/sros2_demo/demo_keys/talker/governance.p7s r,
-  owner /home/*/sros2_demo/demo_keys/talker/identity_ca.cert.pem r,
-  owner /home/*/sros2_demo/demo_keys/talker/key.pem r,
-  owner /home/*/sros2_demo/demo_keys/talker/permissions.p7s r,
-  owner /home/*/sros2_demo/demo_keys/talker/permissions_ca.cert.pem r,
+  owner /proc/*/mounts r,
 
 }

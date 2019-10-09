@@ -66,7 +66,7 @@ void show_image(
     cv::Mat frame(
       msg->height, msg->width, encoding2mat_type(msg->encoding),
       const_cast<unsigned char *>(msg->data.data()), msg->step);
-
+    
     if (msg->encoding == "rgb8") {
       cv::cvtColor(frame, frame, cv::COLOR_RGB2BGR);
     }

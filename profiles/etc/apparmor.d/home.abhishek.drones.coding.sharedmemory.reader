@@ -4,6 +4,10 @@
 /home/abhishek/drones/coding/sharedmemory/reader {
   #include <abstractions/base>
 
+#  dte_domain reader,
+#  dte_net_domain reader,
+#  dte_net_domain writer,
+
   /home/abhishek/drones/coding/sharedmemory/reader mr,
   /lib/x86_64-linux-gnu/ld-*.so mr,
 

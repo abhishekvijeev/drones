@@ -1,12 +1,16 @@
-# Last Modified: Sun Oct  6 15:14:41 2019
+# Last Modified: Wed Oct  9 10:59:51 2019
 #include <tunables/global>
 
-/home/abhishek/ros2_ws/build/demo_nodes_cpp/talker {
+/home/abhishek/ros2_ws/build/image_tools/showimage {
+  #include <abstractions/X>
+  #include <abstractions/audio>
   #include <abstractions/base>
+  #include <abstractions/dbus-session-strict>
+  #include <abstractions/gnome>
 
-#  dte_domain talker,
-#  dte_net_domain talker,
-#  dte_net_domain listener,
+#  dte_domain showimage,
+#  dte_net_domain showimage,
+#  dte_net_domain filterapp,
 
   /home/*/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_generator_c.so mr,
   /home/*/ros2_ws/build/libyaml_vendor/libyaml_install/lib/libyaml.so mr,
@@ -24,25 +28,22 @@
   /home/*/ros2_ws/build/rosidl_generator_c/librosidl_generator_c.so mr,
   /home/*/ros2_ws/build/rosidl_typesupport_c/librosidl_typesupport_c.so mr,
   /home/*/ros2_ws/build/rosidl_typesupport_cpp/librosidl_typesupport_cpp.so mr,
-  /home/*/ros2_ws/build/std_msgs/libstd_msgs__rosidl_typesupport_cpp.so mr,
-  /home/abhishek/ros2_ws/build/demo_nodes_cpp/talker mr,
+  /home/*/ros2_ws/build/sensor_msgs/libsensor_msgs__rosidl_typesupport_cpp.so mr,
+  /home/abhishek/ros2_ws/build/image_tools/showimage mr,
   /lib/x86_64-linux-gnu/ld-*.so mr,
+  owner /home/*/.cache/event-sound-cache.tdb.eb526c04468441d3b8bf69db7e6d4294.x86_64-pc-linux-gnu rwk,
   owner /home/*/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_typesupport_fastrtps_c.so mr,
   owner /home/*/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_typesupport_fastrtps_cpp.so mr,
+  owner /home/*/ros2_ws/build/geometry_msgs/libgeometry_msgs__rosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/rcl_interfaces/librcl_interfaces__rosidl_typesupport_fastrtps_c.so mr,
   owner /home/*/ros2_ws/build/rcl_interfaces/librcl_interfaces__rosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/rmw_fastrtps_cpp/librmw_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/rmw_fastrtps_shared_cpp/librmw_fastrtps_shared_cpp.so mr,
   owner /home/*/ros2_ws/build/rosidl_typesupport_fastrtps_c/librosidl_typesupport_fastrtps_c.so mr,
   owner /home/*/ros2_ws/build/rosidl_typesupport_fastrtps_cpp/librosidl_typesupport_fastrtps_cpp.so mr,
+  owner /home/*/ros2_ws/build/sensor_msgs/libsensor_msgs__rosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/std_msgs/libstd_msgs__rosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/install/fastcdr/lib/libfastcdr.so.1.0.9 mr,
   owner /home/*/ros2_ws/install/fastrtps/lib/libfastrtps.so.1.8.0 mr,
-  owner /home/*/sros2_demo/demo_keys/talker/cert.pem r,
-  owner /home/*/sros2_demo/demo_keys/talker/governance.p7s r,
-  owner /home/*/sros2_demo/demo_keys/talker/identity_ca.cert.pem r,
-  owner /home/*/sros2_demo/demo_keys/talker/key.pem r,
-  owner /home/*/sros2_demo/demo_keys/talker/permissions.p7s r,
-  owner /home/*/sros2_demo/demo_keys/talker/permissions_ca.cert.pem r,
 
 }

@@ -3,7 +3,11 @@
 
 /home/abhishek/drones/coding/tcp/server_tcp {
   #include <abstractions/base>
-
+  
+#  dte_domain server_tcp,
+#  dte_net_domain server_tcp,
+#  dte_net_domain client_tcp,
+  
   /home/abhishek/drones/coding/tcp/server_tcp mr,
   /lib/x86_64-linux-gnu/ld-*.so mr,
 

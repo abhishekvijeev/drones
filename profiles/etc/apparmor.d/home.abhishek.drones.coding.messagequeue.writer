@@ -6,7 +6,7 @@
 
 #  dte_domain writer,
 #  dte_net_domain writer,
- # dte_net_domain reader,
+#  dte_net_domain reader,
 
   /home/abhishek/drones/coding/messagequeue/writer mr,
   /lib/x86_64-linux-gnu/ld-*.so mr,
