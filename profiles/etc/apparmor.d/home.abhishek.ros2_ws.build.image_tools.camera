@@ -1,12 +1,9 @@
-# Last Modified: Wed Oct  9 10:58:50 2019
+# Last Modified: Wed Oct  9 11:23:41 2019
 #include <tunables/global>
 
 /home/abhishek/ros2_ws/build/image_tools/camera {
   #include <abstractions/base>
-  #include <abstractions/evince>
-  #include <abstractions/opencl-pocl>
-  #include <abstractions/ubuntu-browsers.d/plugins-common>
-
+ 
 #  dte_domain camera,
 #  dte_net_domain camera,
 #  dte_net_domain filterapp,
