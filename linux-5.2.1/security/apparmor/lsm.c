@@ -1690,7 +1690,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			else if(sk->sk_family == AF_UNIX)
 			{
 				printk (KERN_INFO "apparmor_socket_sendmsg: UNIX DOMAIN SOCKET \n");
-				printk (KERN_INFO "apparmor_socket_sendmsg: address pair = %ld, port_pair = %d \n", sk->sk_addrpair, sk->sk_portpair);
+				printk (KERN_INFO "apparmor_socket_sendmsg: address pair = %lld, port_pair = %d \n", sk->sk_addrpair, sk->sk_portpair);
 				printk (KERN_INFO "apparmor_socket_sendmsg: desti addr = %d, desti port = %d,  sk_rcv_saddr = %d, sk_num = %d \n", sk->sk_daddr, 														sk->sk_dport, sk->sk_rcv_saddr, sk->sk_num);
 				
 			}
@@ -1791,7 +1791,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			else if(sock->sk->sk_family == AF_UNIX)
 			{
 				printk (KERN_INFO "apparmor_socket_recvmsg: UNIX DOMAIN SOCKET \n");
-				printk (KERN_INFO "apparmor_socket_recvmsg: address pair = %ld, port_pair = %d \n", sk->sk_addrpair, sk->sk_portpair);
+				printk (KERN_INFO "apparmor_socket_recvmsg: address pair = %lld, port_pair = %d \n", sk->sk_addrpair, sk->sk_portpair);
 				printk (KERN_INFO "apparmor_socket_recvmsg: desti addr = %d, desti port = %d,  sk_rcv_saddr = %d, sk_num = %d \n", sk->sk_daddr, 														sk->sk_dport, sk->sk_rcv_saddr, sk->sk_num);
 				
 			}
