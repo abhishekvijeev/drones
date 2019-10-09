@@ -1,0 +1,15 @@
+# Last Modified: Wed Oct  9 10:07:05 2019
+#include <tunables/global>
+
+/home/abhishek/drones/coding/file/reader {
+  #include <abstractions/base>
+
+#  dte_domain reader,
+#  dte_net_domain reader,
+#  dte_net_domain writer,
+
+  /home/abhishek/drones/coding/file/reader mr,
+  /lib/x86_64-linux-gnu/ld-*.so mr,
+  owner /home/*/drones/coding/file/person.dat r,
+
+}
