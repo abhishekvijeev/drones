@@ -92,11 +92,12 @@ int main(int argc, char * argv[])
   // Initialize default demo parameters
   bool show_camera = false;
   size_t depth = rmw_qos_profile_default.depth;
-  double freq = 30.0;
+  double freq = 1.0;
   rmw_qos_reliability_policy_t reliability_policy = rmw_qos_profile_default.reliability;
   rmw_qos_history_policy_t history_policy = rmw_qos_profile_default.history;
   size_t width = 320;
   size_t height = 240;
+   
   bool burger_mode = false;
   std::string topic("imageraw");
 

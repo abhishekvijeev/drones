@@ -124,9 +124,13 @@ void show_image(
   }
 
   cv::Mat cvframe = frame;
-
-  blur(cvframe,cvframe,Size(20,20)); 
   
+  cv::Size size(480,480);
+  cv::resize(cvframe, cvframe, size); 
+  
+  blur(cvframe,cvframe,Size(10,10)); 
+  
+   
 
   if (!cvframe.empty()) {
       
