@@ -93,7 +93,7 @@ static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_d
 	{
 		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
 		{
-			printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
+			// printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
 			if ((strcmp(iterator->domain, checking_domain) == 0) || strcmp(iterator->domain, "*") == 0)
 			{
 				*allow = true;
@@ -111,7 +111,7 @@ static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_
 	{
 		list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
 		{
-			printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
+			// printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
 			if (iterator->ip_addr == 0 || iterator->ip_addr == check_ip_addr)
 			{
 				*allow = true;
@@ -150,7 +150,7 @@ static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
 	}
 	if (ret == 0)
 	{
-		printk (KERN_INFO "apparmor_tsk_container_add: adding data at idx %d, pid %d, label %s\n", remove_idx, pid, label->hname);
+		// printk (KERN_INFO "apparmor_tsk_container_add: adding data at idx %d, pid %d, label %s\n", remove_idx, pid, label->hname);
 		if (label_cache_arr[remove_idx].cur_label != NULL)
 			aa_put_label(label_cache_arr[remove_idx].cur_label);
 
@@ -161,7 +161,7 @@ static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
 	}
 	else
 	{
-		printk (KERN_INFO "apparmor_tsk_container_add: adding data at idx %d, pid %d, label %s\n", i, pid, label->hname);
+		// printk (KERN_INFO "apparmor_tsk_container_add: adding data at idx %d, pid %d, label %s\n", i, pid, label->hname);
 		
 	}
 	
@@ -183,11 +183,11 @@ static struct aa_label *apparmor_tsk_container_get(pid_t pid)
 	}
 	if (ret != NULL)
 	{
-		printk (KERN_INFO "apparmor_tsk_container_get: data found at idx %d, pid %d, label %s\n", i, pid, ret->hname);
+		// printk (KERN_INFO "apparmor_tsk_container_get: data found at idx %d, pid %d, label %s\n", i, pid, ret->hname);
 	}
 	else
 	{
-		printk (KERN_INFO "apparmor_tsk_container_get: data not found  of pid %d\n", pid);
+		// printk (KERN_INFO "apparmor_tsk_container_get: data not found  of pid %d\n", pid);
 	}
 	return ret;
 }
@@ -208,7 +208,9 @@ static int apparmor_tsk_container_remove(pid_t pid)
 		}
 	}
 	if (ret == 1)
-		printk (KERN_INFO "apparmor_tsk_container_get: data removed at idx %d, pid %d, label %s\n", i, pid, hname);
+	{
+		// printk (KERN_INFO "apparmor_tsk_container_get: data removed at idx %d, pid %d, label %s\n", i, pid, hname);
+	}
 	
 	return ret;	
 }
@@ -263,7 +265,7 @@ static int apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 				
 			}
 			
-			printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_label->hname, receiver_pid, sender_label->hname, sender_pid, allow);
+			// printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_label->hname, receiver_pid, sender_label->hname, sender_pid, allow);
 		
 		}
 		if (sender_label != NULL)
@@ -299,7 +301,7 @@ static int apparmor_inode_read_flow(struct inode *inode)
 					ret = 1;
 				
 			}
-			printk (KERN_INFO "apparmor_inode_read_flow: current process %s is reading from file %s, allowed %d\n", current->comm, sender_label->hname, allow);
+			// printk (KERN_INFO "apparmor_inode_read_flow: current process %s is reading from file %s, allowed %d\n", current->comm, sender_label->hname, allow);
 		}
 		
 	}
@@ -346,7 +348,7 @@ static int apparmor_inode_write_flow(struct inode *inode)
 						aa_put_label(inode_label);
 						//update the inode label with new process
 						inode->i_security = aa_get_label(curr_label);
-						printk (KERN_INFO "apparmor_inode_write_flow: label updated\n");
+						// printk (KERN_INFO "apparmor_inode_write_flow: label updated\n");
 						
 					}
 				}
@@ -355,14 +357,14 @@ static int apparmor_inode_write_flow(struct inode *inode)
 			}
 			
 			
-			printk (KERN_INFO "apparmor_inode_write_flow: current process %s is writing to file %s, allowed %d\n", current->comm, inode_label->hname, allow);
+			// printk (KERN_INFO "apparmor_inode_write_flow: current process %s is writing to file %s, allowed %d\n", current->comm, inode_label->hname, allow);
 				
 		}
 		else
 		{
 			//update the label
 			inode->i_security = aa_get_label(curr_label);
-			printk (KERN_INFO "apparmor_inode_write_flow: label added to previous existing file\n");
+			// printk (KERN_INFO "apparmor_inode_write_flow: label added to previous existing file\n");
 		}
 		
 		
@@ -908,7 +910,7 @@ static void apparmor_setxattr(struct file *file, char *curr_domain)
 
 	context[context_len] = '\0';
 
-	printk(KERN_INFO "apparmor_file_permission (%s): setting xattrs of file %s to %s\n", current->comm, file->f_path.dentry->d_iname, context);
+	// printk(KERN_INFO "apparmor_file_permission (%s): setting xattrs of file %s to %s\n", current->comm, file->f_path.dentry->d_iname, context);
 
 
 	__vfs_setxattr_noperm(dentry, XATTR_NAME_APPARMOR, context, context_len, 0);
@@ -1005,12 +1007,12 @@ static int apparmor_file_permission(struct file *file, int mask)
 						// Process with domain trying to read from a file with xattrs set - perform the check
 						if(apparmor_check_domain_in_xattrs(curr_domain, context))
 						{
-							printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s ALLOW read from file %s\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
+							// printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s ALLOW read from file %s\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
 							return 0;
 						}
 						else
 						{
-							printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s DENY read from file %s\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
+							// printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s DENY read from file %s\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
 							return -EPERM;
 						}
 						
@@ -1020,13 +1022,13 @@ static int apparmor_file_permission(struct file *file, int mask)
 						if (rc == -ENODATA || rc == -EOPNOTSUPP || rc == 0) 
 						{
 							// The file has no xattrs set - ALLOW READ
-							printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s ALLOW read from file %s - no xattrs set\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
+							// printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s ALLOW read from file %s - no xattrs set\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
 							return 0;
 						}
 						else
 						{
 							// Error while trying to get xattrs from file - return error code
-							printk(KERN_INFO "apparmor_file_permission (%s): Error -%d while trying to get xattrs from file %s \n", current->comm, rc, file->f_path.dentry->d_iname);
+							// printk(KERN_INFO "apparmor_file_permission (%s): Error -%d while trying to get xattrs from file %s \n", current->comm, rc, file->f_path.dentry->d_iname);
 							return rc;
 						}
 					}
@@ -1052,13 +1054,13 @@ static int apparmor_file_permission(struct file *file, int mask)
 							inode_lock(inode);
 							apparmor_setxattr(file, curr_domain);
 							inode_unlock(inode);
-							printk(KERN_INFO "apparmor_file_permission (%s): writing to file %s with NEW XATTRS UPDATED. \n", current->comm, file->f_path.dentry->d_iname);
+							// printk(KERN_INFO "apparmor_file_permission (%s): writing to file %s with NEW XATTRS UPDATED. \n", current->comm, file->f_path.dentry->d_iname);
 							return 0;
 						}
 						else
 						{
 							// Process is the different from the one that wrote to it first - DENY
-							printk(KERN_INFO "apparmor_file_permission (%s): DENIED UPDATED! setting xattrs of file %s to %s\n", current->comm, file->f_path.dentry->d_iname, context);
+							// printk(KERN_INFO "apparmor_file_permission (%s): DENIED UPDATED! setting xattrs of file %s to %s\n", current->comm, file->f_path.dentry->d_iname, context);
 							return -EPERM;
 						}
 						
@@ -1071,7 +1073,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 							// The file has no extended attributes stored
 							// Process with a domain trying to write for the first time to a file without xattrs.
 							// We set the xattrs of a file to contain the allow_list of the first process that writes to it
-							printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s trying to write for the first time to file %s without xattrs\n", current->comm, curr_domain, file->f_path.dentry->d_iname, context);
+							// printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s trying to write for the first time to file %s without xattrs\n", current->comm, curr_domain, file->f_path.dentry->d_iname, context);
 							inode_lock(inode);
 							apparmor_setxattr(file, curr_domain);
 							inode_unlock(inode);
@@ -1079,7 +1081,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 						else
 						{
 							// Error while trying to get xattrs from file - return error code
-							printk(KERN_INFO "apparmor_file_permission (%s): Error -%d while trying to get xattrs from file %s \n", current->comm, rc, file->f_path.dentry->d_iname);
+							// printk(KERN_INFO "apparmor_file_permission (%s): Error -%d while trying to get xattrs from file %s \n", current->comm, rc, file->f_path.dentry->d_iname);
 							return rc;
 						}
 					}
@@ -1627,7 +1629,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 		if (curr_domain != NULL)
 		{
 			int ret = apparmor_tsk_container_add(curr_label, current->pid);
-			printk (KERN_INFO "apparmor_socket_sendmsg (%s): current_pid = %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
+			// printk (KERN_INFO "apparmor_socket_sendmsg (%s): current_pid = %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
 			if(sk->sk_family == AF_INET)
 			{   
 				int ret_val = 0;
@@ -1637,7 +1639,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 					daddr = tmp;
 				else
 				{
-					printk (KERN_INFO "apparmor_socket_sendmsg: unable to get destination address\n");
+					// printk (KERN_INFO "apparmor_socket_sendmsg: unable to get destination address\n");
 					goto sendmsg_out;
 				}
 				
@@ -1645,7 +1647,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				if(localhost_address(daddr))
 				{
 					ret_val = 1;
-					printk(KERN_INFO "apparmor_socket_sendmsg (%s): Packet from localhost to localhost allowed, current_pid = %d\n", current->comm, current->pid);
+					// printk(KERN_INFO "apparmor_socket_sendmsg (%s): Packet from localhost to localhost allowed, current_pid = %d\n", current->comm, current->pid);
 				}
 				
 
@@ -1653,14 +1655,14 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				else if(ntohs(daddr) == 61439)
 				{
 					ret_val = 1;
-					printk(KERN_INFO "apparmor_socket_sendmsg (%s): DDS Multicast allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
+					// printk(KERN_INFO "apparmor_socket_sendmsg (%s): DDS Multicast allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
 				}
 
 				// 3. Check if destination address is multicast address
 				else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
 				{
 					ret_val = 1;
-					printk(KERN_INFO "apparmor_socket_sendmsg (%s): Multicast address allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
+					// printk(KERN_INFO "apparmor_socket_sendmsg (%s): Multicast address allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
 				}
 				
 				/* 
@@ -1678,7 +1680,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 						ret_val = 1;
 						printk (KERN_INFO "[GRAPH_GEN] Process %s, network, %pi4\n", curr_label->hname, &daddr);
 					}
-					printk(KERN_INFO "apparmor_socket_sendmsg (%s): Domain declassification for message from process %s(pid = %d) to address %pi4, flow is %d\n", current->comm, current->comm, current->pid, &daddr, allow);
+					// printk(KERN_INFO "apparmor_socket_sendmsg (%s): Domain declassification for message from process %s(pid = %d) to address %pi4, flow is %d\n", current->comm, current->comm, current->pid, &daddr, allow);
 				}
 				if (ret_val == 0)
 					error = 0;
@@ -1700,7 +1702,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 	__end_current_label_crit_section(cl);
 	if (error == 0)
 	{
-		printk (KERN_INFO "apparmor_socket_sendmsg (%s): return is -13\n", current->comm);
+		// printk (KERN_INFO "apparmor_socket_sendmsg (%s): return is -13\n", current->comm);
 		return -EACCES;
 	}
 	else
@@ -1736,7 +1738,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 
 		if (curr_domain != NULL && curr_sock_label->pid != 0)
 		{
-			printk (KERN_INFO "apparmor_socket_recvmsg (%s): current_pid %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
+			// printk (KERN_INFO "apparmor_socket_recvmsg (%s): current_pid %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
 			
 			if(sock->sk->sk_family == AF_INET)
 			{
@@ -1769,14 +1771,14 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 						else
 							printk (KERN_INFO "[GRAPH_GEN] Process %s, socket_ipc, %s\n", sender_label->hname, curr_label->hname);
 						
-						printk (KERN_INFO "apparmor_socket_recvmsg (%s): Match is %d for flow from %s(pid = %d) to %s(pid = %d)\n", current->comm, allow, sender_label->hname, sender_pid, current->comm, current->pid);
+						// printk (KERN_INFO "apparmor_socket_recvmsg (%s): Match is %d for flow from %s(pid = %d) to %s(pid = %d)\n", current->comm, allow, sender_label->hname, sender_pid, current->comm, current->pid);
 					}
 					
 					aa_put_label(sender_label);	
 				}
 				else
 				{
-					printk (KERN_INFO "apparmor_socket_recvmsg (%s): else statement for (if (sender_pid != current->pid && sender_label != NULL)) sender pid: %d, current pid: %d\n", current->comm, sender_pid, current->pid);
+					// printk (KERN_INFO "apparmor_socket_recvmsg (%s): else statement for (if (sender_pid != current->pid && sender_label != NULL)) sender pid: %d, current pid: %d\n", current->comm, sender_pid, current->pid);
 				}
 				
 				
@@ -1808,7 +1810,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				drop_flag = true;
 			}
 		}
-		printk (KERN_INFO "apparmor_socket_recvmsg (%s): return is -13, status of drop_flag = %d\n", current->comm, drop_flag);
+		// printk (KERN_INFO "apparmor_socket_recvmsg (%s): return is -13, status of drop_flag = %d\n", current->comm, drop_flag);
 		return -EACCES;
 	}
 	else
@@ -1943,7 +1945,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 			tcpheader = tcp_hdr(skb);
 			if (skb->secmark != label->pid && skb->secmark != 0)
 				label->pid = skb->secmark;
-			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: TCP socket label_name: %s, label->pid %d, label->recv_pid %d, skb->pid %d, skb->data_len %d, syn = %d, ack = %d, fin = %d\n", label->hname, label->pid, label->recv_pid, skb->secmark, skb->data_len, tcpheader->syn, tcpheader->ack, tcpheader->fin);
+			// printk (KERN_INFO "apparmor_socket_sock_rcv_skb: TCP socket label_name: %s, label->pid %d, label->recv_pid %d, skb->pid %d, skb->data_len %d, syn = %d, ack = %d, fin = %d\n", label->hname, label->pid, label->recv_pid, skb->secmark, skb->data_len, tcpheader->syn, tcpheader->ack, tcpheader->fin);
 			int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
 			if (ret != 0)
 			{
@@ -1956,7 +1958,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 
 		else if (curr_domain != NULL && (sk->sk_type == SOCK_DGRAM))
 		{
-			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: UDP socket label_name: %s, label->pid %d, label->recv_pid %d, skb->pid %d, skb->data_len %d\n", label->hname, label->pid, label->recv_pid, skb->secmark, skb->data_len);
+			// printk (KERN_INFO "apparmor_socket_sock_rcv_skb: UDP socket label_name: %s, label->pid %d, label->recv_pid %d, skb->pid %d, skb->data_len %d\n", label->hname, label->pid, label->recv_pid, skb->secmark, skb->data_len);
 			// printk (KERN_INFO "skb len %d skb data_len %d\n", skb->len, skb->data_len);
 			int ret = apparmor_socket_label_compare(label->pid, label->recv_pid);
 			if (ret != 0)
@@ -1971,7 +1973,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 
 	if (error)
 	{
-		printk (KERN_INFO "apparmor_socket_sock_rcv_skb: dropping packet at label_name: %s\n", label->hname);
+		// printk (KERN_INFO "apparmor_socket_sock_rcv_skb: dropping packet at label_name: %s\n", label->hname);
 		
 		// if(sk->sk_type == SOCK_STREAM )
 		// {
@@ -2140,7 +2142,7 @@ static void apparmor_shm_free_security(struct kern_ipc_perm *perm)
 				kzfree (tmp->domain);
 				kzfree (tmp);
 			}	
-			printk(KERN_INFO "apparmor_shm_free_security \n");
+			// printk(KERN_INFO "apparmor_shm_free_security \n");
 			//kfree(perm_security_list);
 		}
 	}
@@ -2160,7 +2162,7 @@ static int apparmor_shm_alloc_security(struct kern_ipc_perm *perm)
 
 	if(curr_domain)
 	{
-		printk(KERN_INFO "apparmor_shm_alloc_security (%s)\n", current->comm);
+		// printk(KERN_INFO "apparmor_shm_alloc_security (%s)\n", current->comm);
 
 		struct ListOfDomains *perm_security_list = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
 		if(perm_security_list)
@@ -2228,12 +2230,12 @@ void apparmor_shm_graph_log(char *cur_domain, struct ListOfDomains *perm_securit
 
 void apparmor_print_list_domain(struct ListOfDomains *perm_security_list)
 {
-	printk(KERN_INFO "apparmor_shm_shmat (%s): shm security list:\n", current->comm);
+	// printk(KERN_INFO "apparmor_shm_shmat (%s): shm security list:\n", current->comm);
 	struct ListOfDomains *iterator;
-	list_for_each_entry(iterator, &(perm_security_list->domain_list), domain_list)
-	{
-		printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
-	}
+	// list_for_each_entry(iterator, &(perm_security_list->domain_list), domain_list)
+	// {
+	// 	printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+	// }
 }
 
 
@@ -2281,7 +2283,7 @@ static int apparmor_shm_shmat(struct kern_ipc_perm *perm, char __user *shmaddr, 
 static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 {
 	// printk(KERN_INFO "msg_msg_alloc_security: current = %s\n", current->comm);
-	printk(KERN_INFO "apparmor_msg_msg_alloc_security: current = %s\n", current->comm);
+	// printk(KERN_INFO "apparmor_msg_msg_alloc_security: current = %s\n", current->comm);
 	struct aa_profile *profile;
 	struct aa_label *curr_label;
 	char *curr_domain = NULL;
@@ -2294,7 +2296,7 @@ static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
 		{
 			msg->pid = current->pid;
 			apparmor_tsk_container_add(curr_label, current->pid);
-			printk(KERN_INFO "apparmor_msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
+			// printk(KERN_INFO "apparmor_msg_msg_alloc_security: attached label to message from process %s\n", current->comm);
 		}
 		aa_put_label(curr_label);
 	}
@@ -2335,7 +2337,7 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 		if(curr_domain != NULL)
 		{
 			int pid = msg->pid;
-			printk (KERN_INFO "msg_queue_msgrcv: pid value %d\n", pid);
+			// printk (KERN_INFO "msg_queue_msgrcv: pid value %d\n", pid);
 			sender_label = apparmor_tsk_container_get(pid);
 			bool allow = false;
 			if (sender_label != NULL)
@@ -2344,7 +2346,7 @@ static int apparmor_msg_queue_msgrcv(struct kern_ipc_perm *perm, struct msg_msg 
 				if (allow == 0)
 				{
 					err = 1;
-					printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, curr_label->hname);
+					// printk(KERN_INFO "msg_queue_msgrcv: err = 1 for flow from sender label %s to target\n", sender_label->hname, curr_label->hname);
 				}
 				else
 					printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_label->hname, curr_label->hname);
