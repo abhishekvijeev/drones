@@ -1,0 +1,14 @@
+# Last Modified: Wed Oct  9 19:12:34 2019
+#include <tunables/global>
+
+/home/abhishek/drones/coding/unix/client  {
+  #include <abstractions/base>
+
+#  dte_domain client,
+#  dte_net_domain client,
+#  dte_net_domain server,
+
+  /home/abhishek/drones/coding/unix/client mr,
+  /lib/x86_64-linux-gnu/ld-*.so mr,
+
+}
