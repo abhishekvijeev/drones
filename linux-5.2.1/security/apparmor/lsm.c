@@ -950,9 +950,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 
 
 		
-	if(uid == 0 || euid == 0 || strcmp(file->f_path.dentry->d_iname, "0") == 0 || 
-		strcmp(file->f_path.dentry->d_iname, "1") == 0 || 
-		strcmp(file->f_path.dentry->d_iname, "2") == 0)
+	if(uid == 0 || euid == 0 )
 	{
 		return 0;
 	}
