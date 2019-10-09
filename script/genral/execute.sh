@@ -1,6 +1,11 @@
-dmesg > ~/graph
+dmesg > ~/kernel_log
+
 
 cd ~/drones/script/genral/graph_genprof
-./graph_generator.sh ~/graph > ~/filter_graph
+./graph_generator.sh ~/kernel_log > ~/filter_graph
 
-code ~/filter_graph
+cd ~/drones/script/genral/apparmor
+./filter.sh ~/kernel_log > ~/filter_log
+
+code ~/filter_graph ~/filter_log
+
