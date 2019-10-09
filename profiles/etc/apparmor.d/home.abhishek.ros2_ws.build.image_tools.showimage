@@ -12,6 +12,8 @@
 #  dte_net_domain showimage,
 #  dte_net_domain filterapp,
 
+  /dev/pts/** wr,
+
   /home/*/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_generator_c.so mr,
   /home/*/ros2_ws/build/libyaml_vendor/libyaml_install/lib/libyaml.so mr,
   /home/*/ros2_ws/build/rcl/librcl.so mr,

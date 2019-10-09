@@ -1,13 +1,18 @@
 # Last Modified: Wed Oct  9 10:59:22 2019
 #include <tunables/global>
 
-/home/abhishek/ros2_ws/build/image_tools/filterapp {
+/home/abhishek/ros2_ws/build/image_tools/filterapp  {
   #include <abstractions/base>
 
 #  dte_domain filterapp,
 #  dte_net_domain filterapp,
 #  dte_net_domain camera,
 #  dte_net_domain showimage,
+
+  /dev/pts/** wr,
+  /proc/sys/vm/nr_hugepages r,
+  /sys/kernel/mm/transparent_hugepage/enabled r,
+
 
   /home/*/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_generator_c.so mr,
   /home/*/ros2_ws/build/libyaml_vendor/libyaml_install/lib/libyaml.so mr,
