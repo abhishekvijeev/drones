@@ -1439,15 +1439,20 @@ static int apparmor_unix_may_send (struct socket *sock, struct socket *other)
 
 	struct aa_sk_ctx *ctx_recv = SK_CTX(other->sk);
 	struct aa_label *recv_label = aa_get_label(ctx_recv->label);
-	printk (KERN_INFO "apparmor_unix_may_send: Current process %s\n", current->comm);
-		
+	
+	struct aa_profile *profile;
+	char *curr_domain = NULL;
+
 	if (sender_label != NULL && recv_label != NULL)
 	{
-		printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
-		
+		fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+		if(curr_domain != NULL)
+		{
+			printk (KERN_INFO "apparmor_unix_may_send: Current process %s\n", current->comm);
+			printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+		}
 		aa_put_label(sender_label);
 		aa_put_label(recv_label);
-		
 	}
 	return 0;
 	
