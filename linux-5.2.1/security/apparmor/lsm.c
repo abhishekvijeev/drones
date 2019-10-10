@@ -1431,6 +1431,28 @@ static void apparmor_sk_clone_security(const struct sock *sk,
 	new->peer = aa_get_label(ctx->peer);
 }
 
+
+static int apparmor_unix_may_send (struct socket *sock, struct socket *other)
+{
+	struct aa_sk_ctx *ctx_sender = SK_CTX(sock->sk);
+	struct aa_label *sender_label = aa_get_label(ctx_sender->label);
+
+	struct aa_sk_ctx *ctx_recv = SK_CTX(other->sk);
+	struct aa_label *recv_label = aa_get_label(ctx_recv->label);
+	printk (KERN_INFO "apparmor_unix_may_send: Current process %s\n", current->comm);
+		
+	if (sender_label != NULL && recv_label != NULL)
+	{
+		printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+		
+		aa_put_label(sender_label);
+		aa_put_label(recv_label);
+		
+	}
+	return 0;
+	
+}
+
 /**
  * apparmor_socket_create - check perms before creating a new socket
  */
@@ -2430,6 +2452,8 @@ static struct security_hook_list apparmor_hooks[] __lsm_ro_after_init = {
 	LSM_HOOK_INIT(sk_free_security, apparmor_sk_free_security),
 	LSM_HOOK_INIT(sk_clone_security, apparmor_sk_clone_security),
 
+
+	LSM_HOOK_INIT(unix_may_send, apparmor_unix_may_send),
 	LSM_HOOK_INIT(socket_create, apparmor_socket_create),
 	LSM_HOOK_INIT(socket_post_create, apparmor_socket_post_create),
 	LSM_HOOK_INIT(socket_bind, apparmor_socket_bind),
