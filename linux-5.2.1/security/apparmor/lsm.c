@@ -47,6 +47,8 @@
 #include "include/procattr.h"
 #include "include/mount.h"
 #include "include/secid.h"
+#include <linux/namei.h>
+#include <linux/dcache.h>
 
 
 
@@ -974,7 +976,9 @@ static int apparmor_file_permission(struct file *file, int mask)
 					char *tmppath = kzalloc(300, GFP_KERNEL);
 					if (tmppath != NULL)
 					{
-						char *fullpath = dentry_path_raw(dentry, tmppath, 300);
+						// char *fullpath = dentry_path_raw(dentry, tmppath, 300);
+						char *fullpath = d_path(dentry, tmppath, 300);
+						
 						if (mask == AA_MAY_EXEC)
 							printk (KERN_INFO "[GRAPH_GEN] Process %s, exec_file, %s\n", curr_label->hname, fullpath);
 						else if (mask ==  AA_MAY_WRITE)
