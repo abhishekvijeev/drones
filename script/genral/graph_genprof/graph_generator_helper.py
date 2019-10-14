@@ -44,7 +44,11 @@ final_data = []
 for item in data:
     val = item
     if "[" in val:
-        val = val.split('[')[0]
+        tmp = val.split('[')[0]
+        if "pipe:" in tmp or "socket:"  in tmp:
+            val = tmp + val.split('[')[1].replace("]","")
+        else:
+            val = tmp 
     final_data.append(val)
 
 gd = group_data_by_app(final_data) 
