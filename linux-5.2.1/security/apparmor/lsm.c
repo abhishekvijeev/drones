@@ -977,7 +977,7 @@ static int apparmor_file_permission(struct file *file, int mask)
 					if (tmppath != NULL)
 					{
 						// char *fullpath = dentry_path_raw(dentry, tmppath, 300);
-						char *fullpath = d_path(dentry, tmppath, 300);
+						char *fullpath = d_path(&file->f_path, tmppath, 300);
 						
 						if (mask == AA_MAY_EXEC)
 							printk (KERN_INFO "[GRAPH_GEN] Process %s, exec_file, %s\n", curr_label->hname, fullpath);
