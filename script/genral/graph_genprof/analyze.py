@@ -133,31 +133,34 @@ def LCA(status, start, end, final_data):
                     que.append(item)
                     allow_one = allow_one - 1
 
-def path_helper(start, end, status, stack, original_stack):
+def path_helper(start, end, status, stack):
     key = stack[-1]
     for data in status[key]['from']:
         stack.append(data)
-        path_helper(start, end, status, stack, original_stack)
+        # print("\t PRE: data", data)
         
+        path_helper(start, end, status, stack)
+
+        
+        # print("\t", "KEY:", key, "\tdata:", data, "\tstack:", stack,  "\n")
         if start in stack:
-            print("PATH: ", end = " ")
+            # print("PATH: ", end = " ")
             tmp = []
-            for data in reversed(stack):
-                tmp.append(data)
-                print(data, end= " -> ")
             tmp.append(end)
-            print(end)
+            
+            for data in stack:
+                tmp.append(data)
+                # print(data, end= " -> ")
+            # print(end)
             if tmp not in final_paths:
                 final_paths.append(tmp)
-
-        stack.clear()
-        for data in original_stack:
-            stack.append(data)
-        if key not in stack:
-            stack.append(key)
+        # print("\t POST: data", data, "\t", stack, end = " \t")
+        
+        stack.remove(data)
         
         
-def print_all_paths(start, end, final_data, status):
+        
+def set_all_paths(start, end, final_data, status):
     endpoints = []
     for key, value in status.items():
         if value[end] == True:
@@ -166,10 +169,38 @@ def print_all_paths(start, end, final_data, status):
     for item in endpoints:
         stack = []
         stack.append(item)
-        original_stack = []
-        original_stack.append(item)
-        path_helper(start, end, status, stack, original_stack)
+        path_helper(start, end, status, stack)
     
+def print_path_helper(data, start, end):
+    if start == end:
+        print(data[start], end = " -> ")
+    else:
+        print_path_helper(data, start + 1, end)
+        if start != 0:
+            print(data[start], end = " -> ")
+        else:
+            print(data[start], end = " ")
+        
+
+def print_all_path():
+    print("PATHS:")
+    for val in final_paths:
+        print_path_helper(val, 0, len(val)-1)
+        print()
+    print()
+    
+def print_dominator(status, final_data, end):
+    print ("DOMINATOR:")
+    for item in final_data:
+        if str(item) != "network" and str(item) != "disk":
+            flag = True
+            for val in final_paths:
+                if item not in val:
+                    # if status[item][end] == False:
+                    flag = False
+                    break
+            if flag:
+                print(item, end = ",")
     print()
 
 def DFS(start, end, final_data):
@@ -233,10 +264,11 @@ status = DFS("A", "network", final_data)
 # start = "A"
 # end = "disk"
 # status = DFS("A", "disk", final_data)
-print_all_paths(start, end, final_data, status)
+set_all_paths(start, end, final_data, status)
+print_all_path()
 
-
+print_dominator(status, final_data, end)
 # for key, value in status.items() :
 #     print(key)
 #     print("\t", value)
-LCA(status, start, end, final_data)
+# LCA(status, start, end, final_data)

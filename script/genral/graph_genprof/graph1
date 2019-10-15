@@ -1,0 +1,64 @@
+ Process A
+	 socket_ipc  B
+     socket_ipc  C
+	 socket_ipc  D
+
+ Process B
+	 socket_ipc  P
+     socket_ipc  E
+     
+
+ Process C
+
+	 socket_ipc  E
+
+
+ Process D
+
+	 write_file  /dev/pts/0
+     socket_ipc  N
+     socket_ipc  E
+
+ Process N
+	 socket_ipc  O
+
+ Process P
+	 socket_ipc  Q
+ Process Q
+	 socket_ipc  R
+ Process R
+	 write_file  /dev/pts/0
+ Process O
+	 write_file  /dev/pts/0
+
+
+ Process E
+	 socket_ipc  F
+     socket_ipc  G
+	 socket_ipc  H
+
+ Process F
+	 socket_ipc  I
+ Process I
+	 socket_ipc  L
+
+ Process G
+	 socket_ipc  J
+ Process J
+	 socket_ipc  L
+
+ Process H
+	 socket_ipc  K
+ Process K
+	 socket_ipc  M
+
+
+ Process L
+	 network  010.192.046.020
+     write_file  /dev/pts/0
+
+ Process M
+	 network  010.192.046.020
+
+	 write_file  /dev/pts/0
+
