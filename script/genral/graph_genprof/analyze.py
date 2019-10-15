@@ -2,22 +2,95 @@
 
 import sys
 
+final_paths = []
 
 def set_final_data(data):
     final_data = {}
     process_flag = False
     key = ""
+    final_data["network"] = []
+    final_data["disk"] = []
+    
     for item in data.split("\n"):
-        if len(item) > 1:
-            if "\t" not in item:
-                item = item.split("Process ")[1]
-                key = item
-                if item not in final_data:
-                    final_data[item] = []
-            else:
-                final_data[key].append(item.strip())
+        item = item.strip()
+        item =  ' '.join(item.split())
         
+        if len(item.split()) > 0:
+            if "Process" in item.split()[0]:
+                key = item.split("Process")[1]
+                key = key.strip()
+                if key not in final_data:
+                    final_data[key] = []
+            else:
+                final_data[key].append(item)
     return final_data    
+
+def print_adj_matrix(adj_matrix, final_data):
+    print("adjacency matrix:")
+    max_key_len = 0
+    for item in final_data:
+        if len(item) > max_key_len:
+            max_key_len = len(item)
+    
+    max_key_len = max_key_len + len("\t")
+    index  = 0
+    for item in sorted(final_data):
+        # if "/" in item:
+        #     item = item.split("/")[-1]
+        print(item, (" ")*(max_key_len - len(item)), end = " ")
+        print(adj_matrix[index])
+        index = index + 1
+    print()
+    
+def setup_adj_matrix(final_data):
+    key_position = {}
+    index = 0
+    for item in sorted(final_data):
+        # if "/" in item:
+        #     item = item.split("/")[-1]
+        if item not in key_position:
+            key_position[item] = index
+            index = index + 1
+    
+    
+    adj_matrix = [[0 for i in range(len(key_position))] for j in range(len(key_position))] 
+    
+    for key in sorted(final_data):
+        for item in final_data[key]:
+            # if "/" in key:
+            #     key = key.split("/")[-1]
+        
+            if "ipc" in item:
+                item = item.split("ipc ")[1]
+                item = item.strip()
+                # if "/" in item:
+                #     item = item.split("/")[-1]
+                    
+                adj_matrix[key_position[key]][key_position[item]] = 1
+            elif "network" in item:
+                adj_matrix[key_position[key]][key_position["network"]] = 1
+            elif "write_file" in item:
+                adj_matrix[key_position[key]][key_position["disk"]] = 1
+            
+    return adj_matrix
+    
+
+def print_graph_representation(nodes_list, edge_list, red_edges, black_edges):
+    import networkx as nx
+    import matplotlib.pyplot as plt
+    G = nx.DiGraph()
+    G.add_nodes_from(nodes_list)
+    G.add_edges_from(edge_list)
+    pos = nx.spring_layout(G)
+    nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'), 
+                        node_color = 'white', node_size = 1000)
+    nx.draw_networkx_labels(G, pos)
+    nx.draw_networkx_edges(G, pos, edgelist=red_edges, edge_color='r', arrows=True)
+    nx.draw_networkx_edges(G, pos, edgelist=black_edges, arrows=True)
+    plt.show()
+
+
+
 def print_gd(group_data):
     for key, value in group_data.items() :
         print(key)
@@ -34,7 +107,6 @@ def LCA(status, start, end, final_data):
                     if item not in newstatus:
                         newstatus[item] = []
 
-    print(newstatus)
     
     print("\nFLOW:\n")
     que = []
@@ -60,36 +132,75 @@ def LCA(status, start, end, final_data):
                 elif allow_one > 0 and status[item]['network'] != True:
                     que.append(item)
                     allow_one = allow_one - 1
-                    
 
-                
+def path_helper(start, end, status, stack, original_stack):
+    key = stack[-1]
+    for data in status[key]['from']:
+        stack.append(data)
+        path_helper(start, end, status, stack, original_stack)
+        
+        if start in stack:
+            print("PATH: ", end = " ")
+            tmp = []
+            for data in reversed(stack):
+                tmp.append(data)
+                print(data, end= " -> ")
+            tmp.append(end)
+            print(end)
+            if tmp not in final_paths:
+                final_paths.append(tmp)
+
+        stack.clear()
+        for data in original_stack:
+            stack.append(data)
+        if key not in stack:
+            stack.append(key)
+        
+        
+def print_all_paths(start, end, final_data, status):
+    endpoints = []
+    for key, value in status.items():
+        if value[end] == True:
+            endpoints.append(key)
+    
+    for item in endpoints:
+        stack = []
+        stack.append(item)
+        original_stack = []
+        original_stack.append(item)
+        path_helper(start, end, status, stack, original_stack)
+    
+    print()
 
 def DFS(start, end, final_data):
+    
     que = []
     status = {}
     
     que.append(start)
-    status[start] = {"network": False, "from": []}
+    status[start] = {"disk":False,"network": False, "from": []}
     
     while len(que) > 0:
         key = que.pop()
+        
+        
         for item in final_data[key]:
             if "ipc" in item:
                 item = item.split("ipc ")[1]
                 item = item.strip()
                 if item not in status:
                     que.append(item)
-                    status[item] = {"network": False, "from": []}
+                    status[item] = {"disk":False,"network": False, "from": []}
                     status[item]["from"].append(key)
                 else:
                     status[item]["from"].append(key)
-            if end in item:
+
+            elif "write_file" in item:
+                status[key]["disk"] = True
+
+            elif "network" in item:
                 status[key]["network"] = True
-    for key, value in status.items() :
-        print(key)
-        for key1, value1 in value.items() :
-            print("\t", key1, value1)
-    LCA(status, start, end, final_data)
+    return status
         
             
 
@@ -104,7 +215,28 @@ f =  open(filename, "r")
 
 data = f.read()
 final_data = set_final_data(data)
-print(final_data)
-#print_gd(final_data)
+adj_matrix = setup_adj_matrix(final_data)
+print_adj_matrix(adj_matrix, final_data)
 
-DFS("F", "network", final_data)
+# print_gd(final_data)
+
+
+
+# input_data = input("Enter starting and ending node (separated by a space):\n")
+# start, end = input_data.split()
+# status = DFS(start, end, final_data)
+
+start = "A"
+end = "network"
+status = DFS("A", "network", final_data)
+
+# start = "A"
+# end = "disk"
+# status = DFS("A", "disk", final_data)
+print_all_paths(start, end, final_data, status)
+
+
+# for key, value in status.items() :
+#     print(key)
+#     print("\t", value)
+LCA(status, start, end, final_data)
