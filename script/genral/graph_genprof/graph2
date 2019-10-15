@@ -1,0 +1,29 @@
+ Process A
+	 socket_ipc  B
+
+	 socket_ipc  C
+
+ Process B
+	 socket_ipc  D
+     socket_ipc  E
+     
+
+ Process C
+
+	 socket_ipc  E
+
+ Process D
+
+	 write_file  /dev/pts/0
+
+ Process E
+	 network  010.192.046.020
+     socket_ipc  F
+
+	 write_file  /dev/pts/0
+
+ Process F
+	 network  010.192.046.020
+
+	 write_file  /dev/pts/0
+

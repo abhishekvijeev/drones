@@ -195,12 +195,12 @@ def print_dominator(status, final_data, end):
         if str(item) != "network" and str(item) != "disk":
             flag = True
             for val in final_paths:
-                if item not in val:
-                    # if status[item][end] == False:
+                if status[item][end] == True  or item not in val:
                     flag = False
                     break
             if flag:
                 print(item, end = ",")
+                
     print()
 
 def DFS(start, end, final_data):
