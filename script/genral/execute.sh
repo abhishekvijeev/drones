@@ -7,5 +7,5 @@ cd ~/drones/script/genral/graph_genprof
 cd ~/drones/script/genral/apparmor
 ./filter.sh ~/kernel_log > ~/filter_log
 
-code ~/filter_graph ~/filter_log
+code ~/filter_graph ~/filter_log ~/kernel_log
 
