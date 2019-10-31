@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/mknod  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

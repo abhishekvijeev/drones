@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/gunzip  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

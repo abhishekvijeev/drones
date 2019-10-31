@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/hostname  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

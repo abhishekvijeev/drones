@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/fgconsole  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

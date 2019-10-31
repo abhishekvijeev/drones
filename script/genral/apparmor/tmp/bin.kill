@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/kill  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

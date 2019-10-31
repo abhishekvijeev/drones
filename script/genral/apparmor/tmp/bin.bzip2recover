@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/bzip2recover  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

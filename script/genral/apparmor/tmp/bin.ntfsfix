@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/ntfsfix  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

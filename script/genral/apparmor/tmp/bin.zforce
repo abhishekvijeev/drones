@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/zforce  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

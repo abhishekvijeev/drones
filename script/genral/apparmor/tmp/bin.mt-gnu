@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/mt-gnu  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

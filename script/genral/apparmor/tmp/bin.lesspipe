@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/lesspipe  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

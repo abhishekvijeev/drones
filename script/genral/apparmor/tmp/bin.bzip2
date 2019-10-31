@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/bzip2  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

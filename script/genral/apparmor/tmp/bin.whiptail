@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/whiptail  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

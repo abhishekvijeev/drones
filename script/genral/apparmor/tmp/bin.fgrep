@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/fgrep  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/plymouth  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

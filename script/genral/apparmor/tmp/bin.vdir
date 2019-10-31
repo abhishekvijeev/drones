@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/vdir  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

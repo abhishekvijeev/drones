@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/fusermount  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

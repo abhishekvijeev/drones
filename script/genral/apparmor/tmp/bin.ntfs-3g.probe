@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/ntfs-3g.probe  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/date  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

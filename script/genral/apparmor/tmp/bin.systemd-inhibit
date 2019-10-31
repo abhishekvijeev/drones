@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/systemd-inhibit  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

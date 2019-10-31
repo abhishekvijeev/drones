@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/efibootmgr  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

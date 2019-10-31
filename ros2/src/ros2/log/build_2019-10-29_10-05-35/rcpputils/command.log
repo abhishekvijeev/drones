@@ -1,0 +1,1 @@
+Invoking command in '/home/abhishek/ros2_ws/src/ros2/build/rcpputils': /usr/bin/cmake /home/abhishek/ros2_ws/src/ros2/rcpputils -DSECURITY=ON -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/abhishek/ros2_ws/src/ros2/install/rcpputils

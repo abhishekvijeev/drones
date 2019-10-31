@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/nc.openbsd  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

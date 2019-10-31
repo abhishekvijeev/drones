@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/ntfsls  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

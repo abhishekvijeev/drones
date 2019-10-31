@@ -1,0 +1,2 @@
+Invoking command in '/home/abhishek/ros2_ws/src/ros2/build/ament_cmake_ros': /usr/bin/cmake /home/abhishek/ros2_ws/src/ros2/ament_cmake_ros/ament_cmake_ros -DSECURITY=ON -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/abhishek/ros2_ws/src/ros2/install/ament_cmake_ros
+Invoked command in '/home/abhishek/ros2_ws/src/ros2/build/ament_cmake_ros' returned '1': /usr/bin/cmake /home/abhishek/ros2_ws/src/ros2/ament_cmake_ros/ament_cmake_ros -DSECURITY=ON -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/abhishek/ros2_ws/src/ros2/install/ament_cmake_ros

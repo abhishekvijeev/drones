@@ -1,0 +1,1 @@
+Invoking command in '/home/abhishek/ros2_ws/src/ros2/build/python_cmake_module': /usr/bin/cmake /home/abhishek/ros2_ws/src/ros2/rosidl_python/python_cmake_module -DSECURITY=ON -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/abhishek/ros2_ws/src/ros2/install/python_cmake_module

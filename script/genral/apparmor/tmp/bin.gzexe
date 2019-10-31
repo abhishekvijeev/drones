@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/gzexe  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

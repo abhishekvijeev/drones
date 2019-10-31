@@ -1,0 +1,1 @@
+Invoking command in '/home/abhishek/ros2_ws/src/ros2/build/launch': PYTHONPATH=/home/abhishek/ros2_ws/src/ros2/install/launch/lib/python3.7/site-packages: /usr/bin/python3 setup.py develop --prefix /home/abhishek/ros2_ws/src/ros2/install/launch --no-deps

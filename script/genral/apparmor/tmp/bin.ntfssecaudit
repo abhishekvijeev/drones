@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/ntfssecaudit  flags=(complain){ 
+  #include <abstractions/base> 
+
+}

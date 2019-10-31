@@ -1,0 +1,6 @@
+#include <tunables/global> 
+
+/bin/uname  flags=(complain){ 
+  #include <abstractions/base> 
+
+}
