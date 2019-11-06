@@ -1742,7 +1742,7 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				unix_dom_sock = unix_sk(sk);
 				peer = unix_dom_sock->peer;
 				peer_ctx = SK_CTX(peer);
-				peer_sk_label = aa_get_label(peer_ctx);
+				peer_sk_label = aa_get_label(peer_ctx->label);
 				
 				printk (KERN_INFO "apparmor_socket_sendmsg: unix_send from %s to %s\n", curr_label->hname, peer_sk_label->hname);
 
