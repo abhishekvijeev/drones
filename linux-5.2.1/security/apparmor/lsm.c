@@ -1734,7 +1734,8 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				// printk (KERN_INFO "apparmor_socket_sendmsg: address pair = %lld, port_pair = %d \n", sock->sk->sk_addrpair, sock->sk->sk_portpair);
 				// printk (KERN_INFO "apparmor_socket_sendmsg: desti addr = %d, desti port = %d,  sk_rcv_saddr = %d, sk_num = %d \n", sock->sk->sk_daddr, 														sock->sk->sk_dport, sock->sk->sk_rcv_saddr, sock->sk->sk_num);
 
-				struct 	unix_sock *unix, *peer;
+				struct unix_sock *unix;
+				struct unix_sock *peer;
 				struct aa_label *peer_sk_label;
 				struct aa_sk_ctx *peer_ctx;
 
