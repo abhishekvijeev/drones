@@ -1435,31 +1435,39 @@ static void apparmor_sk_clone_security(const struct sock *sk,
 	new->peer = aa_get_label(ctx->peer);
 }
 
+static int apparmor_unix_stream_connect(struct sock *sock, struct sock *other,
+					struct sock *newsk)
+{
+	printk (KERN_INFO "apparmor_unix_stream_connect\n");
+	return 0;
+}
 
 static int apparmor_unix_may_send (struct socket *sock, struct socket *other)
 {
-	struct aa_sk_ctx *ctx_sender = SK_CTX(sock->sk);
-	struct aa_label *sender_label = aa_get_label(ctx_sender->label);
+	// struct aa_sk_ctx *ctx_sender = SK_CTX(sock->sk);
+	// struct aa_label *sender_label = aa_get_label(ctx_sender->label);
 
-	struct aa_sk_ctx *ctx_recv = SK_CTX(other->sk);
-	struct aa_label *recv_label = aa_get_label(ctx_recv->label);
+	// struct aa_sk_ctx *ctx_recv = SK_CTX(other->sk);
+	// struct aa_label *recv_label = aa_get_label(ctx_recv->label);
 	
-	struct aa_profile *profile;
-	char *curr_domain = NULL;
+	// struct aa_profile *profile;
+	// char *curr_domain = NULL;
 
-	printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+	printk (KERN_INFO "apparmor_unix_may_send\n");
 
-	if (sender_label != NULL && recv_label != NULL)
-	{
-		fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-		if(curr_domain != NULL)
-		{
-			printk (KERN_INFO "apparmor_unix_may_send: Current process %s\n", current->comm);
-			printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
-		}
-		aa_put_label(sender_label);
-		aa_put_label(recv_label);
-	}
+	// printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+
+	// if (sender_label != NULL && recv_label != NULL)
+	// {
+	// 	fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+	// 	if(curr_domain != NULL)
+	// 	{
+	// 		printk (KERN_INFO "apparmor_unix_may_send: Current process %s\n", current->comm);
+	// 		printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+	// 	}
+	// 	aa_put_label(sender_label);
+	// 	aa_put_label(recv_label);
+	// }
 	return 0;
 	
 }
@@ -2465,6 +2473,7 @@ static struct security_hook_list apparmor_hooks[] __lsm_ro_after_init = {
 
 
 	LSM_HOOK_INIT(unix_may_send, apparmor_unix_may_send),
+	LSM_HOOK_INIT(unix_stream_connect, apparmor_unix_stream_connect),
 	LSM_HOOK_INIT(socket_create, apparmor_socket_create),
 	LSM_HOOK_INIT(socket_post_create, apparmor_socket_post_create),
 	LSM_HOOK_INIT(socket_bind, apparmor_socket_bind),
