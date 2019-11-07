@@ -1450,9 +1450,19 @@ static int apparmor_unix_stream_connect(struct sock *sock, struct sock *other,
 	// struct aa_profile *profile;
 	// char *curr_domain = NULL;
 
-	printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s, newsk = %s\n", sender_label->hname, recv_label->hname, newsk_label->hname);
+	if(sender_label)
+	{
+		printk (KERN_INFO "apparmor_unix_stream_connect: sender = %s\n", sender_label->hname);
+	}
+	if(recv_label)
+	{
+		printk (KERN_INFO "apparmor_unix_stream_connect: receiver = %s\n", recv_label->hname);
+	}
+	if(newsk_label)
+	{
+		printk (KERN_INFO "apparmor_unix_stream_connect: newsk = %s\n", newsk_label->hname);
+	}
 
-	printk (KERN_INFO "apparmor_unix_stream_connect\n");
 	return 0;
 }
 
