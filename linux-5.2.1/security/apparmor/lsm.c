@@ -1477,7 +1477,12 @@ static int apparmor_unix_may_send (struct socket *sock, struct socket *other)
 	// struct aa_profile *profile;
 	// char *curr_domain = NULL;
 
-	printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+	if(sender_label && recv_label)
+	{
+		printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+	}
+
+	
 
 	// if (sender_label != NULL && recv_label != NULL)
 	// {
