@@ -1438,24 +1438,36 @@ static void apparmor_sk_clone_security(const struct sock *sk,
 static int apparmor_unix_stream_connect(struct sock *sock, struct sock *other,
 					struct sock *newsk)
 {
+	struct aa_sk_ctx *ctx_sender = SK_CTX(sock->sk);
+	struct aa_label *sender_label = aa_get_label(ctx_sender->label);
+
+	struct aa_sk_ctx *ctx_recv = SK_CTX(other->sk);
+	struct aa_label *recv_label = aa_get_label(ctx_recv->label);
+	
+	struct aa_sk_ctx *ctx_newsk = SK_CTX(newsk->sk);
+	struct aa_label *newsk_label = aa_get_label(ctx_newsk->label);
+
+	// struct aa_profile *profile;
+	// char *curr_domain = NULL;
+
+	printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s, newsk = %s\n", sender_label->hname, recv_label->hname, newsk_label->hname);
+
 	printk (KERN_INFO "apparmor_unix_stream_connect\n");
 	return 0;
 }
 
 static int apparmor_unix_may_send (struct socket *sock, struct socket *other)
 {
-	// struct aa_sk_ctx *ctx_sender = SK_CTX(sock->sk);
-	// struct aa_label *sender_label = aa_get_label(ctx_sender->label);
+	struct aa_sk_ctx *ctx_sender = SK_CTX(sock->sk);
+	struct aa_label *sender_label = aa_get_label(ctx_sender->label);
 
-	// struct aa_sk_ctx *ctx_recv = SK_CTX(other->sk);
-	// struct aa_label *recv_label = aa_get_label(ctx_recv->label);
+	struct aa_sk_ctx *ctx_recv = SK_CTX(other->sk);
+	struct aa_label *recv_label = aa_get_label(ctx_recv->label);
 	
 	// struct aa_profile *profile;
 	// char *curr_domain = NULL;
 
-	printk (KERN_INFO "apparmor_unix_may_send\n");
-
-	// printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+	printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
 
 	// if (sender_label != NULL && recv_label != NULL)
 	// {
