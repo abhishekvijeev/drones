@@ -44,6 +44,7 @@
   owner /home/*/ros2_ws/build/rosidl_typesupport_fastrtps_cpp/librosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/sensor_msgs/libsensor_msgs__rosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/std_msgs/libstd_msgs__rosidl_typesupport_fastrtps_cpp.so mr,
+  /home/abhishek/ros2_ws/build/std_msgs/libstd_msgs__rosidl_typesupport_cpp.so rm,
   owner /home/*/ros2_ws/install/fastcdr/lib/libfastcdr.so.1.0.9 mr,
   owner /home/*/ros2_ws/install/fastrtps/lib/libfastrtps.so.1.8.0 mr,
 
