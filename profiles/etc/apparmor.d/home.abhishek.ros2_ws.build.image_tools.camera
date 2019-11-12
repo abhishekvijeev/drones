@@ -1,22 +1,17 @@
-# Last Modified: Wed Oct  9 11:23:41 2019
+# Last Modified: Tue Nov 12 10:02:02 2019
 #include <tunables/global>
 
-/home/abhishek/ros2_ws/build/image_tools/camera  {
+/home/abhishek/ros2_ws/build/image_tools/camera {
   #include <abstractions/base>
+  # include <abstractions/evince>
+  # include <abstractions/opencl-pocl>
  
 #  dte_domain camera,
 #  dte_net_domain camera,
 #  dte_net_domain filterapp,
+#  dte_net_domain showimage,
   
   /dev/ r,
-  /dev/pts/** rw,
-  /run/udev/data/** r,
-  /usr/lib/x86_64-linux-gnu/libgphoto2/** rm,
-  /usr/lib/x86_64-linux-gnu/libgphoto2_port/** rm,
-  /etc/fstab r,
-
-
-
   /dev/bus/usb/ r,
   /home/*/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_generator_c.so mr,
   /home/*/ros2_ws/build/libyaml_vendor/libyaml_install/lib/libyaml.so mr,
@@ -29,15 +24,22 @@
   /home/*/ros2_ws/build/rclcpp/librclcpp.so mr,
   /home/*/ros2_ws/build/rcutils/librcutils.so mr,
   /home/*/ros2_ws/build/rmw/librmw.so mr,
+  /home/*/ros2_ws/build/rmw_fastrtps_cpp/librmw_fastrtps_cpp.so mr,
+  /home/*/ros2_ws/build/rmw_fastrtps_shared_cpp/librmw_fastrtps_shared_cpp.so mr,
   /home/*/ros2_ws/build/rmw_implementation/librmw_implementation.so mr,
   /home/*/ros2_ws/build/rosgraph_msgs/librosgraph_msgs__rosidl_typesupport_cpp.so mr,
   /home/*/ros2_ws/build/rosidl_generator_c/librosidl_generator_c.so mr,
   /home/*/ros2_ws/build/rosidl_typesupport_c/librosidl_typesupport_c.so mr,
   /home/*/ros2_ws/build/rosidl_typesupport_cpp/librosidl_typesupport_cpp.so mr,
+  /home/*/ros2_ws/build/rosidl_typesupport_fastrtps_c/librosidl_typesupport_fastrtps_c.so mr,
+  /home/*/ros2_ws/build/rosidl_typesupport_fastrtps_cpp/librosidl_typesupport_fastrtps_cpp.so mr,
   /home/*/ros2_ws/build/sensor_msgs/libsensor_msgs__rosidl_typesupport_cpp.so mr,
   /home/*/ros2_ws/build/std_msgs/libstd_msgs__rosidl_typesupport_cpp.so mr,
+  /home/*/ros2_ws/install/fastcdr/lib/libfastcdr.so.1.0.9 mr,
+  /home/*/ros2_ws/install/fastrtps/lib/libfastrtps.so.1.8.0 mr,
   /home/abhishek/ros2_ws/build/image_tools/camera mr,
   /lib/x86_64-linux-gnu/ld-*.so mr,
+  /proc/sys/vm/nr_hugepages r,
   /sys/block/ r,
   /sys/bus/ r,
   /sys/bus/usb/devices/ r,
@@ -63,20 +65,21 @@
   /sys/devices/pci0000:00/0000:00:0b.0/usb1/uevent r,
   /sys/devices/system/node/ r,
   /sys/devices/system/node/node0/meminfo r,
+  /sys/kernel/mm/transparent_hugepage/enabled r,
   owner /home/*/feed.mp4 r,
   owner /home/*/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_typesupport_fastrtps_c.so mr,
   owner /home/*/ros2_ws/build/builtin_interfaces/libbuiltin_interfaces__rosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/geometry_msgs/libgeometry_msgs__rosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/rcl_interfaces/librcl_interfaces__rosidl_typesupport_fastrtps_c.so mr,
   owner /home/*/ros2_ws/build/rcl_interfaces/librcl_interfaces__rosidl_typesupport_fastrtps_cpp.so mr,
-  owner /home/*/ros2_ws/build/rmw_fastrtps_cpp/librmw_fastrtps_cpp.so mr,
-  owner /home/*/ros2_ws/build/rmw_fastrtps_shared_cpp/librmw_fastrtps_shared_cpp.so mr,
-  owner /home/*/ros2_ws/build/rosidl_typesupport_fastrtps_c/librosidl_typesupport_fastrtps_c.so mr,
-  owner /home/*/ros2_ws/build/rosidl_typesupport_fastrtps_cpp/librosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/sensor_msgs/libsensor_msgs__rosidl_typesupport_fastrtps_cpp.so mr,
   owner /home/*/ros2_ws/build/std_msgs/libstd_msgs__rosidl_typesupport_fastrtps_cpp.so mr,
-  owner /home/*/ros2_ws/install/fastcdr/lib/libfastcdr.so.1.0.9 mr,
-  owner /home/*/ros2_ws/install/fastrtps/lib/libfastrtps.so.1.8.0 mr,
+  owner /home/*/sros2_demo/demo_keys/camera/cert.pem r,
+  owner /home/*/sros2_demo/demo_keys/camera/governance.p7s r,
+  owner /home/*/sros2_demo/demo_keys/camera/identity_ca.cert.pem r,
+  owner /home/*/sros2_demo/demo_keys/camera/key.pem r,
+  owner /home/*/sros2_demo/demo_keys/camera/permissions.p7s r,
+  owner /home/*/sros2_demo/demo_keys/camera/permissions_ca.cert.pem r,
   owner /proc/*/mounts r,
 
 }
