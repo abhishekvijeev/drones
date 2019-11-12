@@ -41,6 +41,66 @@ def print_adj_matrix(adj_matrix, final_data):
         print(adj_matrix[index])
         index = index + 1
     print()
+import xml.etree.ElementTree as ET
+import os.path
+from os import path
+ignore_topic_list = {"rq/$/describe_parametersRequest",\
+"rq/$/get_parameter_typesRequest",\
+"rq/$/get_parametersRequest",\
+"rq/$/list_parametersRequest",\
+"rq/$/set_parametersRequest",\
+"rq/$/set_parameters_atomicallyRequest",\
+"rr/$/describe_parametersReply",\
+"rr/$/get_parameter_typesReply",\
+"rr/$/get_parametersReply",\
+"rr/$/list_parametersReply",\
+"rr/$/set_parametersReply",\
+"rr/$/set_parameters_atomicallyReply",\
+"rt/parameter_events"}
+
+def getMachingTopicNames(key, item):
+    name1 = key.split("/")[-1]
+    name2 = item.split("/")[-1]
+    pathname = "/home/abhishek/sros2_demo/demo_keys/$/permissions.xml"
+    publisher_map = []
+    matched_topics = []
+    if (path.exists(pathname.replace("$", name1))):
+        tree = ET.parse(pathname.replace("$", name1))
+        root = tree.getroot()
+        
+        for permissions in root.findall('permissions'):
+            for grant in permissions.findall('grant'):
+                for allow_rule in grant.findall('allow_rule'):
+                    for publish in allow_rule.findall('publish'):
+                        for topics in publish.findall('topics'):
+                            for topic in topics.findall('topic'):
+                                ignore_flag = False
+                                for data in ignore_topic_list:
+                                    if (data.replace("$", name1) == topic.text):
+                                        ignore_flag = True
+                                if not ignore_flag:
+                                    publisher_map.append(topic.text)
+                    
+    
+    if (path.exists(pathname.replace("$", name2))):
+        tree = ET.parse(pathname.replace("$", name2))
+        root = tree.getroot()
+        
+        for permissions in root.findall('permissions'):
+            for grant in permissions.findall('grant'):
+                for allow_rule in grant.findall('allow_rule'):
+                    for subscribe in allow_rule.findall('subscribe'):
+                        for topics in subscribe.findall('topics'):
+                            for topic in topics.findall('topic'):
+                                ignore_flag = False
+                                for data in ignore_topic_list:
+                                    if (data.replace("$", name2) == topic.text):
+                                        ignore_flag = True
+                                if not ignore_flag:
+                                    if topic.text in publisher_map:
+                                        matched_topics.append(topic.text)
+                    
+    return matched_topics
     
 def setup_adj_matrix(final_data):
     key_position = {}
@@ -53,8 +113,9 @@ def setup_adj_matrix(final_data):
             index = index + 1
     
     
-    adj_matrix = [[0 for i in range(len(key_position))] for j in range(len(key_position))] 
-    
+    adj_matrix = [[0 for i in range(len(key_position))] for j in range(len(key_position))]
+    topic_list = []
+
     for key in sorted(final_data):
         for item in final_data[key]:
             # if "/" in key:
@@ -67,12 +128,19 @@ def setup_adj_matrix(final_data):
                 #     item = item.split("/")[-1]
                     
                 adj_matrix[key_position[key]][key_position[item]] = 1
+                matched_topicnames = getMachingTopicNames(key, item)
+                if (len(matched_topicnames) > 0):
+                    name1 = key.split("/")[-1]
+                    name2 = item.split("/")[-1]
+                    if (name1 + " --> " + name2  + " with topics " + str(matched_topicnames)) not in topic_list:
+                        topic_list.append( name1 + " --> " + name2  + " with topics " + str(matched_topicnames))
+                
             elif "network" in item:
                 adj_matrix[key_position[key]][key_position["network"]] = 1
             elif "write_file" in item:
                 adj_matrix[key_position[key]][key_position["disk"]] = 1
             
-    return adj_matrix
+    return adj_matrix, topic_list
     
 
 def print_graph_representation(nodes_list, edge_list, red_edges, black_edges):
@@ -246,20 +314,22 @@ f =  open(filename, "r")
 
 data = f.read()
 final_data = set_final_data(data)
-adj_matrix = setup_adj_matrix(final_data)
+adj_matrix, topic_list = setup_adj_matrix(final_data)
 print_adj_matrix(adj_matrix, final_data)
-
+for item in topic_list:
+    print(item)
+print()
 # print_gd(final_data)
 
 
 
-# input_data = input("Enter starting and ending node (separated by a space):\n")
-# start, end = input_data.split()
-# status = DFS(start, end, final_data)
+input_data = input("Enter starting and ending node (separated by a space):\n")
+start, end = input_data.split()
+status = DFS(start, end, final_data)
 
-start = "A"
-end = "network"
-status = DFS("A", "network", final_data)
+# start = "A"
+# end = "network"
+# status = DFS("A", "network", final_data)
 
 # start = "A"
 # end = "disk"
