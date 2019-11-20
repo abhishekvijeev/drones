@@ -9,3 +9,11 @@ colcon build --symlink-install --cmake-args -DSECURITY=ON --packages-select demo
 
 
 rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y --os=ubuntu:xenial --skip-keys python-imaging 
+
+
+//change node name 
+ros2 run demo_nodes_cpp talker __node:=listener
+
+//change topic name 
+ros2 run demo_nodes_cpp listener rostopic://chatter:=demo
+

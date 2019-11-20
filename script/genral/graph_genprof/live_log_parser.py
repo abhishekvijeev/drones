@@ -42,12 +42,14 @@ def followFile(thefile):
 
 if __name__ == '__main__':
     pid = getDmesgProcessPID()
+    #pid = int(input("Enter pid:"))
     filename = "/proc/$/fd/3"
     
     logfile = open(filename.replace("$", str(pid)),"r")
     loglines = followFile(logfile)
     group_data = {}
     for line in loglines:
+        #print line,
         if "[GRAPH_GEN]" in line:
             # print line,
             # print (line, end = "")
