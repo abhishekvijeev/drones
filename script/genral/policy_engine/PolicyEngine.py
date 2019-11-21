@@ -3,8 +3,9 @@ import sys, os
 import threading 
 import xml.etree.ElementTree as ET
 
-
-
+#extra space at the end is required
+KILLER_PROCESS_SH = "/home/abhishek/sros2_demo/killprocess.sh "
+SROS_PROFILE_SH = "/home/abhishek/sros2_demo/sros_profile_generator.sh "
 
 
 def parse_topictype_data(topic_with_type, topic_with_type_lock, recv_data):
@@ -106,12 +107,31 @@ def read_all_sros_profiles (app_with_topic):
                     if tmp not in app_with_topic[app_name]["subscriber"]:
                         app_with_topic[app_name]["subscriber"].append(tmp)
                 
-                
+
+def get_new_msgtype_name(msgtype_applist, msgtype):
+    if msgtype not in msgtype_applist:
+        msgtype_applist[msgtype] = []
+    
+    app_name = "tmp" + str(len(msgtype_applist[msgtype]))
+    msgtype_applist[msgtype].append(app_name)
+    return app_name
+    
+
+
+def remove_new_msgtype_name(msgtype_applist, msgtype, app_name):
+    if msgtype in msgtype_applist:
+        if app_name in msgtype_applist[msgtype]:
+            msgtype_applist[msgtype].remove(app_name)
+            
+
             
 
 def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
     read_all_sros_profiles (app_with_topic)
     redirection_list = {}
+    msgtype_applist = {}
+    topic_change_list = {}
+    command_list = {}
     while(True):
         data = input("Enter command:")
         if (data == "get types"):
@@ -139,24 +159,82 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
                         # else:
                         #     print ("\t\t", topic)
                     topic_with_type_lock.release()
+        elif (data == "print list"):
+            print ("redirection_list:\n", redirection_list)
+            print ("topic_change_list:\n", topic_change_list)
         elif "redirect" in data:
             values = data.split(" ")
+            sros_profile_generator = ""
             if (len(values) == 2):
                 redirect_process_name = values[1]
+                    
                 for topic in app_with_topic[redirect_process_name]['publisher']:
                     topic = topic.replace("rt", "")
                     if topic == "/rosout" or topic == "/flowcontroller":
                         continue
-                    
+
                     topic_with_type_lock.acquire()
                     if topic in topic_with_type:
                         for newprocesstype in topic_with_type[topic]:
                             names = newprocesstype.split("/")
-                            fullname = names[0] + "_" + names[-1].lower()
-                            print (fullname)
+                            msgtype_name = names[0] + "_" + names[-1].lower()
+                            
+                            app_name_extension = get_new_msgtype_name(msgtype_applist, msgtype_name)
+                            app_name = msgtype_name + "_" + app_name_extension
+                            
+                            if (app_name + " " + msgtype_name) not in sros_profile_generator:
+                                sros_profile_generator = sros_profile_generator + (app_name + " " + msgtype_name) + " "
+
+
+                            if redirect_process_name not in redirection_list:
+                                redirection_list[redirect_process_name] = {}
+                                topic_change_list[redirect_process_name] = {}
+                                command_list[redirect_process_name] = []
+                            
+                            if msgtype_name not in redirection_list[redirect_process_name]:
+                                redirection_list[redirect_process_name][msgtype_name] = []
+                            
+                            if topic not in redirection_list[redirect_process_name][msgtype_name]:
+                                redirection_list[redirect_process_name][msgtype_name].append(topic)
+                                redirection_list[redirect_process_name][msgtype_name].append(app_name_extension)
+                            
+                            if topic not in topic_change_list[redirect_process_name]:
+                                topic_change_list[redirect_process_name] = {"tmp"+str(len(topic_change_list[redirect_process_name])):topic}
+                            else:
+                                topic_change_list[redirect_process_name] = {"tmp"+str(len(topic_change_list[redirect_process_name])):topic}
                     topic_with_type_lock.release()
+
+                #send command to sros_profile_generator.sh to generate sros profiles and run application in background
+                if len(sros_profile_generator) > 0:
+                    command_list[redirect_process_name].append(sros_profile_generator)
+                    print ("Sending command to sros_profile_generator with parameter:", sros_profile_generator)
+                    #os.system(SROS_PROFILE_SH + sros_profile_generator)
+
+                    #send command to change apparmor profile
+                    #send command to redirect ros2 topics
+                    
+
             else:
                 print("Error! command: redirect <ros process>")
+        elif "revert" in data:
+            values = data.split(" ")
+            if (len(values) == 2):
+                redirect_process_name = values[1]
+                #send command to change apparmor profile
+                #send command to redirect ros2 topics
+
+                #delete entries
+                if redirect_process_name in redirection_list:
+                    for key, value in redirection_list[redirect_process_name].items():
+                        remove_new_msgtype_name(msgtype_applist, key, value[1])
+                    del redirection_list[redirect_process_name]
+                    del topic_change_list[redirect_process_name]
+                if redirect_process_name in command_list:
+                    print ("Sending command to killprocess with parameter:", command_list[redirect_process_name][0])
+                    #os.system(KILLER_PROCESS_SH + command_list[redirect_process_name][0])
+
+            else:
+                print("Error! command: revert <ros process>")
 
 if __name__ == '__main__': 
     topic_with_type = {}
