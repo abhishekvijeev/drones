@@ -131,7 +131,7 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
     redirection_list = {}
     msgtype_applist = {}
     topic_change_list = {}
-    command_list = {}
+    sros_policy_cmd_list = {}
     while(True):
         data = input("Enter command:")
         if (data == "get types"):
@@ -189,7 +189,7 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
                             if redirect_process_name not in redirection_list:
                                 redirection_list[redirect_process_name] = {}
                                 topic_change_list[redirect_process_name] = {}
-                                command_list[redirect_process_name] = []
+                                sros_policy_cmd_list[redirect_process_name] = []
                             
                             if msgtype_name not in redirection_list[redirect_process_name]:
                                 redirection_list[redirect_process_name][msgtype_name] = []
@@ -206,7 +206,7 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
 
                 #send command to sros_profile_generator.sh to generate sros profiles and run application in background
                 if len(sros_profile_generator) > 0:
-                    command_list[redirect_process_name].append(sros_profile_generator)
+                    sros_policy_cmd_list[redirect_process_name].append(sros_profile_generator)
                     print ("Sending command to sros_profile_generator with parameter:", sros_profile_generator)
                     #os.system(SROS_PROFILE_SH + sros_profile_generator)
 
@@ -229,9 +229,9 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
                         remove_new_msgtype_name(msgtype_applist, key, value[1])
                     del redirection_list[redirect_process_name]
                     del topic_change_list[redirect_process_name]
-                if redirect_process_name in command_list:
-                    print ("Sending command to killprocess with parameter:", command_list[redirect_process_name][0])
-                    #os.system(KILLER_PROCESS_SH + command_list[redirect_process_name][0])
+                if redirect_process_name in sros_policy_cmd_list:
+                    print ("Sending command to killprocess with parameter:", sros_policy_cmd_list[redirect_process_name][0])
+                    #os.system(KILLER_PROCESS_SH + sros_policy_cmd_list[redirect_process_name][0])
 
             else:
                 print("Error! command: revert <ros process>")
