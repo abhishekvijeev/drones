@@ -20,7 +20,7 @@ for ((i = 1; i <= $#; i+=2 )); do
         exit 1
     fi
     #to kill process
-    ps -ef | grep -i "$second __node:=$first" | grep -v grep | awk '{print "kill " $2}' | sh
+    ps -ef | grep -i "$second __node:=$first" | grep -v "/bin/bash" | grep -v grep | grep -v "ros2 run" | grep -v "killprocess.sh"  | awk '{print "kill " $2}' | sh
 
 
     rm -rf demo_keys/$first

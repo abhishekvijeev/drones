@@ -9,7 +9,7 @@ if (( $# < 2 ));
 fi
 
 USERNAME=$(whoami)
-source /home/$USERNAME/ros2_ws/install/local_setup.bash
+# source /home/$USERNAME/ros2_ws/install/local_setup.bash
 
 for ((i = 1; i <= $#; i+=2 )); do
   first=${!i}
@@ -26,14 +26,14 @@ for ((i = 1; i <= $#; i+=2 )); do
   
   cd /home/$USERNAME/sros2_demo
 
-  ros2 security create_key demo_keys /$first
+  ros2 security create_key demo_keys /$first 
 
   #create new sros policies from existing templates for that msg_type
   cp policies/templates/$second.xml policies/tmp/$first.xml
   sed -i -e "s/\($second\)/$first/" policies/tmp/$first.xml
 
-  ros2 security create_permission demo_keys /$first policies/tmp/$first.xml
-
+  ros2 security create_permission demo_keys /$first policies/tmp/$first.xml 
+  
   ros2 run templates $second __node:=$first > /dev/null 2>&1 &
 
 done

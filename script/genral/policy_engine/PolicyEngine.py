@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 #extra space at the end is required
 KILLER_PROCESS_SH = "/home/abhishek/sros2_demo/killprocess.sh "
 SROS_PROFILE_SH = "/home/abhishek/sros2_demo/sros_profile_generator.sh "
-
+ROS2_TOPIC_CHANGER_SH = "/home/abhishek/sros2_demo/ros2_topic_changer.sh "
 
 def parse_topictype_data(topic_with_type, topic_with_type_lock, recv_data):
     for item in recv_data.split("[Topic_Type] "):
@@ -21,7 +21,13 @@ def parse_topictype_data(topic_with_type, topic_with_type_lock, recv_data):
             for types in data[1:]:
                 types = types.strip()
                 if types not in topic_with_type[topic_name]:
-                    topic_with_type[topic_name].append(types)
+                    flag = True
+                    for val in range(0,100):
+                        if topic_name == "/tmp"+str(val):
+                            flag =False
+                            break
+                    if flag:
+                        topic_with_type[topic_name].append(types)
             topic_with_type_lock.release()
             
     
@@ -123,6 +129,32 @@ def remove_new_msgtype_name(msgtype_applist, msgtype, app_name):
         if app_name in msgtype_applist[msgtype]:
             msgtype_applist[msgtype].remove(app_name)
             
+# {'camera': {'sensor_msgs_image': ['/imageraw', 'tmp0']}}
+# ros2 run templates sensor_msgs_image __node:=sensor_msgs_image_tmp1
+
+def Generate_Topic_Changer_Command(cmd_type, process_name, redirection_list, topic_change_list):
+    cmd = ""
+    if process_name in topic_change_list:
+        for key, value in topic_change_list[process_name].items():
+            key = key.replace("/","")
+            value = value.replace("/","")
+            if cmd_type == "redirect":
+                cmd = cmd + " pub " + "/" + process_name + " " + key + " " + value 
+            elif cmd_type == "revert":
+                cmd = cmd + " pub " + "/" + process_name + " " + value + " " + key 
+    
+    if process_name in redirection_list:
+        for key, value in redirection_list[process_name].items():
+            app_name = "\'" + key + " __node:=" + key + "_" + value[1] + "\'"
+            topic = value[0].replace("/","")
+            if cmd_type == "redirect":
+                cmd = cmd + " pub " +  app_name + " " + "output" + " " + topic 
+                cmd = cmd + " sub " +  app_name + " " + "input" + " " + topic_change_list[process_name][value[0]].replace("/","")
+            elif cmd_type == "revert":
+                cmd = cmd + " pub " +  app_name + " " + topic + " " + "output" 
+                cmd = cmd + " sub " +  app_name + " " + topic_change_list[process_name][value[0]].replace("/","") + " " + "input"
+    cmd = cmd.strip()
+    return cmd
 
             
 
@@ -162,6 +194,8 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
         elif (data == "print list"):
             print ("redirection_list:\n", redirection_list)
             print ("topic_change_list:\n", topic_change_list)
+            print ("msgtype_applist:\n", msgtype_applist)
+            print ("sros_policy_cmd_list:\n", sros_policy_cmd_list)
         elif "redirect" in data:
             values = data.split(" ")
             sros_profile_generator = ""
@@ -197,21 +231,28 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
                             if topic not in redirection_list[redirect_process_name][msgtype_name]:
                                 redirection_list[redirect_process_name][msgtype_name].append(topic)
                                 redirection_list[redirect_process_name][msgtype_name].append(app_name_extension)
+                                
                             
                             if topic not in topic_change_list[redirect_process_name]:
-                                topic_change_list[redirect_process_name] = {"tmp"+str(len(topic_change_list[redirect_process_name])):topic}
-                            else:
-                                topic_change_list[redirect_process_name] = {"tmp"+str(len(topic_change_list[redirect_process_name])):topic}
+                                topic_change_list[redirect_process_name][topic] = "tmp"+str(len(topic_change_list[redirect_process_name]))
+                            
                     topic_with_type_lock.release()
 
                 #send command to sros_profile_generator.sh to generate sros profiles and run application in background
                 if len(sros_profile_generator) > 0:
-                    sros_policy_cmd_list[redirect_process_name].append(sros_profile_generator)
-                    print ("Sending command to sros_profile_generator with parameter:", sros_profile_generator)
-                    #os.system(SROS_PROFILE_SH + sros_profile_generator)
+                    if sros_profile_generator not in sros_policy_cmd_list[redirect_process_name]:
+                        sros_policy_cmd_list[redirect_process_name].append(sros_profile_generator)
+                        print ("Sending command to sros_profile_generator with parameter:\n", sros_profile_generator)
+                        os.system(SROS_PROFILE_SH + sros_profile_generator)
 
-                    #send command to change apparmor profile
-                    #send command to redirect ros2 topics
+                #send command to change apparmor profile
+                
+                #send command to redirect ros2 topics
+                topic_changer_cmd = Generate_Topic_Changer_Command("redirect", redirect_process_name, redirection_list, topic_change_list)
+                if (len(topic_changer_cmd) > 0):
+                    print ("topic_changer_cmd:\n", topic_changer_cmd)
+                    os.system(ROS2_TOPIC_CHANGER_SH + topic_changer_cmd)
+                
                     
 
             else:
@@ -222,6 +263,12 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
                 redirect_process_name = values[1]
                 #send command to change apparmor profile
                 #send command to redirect ros2 topics
+                topic_changer_cmd = Generate_Topic_Changer_Command("revert", redirect_process_name, redirection_list, topic_change_list)
+                if (len(topic_changer_cmd) > 0):
+                    print ("topic_changer_cmd:\n", topic_changer_cmd)
+                    os.system(ROS2_TOPIC_CHANGER_SH + topic_changer_cmd)
+
+                
 
                 #delete entries
                 if redirect_process_name in redirection_list:
@@ -231,8 +278,8 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
                     del topic_change_list[redirect_process_name]
                 if redirect_process_name in sros_policy_cmd_list:
                     print ("Sending command to killprocess with parameter:", sros_policy_cmd_list[redirect_process_name][0])
-                    #os.system(KILLER_PROCESS_SH + sros_policy_cmd_list[redirect_process_name][0])
-
+                    os.system(KILLER_PROCESS_SH + sros_policy_cmd_list[redirect_process_name][0])
+                    del sros_policy_cmd_list[redirect_process_name]
             else:
                 print("Error! command: revert <ros process>")
 

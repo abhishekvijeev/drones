@@ -9,7 +9,7 @@ if (( $# < 2 ));
 fi
 
 USERNAME=$(whoami)
-source /home/$USERNAME/ros2_ws/install/local_setup.bash
+# source /home/$USERNAME/ros2_ws/install/local_setup.bash
 
 for ((i = 1; i <= $#; i+=4 )); do
   first=${!i}
@@ -24,13 +24,15 @@ for ((i = 1; i <= $#; i+=4 )); do
       echo "Error in arguments! Should be in 4s"
       exit 1
   fi
-  pid=`ps -ef | grep -i $second | grep -v "/bin/bash" | grep -v grep | awk '{print $2}'`
+  
+  pid=`ps -ef | grep -i "$second" | grep -v "/bin/bash" | grep -v grep | grep -v "ros2 run" | grep -v "ros2_topic_changer.sh" | awk '{print $2}'`
   if [[ -z "$pid" ]]
     then
       echo "$second process not running or was not able to find its pid"
       exit
   fi
-  echo $first $pid $third $fourth 
+  
+  # echo $first $pid $third $fourth 
   command="data: 2, $first, $pid, $third, $fourth"
   ros2 topic pub /flowcontroller std_msgs/String "$command" -1
 
