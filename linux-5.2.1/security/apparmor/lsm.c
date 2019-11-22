@@ -1447,6 +1447,7 @@ static int apparmor_unix_stream_connect(struct sock *sock, struct sock *other,
 	struct aa_profile *profile;
 	char *sender_domain = NULL;
 	char *recv_domain = NULL;
+	bool allow = false;
 
 	if(sender_label && recv_label)
 	{
@@ -1456,16 +1457,25 @@ static int apparmor_unix_stream_connect(struct sock *sock, struct sock *other,
 			fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &sender_domain));
 			fn_for_each (recv_label, profile, apparmor_getlabel_domain(profile, &recv_domain));
 
-			if(sender_domain != NULL)
+			// if(sender_domain != NULL)
+			// {
+			// 	printk (KERN_INFO "apparmor_unix_stream_connect: sender_domain = %s\n", sender_domain);
+			// }
+			// if(recv_domain != NULL)
+			// {
+			// 	printk (KERN_INFO "apparmor_unix_stream_connect: recv_domain = %s\n", recv_domain);
+			// }
+
+			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
+			if(allow)
 			{
-				printk (KERN_INFO "apparmor_unix_stream_connect: sender_domain = %s\n", sender_domain);
+				printk (KERN_INFO "apparmor_unix_stream_connect: flow from sender_domain %s to recv_domain %s is allowed\n", sender_domain, recv_domain);
 			}
-			if(recv_domain != NULL)
+			else
 			{
-				printk (KERN_INFO "apparmor_unix_stream_connect: recv_domain = %s\n", recv_domain);
+				printk (KERN_INFO "apparmor_unix_stream_connect: flow from sender_domain %s to recv_domain %s is not allowed\n", sender_domain, recv_domain);
 			}
 
-			// fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
 		}
 	}
 
