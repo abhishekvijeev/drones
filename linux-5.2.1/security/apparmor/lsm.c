@@ -1444,10 +1444,29 @@ static int apparmor_unix_stream_connect(struct sock *sock, struct sock *other,
 	struct aa_sk_ctx *ctx_recv = SK_CTX(other);
 	struct aa_label *recv_label = aa_get_label(ctx_recv->label);
 
+	struct aa_profile *profile;
+	char *sender_domain = NULL;
+	char *recv_domain = NULL;
+
 	if(sender_label && recv_label)
 	{
 		if(!unconfined(sender_label) && !unconfined(recv_label))
-			printk (KERN_INFO "apparmor_unix_stream_connect: sender = %s\n", sender_label->hname);
+		{
+			printk (KERN_INFO "apparmor_unix_stream_connect: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+			fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &sender_domain));
+			fn_for_each (recv_label, profile, apparmor_getlabel_domain(profile, &recv_domain));
+
+			if(sender_domain != NULL)
+			{
+				printk (KERN_INFO "apparmor_unix_stream_connect: sender_domain = %s\n", sender_domain);
+			}
+			if(recv_domain != NULL)
+			{
+				printk (KERN_INFO "apparmor_unix_stream_connect: recv_domain = %s\n", recv_domain);
+			}
+
+			// fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
+		}
 	}
 
 	aa_put_label(sender_label);
