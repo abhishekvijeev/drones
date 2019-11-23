@@ -11,11 +11,13 @@ fi
 USERNAME=$(whoami)
 # source /home/$USERNAME/ros2_ws/install/local_setup.bash
 
-for ((i = 1; i <= $#; i+=2 )); do
+for ((i = 1; i <= $#; i+=3 )); do
   first=${!i}
   x=$(expr $i + 1)
   second=${!x}
-  if [[ (-z "$first") || (-z "$second") ]]
+  y=$(expr $i + 2)
+  third=${!y}
+  if [[ (-z "$first") || (-z "$second") || (-z "$third") ]]
     then
       echo "Error!"
       exit 1
@@ -32,28 +34,24 @@ for ((i = 1; i <= $#; i+=2 )); do
   cp policies/templates/$second.xml policies/tmp/$first.xml
   sed -i -e "s/\($second\)/$first/" policies/tmp/$first.xml
 
+  #get all publisher topics
+  publisher=$(sed -n '/<publish/,/<\/publish/p' demo_keys/$third/permissions.xml | grep -v "<topic>rq/" | grep -v "<topic>rr/" | grep -v "<topic>rt/parameter_events</topic>" | grep -v "<topic>rt/rosout</topic>" | grep -v "<publish>" | grep -v "</publish>" | grep -v "<topics>" | grep -v "</topics>" | grep -vP "<topic>rt/tmp\d</topic>" | sed 's/rt\///g') 
+  outputpattern="<topic>output</topic>"
+  publisher="${outputpattern} $publisher"
+  publisher=`echo ${publisher} | tr '\n' "\\n"`
+
+  #get all subscriber topics
+  subscriber=$(sed -n '/<subscribe/,/<\/subscribe/p' demo_keys/talker/permissions.xml | grep -v "<topic>rq/" | grep -v "<topic>rr/" | grep -v "<topic>rt/parameter_events</topic>" | grep -v "<topic>rt/rosout</topic>" | grep -v "<topic>rt/flowcontroller</topic>" | grep -v "<subscribe>" | grep -v "</subscribe>" | grep -v "<topics>" | grep -v "</topics>" | sed 's/rt\///g' ) 
+  inputpattern="<topic>input</topic>"
+  subscriber="${inputpattern} $subscriber"
+  subscriber=`echo ${subscriber} | tr '\n' "\\n"`
+  
+  sed -i -e "s#\($outputpattern\)#$publisher#" -e "s#\($inputpattern\)#$subscriber#" policies/tmp/$first.xml
+
+
   ros2 security create_permission demo_keys /$first policies/tmp/$first.xml 
   
   ros2 run templates $second __node:=$first > /dev/null 2>&1 &
 
 done
 
-# #TODO!
-# #add checks to see if policies/template and policies/tmp exists
-
-# source /home/$USERNAME/ros2_ws/install/local_setup.bash
-
-# cd /home/$USERNAME/sros2_demo
-
-# ros2 security create_key demo_keys /$1
-
-# #create new sros policies from existing templates for that msg_type
-# cp policies/templates/$2.xml policies/tmp/$1.xml
-# sed -i -e "s/\($2\)/$1/" policies/tmp/$1.xml
-
-# ros2 security create_permission demo_keys /$1 policies/tmp/$1.xml
-
-# ros2 run templates $2 __node:=$1 > /dev/null 2>&1 &
-
-# #to kill process
-# #ps -ef | grep -i "sensor_msgs_image __node:=sensor_msgs_image_tmp1" | grep -v grep | awk '{print "kill " $2}' | sh

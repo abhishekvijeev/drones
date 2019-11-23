@@ -10,12 +10,14 @@ fi
 USERNAME=$(whoami)
 cd /home/$USERNAME/sros2_demo
 
-for ((i = 1; i <= $#; i+=2 )); do
+for ((i = 1; i <= $#; i+=3 )); do
     first=${!i}
     x=$(expr $i + 1)
     second=${!x}
-    if [[ (-z "$first") || (-z "$second") ]]
-    then
+    y=$(expr $i + 2)
+    third=${!y}
+    if [[ (-z "$first") || (-z "$second") || (-z "$third") ]]
+      then
         echo "Error!"
         exit 1
     fi

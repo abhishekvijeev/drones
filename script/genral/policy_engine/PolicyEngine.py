@@ -8,7 +8,7 @@ KILLER_PROCESS_SH = "/home/abhishek/sros2_demo/killprocess.sh "
 SROS_PROFILE_SH = "/home/abhishek/sros2_demo/sros_profile_generator.sh "
 ROS2_TOPIC_CHANGER_SH = "/home/abhishek/sros2_demo/ros2_topic_changer.sh "
 
-def parse_topictype_data(topic_with_type, topic_with_type_lock, recv_data):
+def Parse_Topictype_Data(topic_with_type, topic_with_type_lock, recv_data):
     for item in recv_data.split("[Topic_Type] "):
         if (len(item) > 0):
             data = item.split(", ")
@@ -32,7 +32,7 @@ def parse_topictype_data(topic_with_type, topic_with_type_lock, recv_data):
             
     
         
-def tcp_server(topic_with_type, topic_with_type_lock):
+def TCP_Server(topic_with_type, topic_with_type_lock):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_address = ('localhost', 8080)
     # print( 'starting up on %s port %s' % server_address)
@@ -46,12 +46,12 @@ def tcp_server(topic_with_type, topic_with_type_lock):
             data = connection.recv(1000)
             data = data.decode("utf-8") 
             # print( 'received "%s"' % str(data))
-            parse_topictype_data(topic_with_type, topic_with_type_lock, data)
+            Parse_Topictype_Data(topic_with_type, topic_with_type_lock, data)
         finally:
             connection.close()
 
 
-def read_all_sros_profiles (app_with_topic):
+def Read_All_Sros_Profiles (app_with_topic):
     ignore_topic_list ={"rq/$/describe_parametersRequest",\
                         "rq/$/get_parameter_typesRequest",\
                         "rq/$/get_parametersRequest",\
@@ -114,7 +114,7 @@ def read_all_sros_profiles (app_with_topic):
                         app_with_topic[app_name]["subscriber"].append(tmp)
                 
 
-def get_new_msgtype_name(msgtype_applist, msgtype):
+def Get_New_Msgtype_Name(msgtype_applist, msgtype):
     if msgtype not in msgtype_applist:
         msgtype_applist[msgtype] = []
     
@@ -124,14 +124,11 @@ def get_new_msgtype_name(msgtype_applist, msgtype):
     
 
 
-def remove_new_msgtype_name(msgtype_applist, msgtype, app_name):
+def Remove_New_Msgtype_Name(msgtype_applist, msgtype, app_name):
     if msgtype in msgtype_applist:
         if app_name in msgtype_applist[msgtype]:
             msgtype_applist[msgtype].remove(app_name)
             
-# {'camera': {'sensor_msgs_image': ['/imageraw', 'tmp0']}}
-# ros2 run templates sensor_msgs_image __node:=sensor_msgs_image_tmp1
-
 def Generate_Topic_Changer_Command(cmd_type, process_name, redirection_list, topic_change_list):
     cmd = ""
     if process_name in topic_change_list:
@@ -158,8 +155,8 @@ def Generate_Topic_Changer_Command(cmd_type, process_name, redirection_list, top
 
             
 
-def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
-    read_all_sros_profiles (app_with_topic)
+def User_Input_Parser(topic_with_type, topic_with_type_lock, app_with_topic):
+    Read_All_Sros_Profiles (app_with_topic)
     redirection_list = {}
     msgtype_applist = {}
     topic_change_list = {}
@@ -199,7 +196,7 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
         elif "redirect" in data:
             values = data.split(" ")
             sros_profile_generator = ""
-            if (len(values) == 2):
+            if (len(values) == 2 and (values[1] in app_with_topic)):
                 redirect_process_name = values[1]
                     
                 for topic in app_with_topic[redirect_process_name]['publisher']:
@@ -213,11 +210,11 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
                             names = newprocesstype.split("/")
                             msgtype_name = names[0] + "_" + names[-1].lower()
                             
-                            app_name_extension = get_new_msgtype_name(msgtype_applist, msgtype_name)
+                            app_name_extension = Get_New_Msgtype_Name(msgtype_applist, msgtype_name)
                             app_name = msgtype_name + "_" + app_name_extension
                             
                             if (app_name + " " + msgtype_name) not in sros_profile_generator:
-                                sros_profile_generator = sros_profile_generator + (app_name + " " + msgtype_name) + " "
+                                sros_profile_generator = sros_profile_generator + (app_name + " " + msgtype_name) + " " + redirect_process_name + " "
 
 
                             if redirect_process_name not in redirection_list:
@@ -259,7 +256,7 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
                 print("Error! command: redirect <ros process>")
         elif "revert" in data:
             values = data.split(" ")
-            if (len(values) == 2):
+            if (len(values) == 2 and (values[1] in app_with_topic)):
                 redirect_process_name = values[1]
                 #send command to change apparmor profile
                 #send command to redirect ros2 topics
@@ -273,7 +270,7 @@ def user_input_parser(topic_with_type, topic_with_type_lock, app_with_topic):
                 #delete entries
                 if redirect_process_name in redirection_list:
                     for key, value in redirection_list[redirect_process_name].items():
-                        remove_new_msgtype_name(msgtype_applist, key, value[1])
+                        Remove_New_Msgtype_Name(msgtype_applist, key, value[1])
                     del redirection_list[redirect_process_name]
                     del topic_change_list[redirect_process_name]
                 if redirect_process_name in sros_policy_cmd_list:
@@ -288,8 +285,8 @@ if __name__ == '__main__':
     topic_with_type_lock = threading.Lock()
     app_with_topic = {}
     
-    t1 = threading.Thread(target=tcp_server, args=(topic_with_type, topic_with_type_lock)) 
-    t2 = threading.Thread(target=user_input_parser, args=(topic_with_type, topic_with_type_lock, app_with_topic)) 
+    t1 = threading.Thread(target=TCP_Server, args=(topic_with_type, topic_with_type_lock)) 
+    t2 = threading.Thread(target=User_Input_Parser, args=(topic_with_type, topic_with_type_lock, app_with_topic)) 
     # starting thread 1 
     t1.start() 
     # starting thread 2 
@@ -305,19 +302,3 @@ if __name__ == '__main__':
 
 
 
-# n = os.fork() 
-# if (n == 0):
-#     print("Child process and id is : ", os.getpid()) 
-#     time.sleep(5) 
-#     while(True):
-#         data = input("Enter command:")
-#         print ("you entered:", data, type(data))
-#         if (data == "print"):
-#             print ("Inside if, len of topic_with_type:", len(topic_with_type))
-#             print (topic_with_type)
-# elif n > 0: 
-#     print("Parent process and id is : ", os.getpid()) 
-#     tcp_server()
-# else: 
-#     print ("Error!")
-    
