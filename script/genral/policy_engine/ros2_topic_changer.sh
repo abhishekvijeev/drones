@@ -24,7 +24,7 @@ for ((i = 1; i <= $#; i+=4 )); do
       echo "Error in arguments! Should be in 4s"
       exit 1
   fi
-  
+  echo `ps -ef | grep -i "$second" | grep -v "/bin/bash" | grep -v grep | grep -v "ros2 run" | grep -v "ros2_topic_changer.sh" `
   pid=`ps -ef | grep -i "$second" | grep -v "/bin/bash" | grep -v grep | grep -v "ros2 run" | grep -v "ros2_topic_changer.sh" | awk '{print $2}'`
   if [[ -z "$pid" ]]
     then
@@ -32,8 +32,9 @@ for ((i = 1; i <= $#; i+=4 )); do
       exit
   fi
   
-  # echo $first $pid $third $fourth 
+  echo $first $pid $third $fourth 
   command="data: 2, $first, $pid, $third, $fourth"
+  echo $command
   ros2 topic pub /flowcontroller std_msgs/String "$command" -1
 
   

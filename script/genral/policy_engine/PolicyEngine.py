@@ -140,16 +140,28 @@ def Generate_Topic_Changer_Command(cmd_type, process_name, redirection_list, top
             elif cmd_type == "revert":
                 cmd = cmd + " pub " + "/" + process_name + " " + value + " " + key 
     
+    # if process_name in redirection_list:
+    #     for key, value in redirection_list[process_name].items():
+    #         app_name = "\'" + key + " __node:=" + key + "_" + value[1] + "\'"
+    #         topic = value[0].replace("/","")
+    #         if cmd_type == "redirect":
+    #             cmd = cmd + " pub " +  app_name + " " + "output" + " " + topic 
+    #             cmd = cmd + " sub " +  app_name + " " + "input" + " " + topic_change_list[process_name][value[0]].replace("/","")
+    #         elif cmd_type == "revert":
+    #             cmd = cmd + " pub " +  app_name + " " + topic + " " + "output" 
+    #             cmd = cmd + " sub " +  app_name + " " + topic_change_list[process_name][value[0]].replace("/","") + " " + "input"
     if process_name in redirection_list:
         for key, value in redirection_list[process_name].items():
-            app_name = "\'" + key + " __node:=" + key + "_" + value[1] + "\'"
-            topic = value[0].replace("/","")
-            if cmd_type == "redirect":
-                cmd = cmd + " pub " +  app_name + " " + "output" + " " + topic 
-                cmd = cmd + " sub " +  app_name + " " + "input" + " " + topic_change_list[process_name][value[0]].replace("/","")
-            elif cmd_type == "revert":
-                cmd = cmd + " pub " +  app_name + " " + topic + " " + "output" 
-                cmd = cmd + " sub " +  app_name + " " + topic_change_list[process_name][value[0]].replace("/","") + " " + "input"
+            for idx in range(0, len(value), 2):
+                app_name = "\'" + key + " __node:=" + key + "_" + value[idx+1] + "\'"
+                topic = value[idx].replace("/","")
+                if cmd_type == "redirect":
+                    cmd = cmd + " pub " +  app_name + " " + "output" + " " + topic 
+                    cmd = cmd + " sub " +  app_name + " " + "input" + " " + topic_change_list[process_name][value[idx]].replace("/","")
+                elif cmd_type == "revert":
+                    cmd = cmd + " pub " +  app_name + " " + topic + " " + "output" 
+                    cmd = cmd + " sub " +  app_name + " " + topic_change_list[process_name][value[idx]].replace("/","") + " " + "input"
+    
     cmd = cmd.strip()
     return cmd
 
