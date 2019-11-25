@@ -1793,21 +1793,47 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 			}//end of if(sk->sk_family == AF_INET)
 			else if(sk->sk_family == AF_UNIX)
 			{
-				// printk (KERN_INFO "apparmor_socket_sendmsg: UNIX DOMAIN SOCKET \n");
-				
-				// struct unix_sock *unix_dom_sock;
-				// struct sock *peer;
-				// struct aa_label *peer_sk_label;
-				// struct aa_sk_ctx *peer_ctx;
+				struct unix_sock *unix_dom_sock;
+				struct sock *peer;
+				struct aa_label *peer_sk_label;
+				struct aa_sk_ctx *peer_ctx;
 
-				// unix_dom_sock = unix_sk(sk);
-				// peer = unix_dom_sock->peer;
-				// peer_ctx = SK_CTX(peer);
-				// peer_sk_label = aa_get_label(peer_ctx->label);
+				unix_dom_sock = unix_sk(sk);
+				peer = unix_dom_sock->peer;
+				peer_ctx = SK_CTX(peer);
+				peer_sk_label = aa_get_label(peer_ctx->label);
 				
-				// printk (KERN_INFO "apparmor_socket_sendmsg: unix_send from %s to %s\n", curr_label->hname, peer_sk_label->hname);
+				printk (KERN_INFO "apparmor_socket_sendmsg: unix_send from %s to %s\n", curr_label->hname, peer_sk_label->hname);
 
-				// aa_put_label(peer_sk_label);
+				aa_put_label(peer_sk_label);
+
+
+
+
+
+
+				// if(sk->sk_type == SOCK_STREAM){}
+
+				// struct aa_sk_ctx *ctx_sender = SK_CTX(sock);
+				// struct aa_label *sender_label = aa_get_label(ctx_sender->label);
+
+				// struct aa_sk_ctx *ctx_recv = SK_CTX(other);
+				// struct aa_label *recv_label = aa_get_label(ctx_recv->label);
+
+				// struct aa_profile *profile;
+				// char *sender_domain = NULL;
+				// char *recv_domain = NULL;
+				// bool allow = false;
+
+				// if(sender_label && recv_label)
+				// {
+				// 	if(!unconfined(sender_label) && !unconfined(recv_label))
+				// 	{
+				// 		printk (KERN_INFO "apparmor_unix_stream_connect: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+				// 		fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &sender_domain));
+				// 		fn_for_each (recv_label, profile, apparmor_getlabel_domain(profile, &recv_domain));
+				// 	}
+				// }
 				
 			}
 		
@@ -2055,9 +2081,28 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
     char *curr_domain = NULL;
 	
 	int error = 0;
+	
 	if (ctx != NULL && ctx->label != NULL)
 	{
 		label = aa_get_label(ctx->label);
+
+		if(!unconfined(label) && sk->sk_family == AF_UNIX)
+		{
+			struct unix_sock *unix_dom_sock;
+			struct sock *peer;
+			struct aa_label *peer_sk_label;
+			struct aa_sk_ctx *peer_ctx;
+
+			unix_dom_sock = unix_sk(sk);
+			peer = unix_dom_sock->peer;
+			peer_ctx = SK_CTX(peer);
+			peer_sk_label = aa_get_label(peer_ctx->label);
+			
+			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: unix domain socket message from %s to %s\n", peer_sk_label->hname, curr_label->hname);
+
+			aa_put_label(peer_sk_label);
+		}
+
 		const struct tcphdr *tcpheader;
 		
 		fn_for_each (label, profile, apparmor_getlabel_domain(profile, &curr_domain));
