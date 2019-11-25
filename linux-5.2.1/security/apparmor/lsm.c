@@ -2098,7 +2098,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 			peer_ctx = SK_CTX(peer);
 			peer_sk_label = aa_get_label(peer_ctx->label);
 			
-			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: unix domain socket message from %s to %s\n", peer_sk_label->hname, curr_label->hname);
+			printk (KERN_INFO "apparmor_socket_sock_rcv_skb: unix domain socket message from %s to %s\n", peer_sk_label->hname, label->hname);
 
 			aa_put_label(peer_sk_label);
 		}
