@@ -1792,20 +1792,57 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				
 			}//end of if(sk->sk_family == AF_INET)
 			else if(sk->sk_family == AF_UNIX)
-			{
+			{				
+				struct aa_label *sender_label = aa_get_label(cl);
 				struct unix_sock *unix_dom_sock;
 				struct sock *peer;
-				struct aa_label *peer_sk_label;
+				struct aa_label *recv_label;
 				struct aa_sk_ctx *peer_ctx;
 
 				unix_dom_sock = unix_sk(sk);
 				peer = unix_dom_sock->peer;
 				peer_ctx = SK_CTX(peer);
-				peer_sk_label = aa_get_label(peer_ctx->label);
-				
-				printk (KERN_INFO "apparmor_socket_sendmsg: unix_send from %s to %s\n", curr_label->hname, peer_sk_label->hname);
+				recv_label = aa_get_label(peer_ctx->label);
 
-				aa_put_label(peer_sk_label);
+				struct aa_profile *profile;
+				char *sender_domain = NULL;
+				char *recv_domain = NULL;
+				bool allow = false;
+
+				if(sender_label && recv_label)
+				{
+					if(!unconfined(sender_label) && !unconfined(recv_label))
+					{
+						printk (KERN_INFO "apparmor_socket_sendmsg: unix socket sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+						fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &sender_domain));
+						fn_for_each (recv_label, profile, apparmor_getlabel_domain(profile, &recv_domain));
+
+						// if(sender_domain != NULL)
+						// {
+						// 	printk (KERN_INFO "apparmor_unix_may_send: sender_domain = %s\n", sender_domain);
+						// }
+						// if(recv_domain != NULL)
+						// {
+						// 	printk (KERN_INFO "apparmor_unix_may_send: recv_domain = %s\n", recv_domain);
+						// }
+
+						if(sender_domain != NULL && recv_domain != NULL)
+						{
+							fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
+							if(allow)
+							{
+								printk (KERN_INFO "apparmor_socket_sendmsg: unix socket flow from sender_domain %s to recv_domain %s is allowed\n", sender_domain, recv_domain);
+							}
+							else
+							{
+								printk (KERN_INFO "apparmor_socket_sendmsg: unix socket flow from sender_domain %s to recv_domain %s is not allowed\n", sender_domain, recv_domain);
+							}
+						}
+					}
+				}
+
+				aa_put_label(sender_label);
+				aa_put_label(recv_label);
 
 
 
