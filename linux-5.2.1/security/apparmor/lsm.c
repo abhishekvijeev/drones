@@ -59,8 +59,6 @@ int apparmor_ioctl_debug;
 
 DEFINE_PER_CPU(struct aa_buffers, aa_buffers);
 
-
-
 static int print_all_domain(struct aa_profile *profile)
 {
 	if (apparmor_ioctl_debug)
@@ -87,6 +85,7 @@ static int apparmor_getlabel_domain (struct aa_profile *profile, char **name)
 	}
 	return 0;
 }
+
 static int apparmor_check_for_flow (struct aa_profile *profile, char *checking_domain, bool *allow)
 {
 	*allow = false;
@@ -123,6 +122,7 @@ static int apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_
 	}
 	return 0;
 }
+
 #define MAX_LABEL_CACHE_SIZE 20
 struct label_cache
 {
@@ -164,13 +164,11 @@ static int apparmor_tsk_container_add(struct aa_label *label, pid_t pid)
 	else
 	{
 		// printk (KERN_INFO "apparmor_tsk_container_add: adding data at idx %d, pid %d, label %s\n", i, pid, label->hname);
-		
 	}
 	
-
-
 	return ret;	
 }
+
 static struct aa_label *apparmor_tsk_container_get(pid_t pid)
 {
 	struct aa_label *ret = NULL;
@@ -193,6 +191,7 @@ static struct aa_label *apparmor_tsk_container_get(pid_t pid)
 	}
 	return ret;
 }
+
 static int apparmor_tsk_container_remove(pid_t pid)
 {
 	int ret = 0, i;
@@ -1454,18 +1453,9 @@ static int apparmor_unix_stream_connect(struct sock *sock, struct sock *other,
 		if(!unconfined(sender_label) && !unconfined(recv_label))
 		{
 			printk (KERN_INFO "apparmor_unix_stream_connect: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+
 			fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &sender_domain));
 			fn_for_each (recv_label, profile, apparmor_getlabel_domain(profile, &recv_domain));
-
-			// if(sender_domain != NULL)
-			// {
-			// 	printk (KERN_INFO "apparmor_unix_stream_connect: sender_domain = %s\n", sender_domain);
-			// }
-			// if(recv_domain != NULL)
-			// {
-			// 	printk (KERN_INFO "apparmor_unix_stream_connect: recv_domain = %s\n", recv_domain);
-			// }
-
 			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
 			if(allow)
 			{
@@ -1508,19 +1498,11 @@ static int apparmor_unix_may_send (struct socket *sock, struct socket *other)
 		if(!unconfined(sender_label) && !unconfined(recv_label))
 		{
 			printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+
 			fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &sender_domain));
 			fn_for_each (recv_label, profile, apparmor_getlabel_domain(profile, &recv_domain));
-
-			// if(sender_domain != NULL)
-			// {
-			// 	printk (KERN_INFO "apparmor_unix_may_send: sender_domain = %s\n", sender_domain);
-			// }
-			// if(recv_domain != NULL)
-			// {
-			// 	printk (KERN_INFO "apparmor_unix_may_send: recv_domain = %s\n", recv_domain);
-			// }
-
 			fn_for_each (sender_label, profile, apparmor_check_for_flow(profile, recv_domain, &allow));
+
 			if(allow)
 			{
 				printk (KERN_INFO "apparmor_unix_may_send: flow from sender_domain %s to recv_domain %s is allowed\n", sender_domain, recv_domain);
@@ -1716,7 +1698,6 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 	struct sock *sk = sock->sk;
     struct aa_label *curr_label, *curr_sock_label;
 	bool allow = false;
-	struct aa_label *cl;
 	struct aa_profile *profile;
     u32 daddr = 0;
 	struct aa_sk_ctx *ctx = SK_CTX(sk);
@@ -1724,9 +1705,8 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 	int error = 1;
 
 
-	cl = __begin_current_label_crit_section();	
-	curr_label = aa_get_task_label(current);
-	if(!unconfined(cl) && ctx != NULL && ctx->label != NULL && curr_label != NULL)
+	curr_label = __begin_current_label_crit_section();	
+	if(!unconfined(curr_label) && ctx != NULL && ctx->label != NULL && curr_label != NULL)
 	{
 		curr_sock_label = aa_get_label(ctx->label);
 		
@@ -1801,34 +1781,15 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				
 				
 			}//end of if(sk->sk_family == AF_INET)
-			else if(sk->sk_family == AF_UNIX)
-			{
-				// printk (KERN_INFO "apparmor_socket_sendmsg: UNIX DOMAIN SOCKET \n");
-				
-				// struct unix_sock *unix_dom_sock;
-				// struct sock *peer;
-				// struct aa_label *peer_sk_label;
-				// struct aa_sk_ctx *peer_ctx;
-
-				// unix_dom_sock = unix_sk(sk);
-				// peer = unix_dom_sock->peer;
-				// peer_ctx = SK_CTX(peer);
-				// peer_sk_label = aa_get_label(peer_ctx->label);
-				
-				// printk (KERN_INFO "apparmor_socket_sendmsg: unix_send from %s to %s\n", curr_label->hname, peer_sk_label->hname);
-
-				// aa_put_label(peer_sk_label);
-				
-			}
 		
 		}//end if (curr_domain != NULL)
+
 		sendmsg_out:
 		aa_put_label(curr_sock_label);
 		
 	}
-	
-	aa_put_label(curr_label);
-	__end_current_label_crit_section(cl);
+
+	__end_current_label_crit_section(curr_label);
 	if (error == 0)
 	{
 		// printk (KERN_INFO "apparmor_socket_sendmsg (%s): return is -13\n", current->comm);
@@ -1855,9 +1816,9 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	char *curr_domain = NULL;
 	int error = 1;
 
-	cl = __begin_current_label_crit_section();
-	curr_label = aa_get_task_label(current);
-	if(!unconfined(cl) && ctx != NULL && ctx->label != NULL && curr_label != NULL)
+	curr_label = __begin_current_label_crit_section();
+
+	if(!unconfined(curr_label) && ctx != NULL && ctx->label != NULL && curr_label != NULL)
 	{
 		curr_sock_label = aa_get_label(ctx->label);
 
@@ -1925,9 +1886,7 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 		aa_put_label(curr_sock_label);
 	}
 	
-
-	aa_put_label(curr_label);
-	__end_current_label_crit_section(cl);
+	__end_current_label_crit_section(curr_label);
 	if (error == 0)
 	{
 		bool drop_flag = false;
