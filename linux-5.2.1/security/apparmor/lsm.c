@@ -1482,6 +1482,11 @@ static int apparmor_unix_stream_connect(struct sock *sock, struct sock *other,
 	aa_put_label(sender_label);
 	aa_put_label(recv_label);
 
+	if(!allow)
+	{
+		return -EPERM;
+	}
+
 	return 0;
 }
 
@@ -1530,6 +1535,11 @@ static int apparmor_unix_may_send (struct socket *sock, struct socket *other)
 
 	aa_put_label(sender_label);
 	aa_put_label(recv_label);
+
+	if(!allow)
+	{
+		return -EPERM;
+	}
 
 	return 0;
 	
