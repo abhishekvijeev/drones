@@ -4,20 +4,23 @@
 
 if (( $# < 2 ));
   then
-    echo "Not enough arguments supplied. To Run: ./sros_profile_generator <newfilename> <derivedFilename>"
+    # ./sros_profile_generator.sh std_msgs_string_tmp0 std_msgs_string talker lib_std_msgs_string.so
+    echo "Not enough arguments supplied. To Run: ./sros_profile_generator <newfilename> <derivedFilename> <nodeWhosePermissionWillBeCopied> <libName>"
     exit 1
 fi
 
 USERNAME=$(whoami)
 # source /home/$USERNAME/ros2_ws/install/local_setup.bash
 
-for ((i = 1; i <= $#; i+=3 )); do
-  first=${!i}
+for ((i = 1; i <= $#; i+=4 )); do
+  first=${!i} #newfilename
   x=$(expr $i + 1)
-  second=${!x}
+  second=${!x} #derivedFilename
   y=$(expr $i + 2)
-  third=${!y}
-  if [[ (-z "$first") || (-z "$second") || (-z "$third") ]]
+  third=${!y} #nodeWhosePermissionWillBeCopied
+  z=$(expr $i + 3)
+  fourth=${!z} #libName
+  if [[ (-z "$first") || (-z "$second") || (-z "$third")  || (-z "$fourth")]]
     then
       echo "Error!"
       exit 1
@@ -51,7 +54,7 @@ for ((i = 1; i <= $#; i+=3 )); do
 
   ros2 security create_permission demo_keys /$first policies/tmp/$first.xml 
   
-  ros2 run templates $second __node:=$first > /dev/null 2>&1 &
+  ros2 run templates $second __node:=$first  -sl $fourth  > /dev/null 2>&1 &
 
 done
 

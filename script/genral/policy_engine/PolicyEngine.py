@@ -206,10 +206,25 @@ def User_Input_Parser(topic_with_type, topic_with_type_lock, app_with_topic):
             print ("msgtype_applist:\n", msgtype_applist)
             print ("sros_policy_cmd_list:\n", sros_policy_cmd_list)
         elif "redirect" in data:
+            # eg: redirect camera sensor_msgs_image lib_sensor_msgs_image.so
+            # syntax: 
+            # redirect camera 
+            # redirect camera <topictype> <libname>
+            # redirect camera <topictype> <libname> <topictype> <libname>
+            
             values = data.split(" ")
             sros_profile_generator = ""
-            if (len(values) == 2 and (values[1] in app_with_topic)):
+            loadable_modules = {}
+            if (len(values) >= 2 and (values[1] in app_with_topic)):
                 redirect_process_name = values[1]
+
+                #TODO!
+                # naive way to associate topic type with library
+                # Limitation: right now two same topictype cannot be associated with diff lib
+                for idx in range(2, len(values), 2):
+                    if values[idx] not in loadable_modules:
+                        loadable_modules[values[idx]] = values[idx+1]
+
                     
                 for topic in app_with_topic[redirect_process_name]['publisher']:
                     topic = topic.replace("rt", "")
@@ -226,7 +241,14 @@ def User_Input_Parser(topic_with_type, topic_with_type_lock, app_with_topic):
                             app_name = msgtype_name + "_" + app_name_extension
                             
                             if (app_name + " " + msgtype_name) not in sros_profile_generator:
-                                sros_profile_generator = sros_profile_generator + (app_name + " " + msgtype_name) + " " + redirect_process_name + " "
+                                # output:
+                                # app_name: std_msgs_string_tmp0
+                                # msgtype_name: std_msgs_string
+                                # redirect_process_name: talker
+                                if msgtype_name in loadable_modules:
+                                    sros_profile_generator = sros_profile_generator + (app_name + " " + msgtype_name) + " " + redirect_process_name + " " + loadable_modules[msgtype_name] + " "
+                                else:
+                                    sros_profile_generator = sros_profile_generator + (app_name + " " + msgtype_name) + " " + redirect_process_name + " " + "NoModule "
 
 
                             if redirect_process_name not in redirection_list:
