@@ -195,6 +195,29 @@ struct aa_replacedby {
  * character.  If a profile name begins with / it will be considered when
  * determining profile attachment on "unconfined" tasks.
  */
+
+//Custom code: start
+struct ListOfDomains
+{
+	char *domain;
+	struct list_head domain_list;
+};
+
+
+struct DomainMetaData
+{
+	char *domain;
+	int allow_cnt;
+	int deny_cnt;
+	int ip_allow_cnt;
+};
+
+struct ListOfIPAddrs 
+{
+	u32 ip_addr;
+	struct list_head ip_addr_list;
+};
+//Custom code: end
 struct aa_profile {
 	struct aa_policy base;
 	struct kref count;
@@ -213,6 +236,13 @@ struct aa_profile {
 	long flags;
 	u32 path_flags;
 	int size;
+
+	/*
+	 * Custom fields
+	 */
+	struct DomainMetaData *current_domain;
+	struct ListOfDomains *allow_net_domains;
+	struct ListOfIPAddrs *allowed_ip_addrs;
 
 	struct aa_policydb policy;
 	struct aa_file_rules file;

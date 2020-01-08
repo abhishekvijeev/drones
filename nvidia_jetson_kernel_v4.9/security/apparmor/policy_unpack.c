@@ -509,6 +509,122 @@ static struct aa_profile *unpack_profile(struct aa_ext *e)
 			goto fail;
 		profile->xmatch_len = tmp;
 	}
+	// Custom code : start
+	/* Start of new grammar rules */
+	if (unpack_nameX(e, AA_STRUCT, "DomainMetaData"))
+	{
+		profile->current_domain = kzalloc (sizeof(struct DomainMetaData), GFP_KERNEL);
+		if (!profile->current_domain)
+			goto fail;
+		if(!unpack_strdup(e, &profile->current_domain->domain, NULL))
+			goto fail;
+
+		if (!unpack_u32(e, &(profile->current_domain->allow_cnt), NULL))
+			goto fail;
+		// profile->current_domain->allow_cnt = allow_cnt;
+		if (!unpack_u32(e, &(profile->current_domain->deny_cnt), NULL))
+			goto fail;
+		// profile->current_domain->deny_cnt = deny_cnt;
+		if (!unpack_u32(e, &(profile->current_domain->ip_allow_cnt), NULL))
+			goto fail;
+		if (!unpack_nameX(e, AA_STRUCTEND, NULL))
+			goto fail;
+		
+
+
+		// if (apparmor_ioctl_debug)
+		// 	printk_ratelimited (KERN_INFO "\t\tDomainName=%s\n, allow=%d, deny=%d", profile->current_domain->domain, profile->current_domain->allow_cnt, profile->current_domain->deny_cnt);
+	
+		if (unpack_nameX(e, AA_STRUCT, "AllowedDomains")) 
+		{
+			// if (apparmor_ioctl_debug)
+			// 	printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
+			profile->allow_net_domains = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+			if (!profile->allow_net_domains)
+				goto fail;
+			INIT_LIST_HEAD(&(profile->allow_net_domains->domain_list));
+
+			for (i = 0; i < profile->current_domain->allow_cnt; i++)
+			{
+				struct ListOfDomains *new_node = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
+				if (!new_node)
+					goto fail;
+				if(!unpack_strdup(e, &new_node->domain, NULL))
+					goto fail;
+
+				INIT_LIST_HEAD(&(new_node->domain_list));
+				list_add(&(new_node->domain_list), &(profile->allow_net_domains->domain_list));
+			}
+			if (!unpack_nameX(e, AA_STRUCTEND, NULL))
+				goto fail;
+			
+			// struct ListOfDomains *iterator;
+			// list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+			// {
+			// 	if (apparmor_ioctl_debug)
+			// 		printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+			// }
+			
+			// if (apparmor_ioctl_debug)
+			// 	printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
+			// iterator = list_first_entry(&(profile->allow_net_domains->domain_list), typeof(*iterator), domain_list);
+			// while( (&iterator->domain_list) != &(profile->allow_net_domains->domain_list))
+			// {
+			// 	if (apparmor_ioctl_debug)
+			// 		printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+				
+			// 	iterator = list_next_entry (iterator, domain_list);
+			// }
+
+		}		
+
+		if (unpack_nameX(e, AA_STRUCT, "AllowedIPAddrs")) 
+		{
+			// if (apparmor_ioctl_debug)
+			// 	printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
+			profile->allowed_ip_addrs = kzalloc(sizeof(struct ListOfIPAddrs), GFP_KERNEL);
+			if (!profile->allowed_ip_addrs)
+				goto fail;
+			INIT_LIST_HEAD(&(profile->allowed_ip_addrs->ip_addr_list));
+
+
+			for (i = 0; i < profile->current_domain->ip_allow_cnt; i++)
+			{
+				struct ListOfIPAddrs *new_node = kzalloc(sizeof(struct ListOfIPAddrs), GFP_KERNEL);
+				if (!new_node)
+					goto fail;
+				if(!unpack_u32(e, &new_node->ip_addr, NULL))
+					goto fail;
+
+				INIT_LIST_HEAD(&(new_node->ip_addr_list));
+				list_add(&(new_node->ip_addr_list), &(profile->allowed_ip_addrs->ip_addr_list));
+			}
+			if (!unpack_nameX(e, AA_STRUCTEND, NULL))
+				goto fail;
+			
+			// struct ListOfIPAddrs *iterator;
+			// list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
+			// {
+			// 	if (apparmor_ioctl_debug)
+			// 		printk_ratelimited(KERN_INFO "%pi4\n", &(iterator->ip_addr));
+			// }
+			// if (apparmor_ioctl_debug)
+			// 	printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
+			// iterator = list_first_entry(&(profile->allow_net_domains->domain_list), typeof(*iterator), domain_list);
+			// while( (&iterator->domain_list) != &(profile->allow_net_domains->domain_list))
+			// {
+			// 	if (apparmor_ioctl_debug)
+			// 		printk_ratelimited(KERN_INFO "%s\n", iterator->domain);
+				
+			// 	iterator = list_next_entry (iterator, domain_list);
+			// }
+
+		}		
+
+	}
+	/* End of new grammar rules */
+	// Custom code : end
+
 
 	/* per profile debug flags (complain, audit) */
 	if (!unpack_nameX(e, AA_STRUCT, "flags"))
