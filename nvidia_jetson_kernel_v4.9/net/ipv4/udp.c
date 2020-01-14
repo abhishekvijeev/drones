@@ -116,6 +116,16 @@
 #include <net/sock_reuseport.h>
 #include <net/addrconf.h>
 
+#include "../../security/apparmor/include/apparmor.h"
+#include "../../security/apparmor/include/apparmorfs.h"
+#include "../../security/apparmor/include/audit.h"
+#include "../../security/apparmor/include/capability.h"
+#include "../../security/apparmor/include/file.h"
+#include "../../security/apparmor/include/ipc.h"
+#include "../../security/apparmor/include/path.h"
+#include "../../security/apparmor/include/policy.h"
+#include "../../security/apparmor/include/procattr.h"
+
 struct udp_table udp_table __read_mostly;
 EXPORT_SYMBOL(udp_table);
 
@@ -798,6 +808,24 @@ static int udp_send_skb(struct sk_buff *skb, struct flowi4 *fl4)
 	int len = skb->len - offset;
 	__wsum csum = 0;
 
+	//Custom code: start
+	struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	char *curr_domain = NULL;
+	if (profile != NULL && !unconfined(profile))
+	{
+		if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+		{
+			curr_domain = profile->current_domain->domain;
+		}
+		if (curr_domain != NULL)
+		{
+			skb->secmark = profile->pid;
+			printk (KERN_INFO "udp_send_skb: pid %d added to skb\n", profile->pid);
+		}
+	}
+	//Custom code: end
+
+
 	/*
 	 * Create a UDP header
 	 */
@@ -1269,6 +1297,24 @@ try_again:
 	if (!skb)
 		return err;
 
+	//Custom code: start
+	struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	char *curr_domain = NULL;
+	if (profile != NULL && !unconfined(profile))
+	{
+		if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+		{
+			curr_domain = profile->current_domain->domain;
+		}
+		if (curr_domain != NULL)
+		{
+			profile->pid = skb->secmark;
+			printk (KERN_INFO "udp_send_skb: pid %d added to skb\n", profile->pid);
+		}
+	}
+	//Custom code: end
+
+
 	ulen = skb->len;
 	copied = len;
 	if (copied > ulen - off)
@@ -1505,6 +1551,25 @@ int udp_queue_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	struct udp_sock *up = udp_sk(sk);
 	int rc;
 	int is_udplite = IS_UDPLITE(sk);
+
+	//Custom code: start
+	struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	char *curr_domain = NULL;
+	if (profile != NULL && !unconfined(profile))
+	{
+		if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+		{
+			curr_domain = profile->current_domain->domain;
+		}
+		if (curr_domain != NULL)
+		{
+			profile->pid = skb->secmark;
+			printk (KERN_INFO "udp_send_skb: pid %d added to skb\n", profile->pid);
+		}
+	}
+	//Custom code: end
+
+
 
 	/*
 	 *	Charge it to the socket, dropping if the queue is full.

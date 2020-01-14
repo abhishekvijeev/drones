@@ -42,6 +42,16 @@
 #include <linux/gfp.h>
 #include <linux/module.h>
 
+#include "../../security/apparmor/include/apparmor.h"
+#include "../../security/apparmor/include/apparmorfs.h"
+#include "../../security/apparmor/include/audit.h"
+#include "../../security/apparmor/include/capability.h"
+#include "../../security/apparmor/include/file.h"
+#include "../../security/apparmor/include/ipc.h"
+#include "../../security/apparmor/include/path.h"
+#include "../../security/apparmor/include/policy.h"
+#include "../../security/apparmor/include/procattr.h"
+
 /* allow Tegra qdisc to restrict tcp rx datarate */
 #ifdef CONFIG_NET_SCH_TEGRA
 uint tcp_window_divisor = 1;
@@ -1064,6 +1074,25 @@ static int __tcp_transmit_skb(struct sock *sk, struct sk_buff *skb,
 	/* Cleanup our debris for IP stacks */
 	memset(skb->cb, 0, max(sizeof(struct inet_skb_parm),
 			       sizeof(struct inet6_skb_parm)));
+
+	
+	//Custom code: start
+	struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	char *curr_domain = NULL;
+	if (profile != NULL && !unconfined(profile))
+	{
+		if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+		{
+			curr_domain = profile->current_domain->domain;
+		}
+		if (curr_domain != NULL)
+		{
+			skb->secmark = profile->pid;
+			printk (KERN_INFO "__tcp_transmit_skb: pid %d added to skb\n", profile->pid);
+		}
+	}
+	//Custom code: end
+
 
 	err = icsk->icsk_af_ops->queue_xmit(sk, skb, &inet->cork.fl);
 

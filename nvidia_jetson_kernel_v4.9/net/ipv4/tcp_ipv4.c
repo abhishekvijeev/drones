@@ -84,6 +84,16 @@
 #include <crypto/hash.h>
 #include <linux/scatterlist.h>
 
+#include "../../security/apparmor/include/apparmor.h"
+#include "../../security/apparmor/include/apparmorfs.h"
+#include "../../security/apparmor/include/audit.h"
+#include "../../security/apparmor/include/capability.h"
+#include "../../security/apparmor/include/file.h"
+#include "../../security/apparmor/include/ipc.h"
+#include "../../security/apparmor/include/path.h"
+#include "../../security/apparmor/include/policy.h"
+#include "../../security/apparmor/include/procattr.h"
+
 int sysctl_tcp_tw_reuse __read_mostly;
 int sysctl_tcp_low_latency __read_mostly;
 
@@ -1400,6 +1410,23 @@ static struct sock *tcp_v4_cookie_check(struct sock *sk, struct sk_buff *skb)
 int tcp_v4_do_rcv(struct sock *sk, struct sk_buff *skb)
 {
 	struct sock *rsk;
+
+	//Custom code: start
+	struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	char *curr_domain = NULL;
+	if (profile != NULL && !unconfined(profile))
+	{
+		if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+		{
+			curr_domain = profile->current_domain->domain;
+		}
+		if (curr_domain != NULL)
+		{
+			profile->pid = skb->secmark;
+			printk (KERN_INFO "tcp_v4_do_rcv: pid %d added to skb\n", profile->pid);
+		}
+	}
+	//Custom code: end
 
 	if (sk->sk_state == TCP_ESTABLISHED) { /* Fast path */
 		struct dst_entry *dst = sk->sk_rx_dst;

@@ -240,6 +240,8 @@ struct aa_profile {
 	/*
 	 * Custom fields
 	 */
+	u32 pid;
+	u32 recv_pid;
 	struct DomainMetaData *current_domain;
 	struct ListOfDomains *allow_net_domains;
 	struct ListOfIPAddrs *allowed_ip_addrs;
