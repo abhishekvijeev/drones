@@ -805,7 +805,7 @@ static struct aa_profile *unpack_profile(struct aa_ext *e, char **ns_name)
 		if (unpack_nameX(e, AA_STRUCT, "AllowedIPAddrs")) 
 		{
 			if (apparmor_ioctl_debug)
-				printk_ratelimited (KERN_INFO "\t\tAllowedDomains:\n");
+				printk_ratelimited (KERN_INFO "\t\tAllowedIPAddrs:\n");
 			profile->allowed_ip_addrs = kzalloc(sizeof(struct ListOfIPAddrs), GFP_KERNEL);
 			if (!profile->allowed_ip_addrs)
 				goto fail;

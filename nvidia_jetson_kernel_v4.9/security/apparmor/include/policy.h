@@ -156,6 +156,29 @@ struct aa_replacedby {
 	struct aa_profile __rcu *profile;
 };
 
+//Custom code: start
+struct ListOfDomains
+{
+	char *domain;
+	struct list_head domain_list;
+};
+
+
+struct DomainMetaData
+{
+	char *domain;
+	int allow_cnt;
+	int deny_cnt;
+	int ip_allow_cnt;
+};
+
+struct ListOfIPAddrs 
+{
+	u32 ip_addr;
+	struct list_head ip_addr_list;
+};
+//Custom code: end
+
 
 /* struct aa_profile - basic confinement data
  * @base - base components of the profile (name, refcount, lists, lock ...)
@@ -195,29 +218,6 @@ struct aa_replacedby {
  * character.  If a profile name begins with / it will be considered when
  * determining profile attachment on "unconfined" tasks.
  */
-
-//Custom code: start
-struct ListOfDomains
-{
-	char *domain;
-	struct list_head domain_list;
-};
-
-
-struct DomainMetaData
-{
-	char *domain;
-	int allow_cnt;
-	int deny_cnt;
-	int ip_allow_cnt;
-};
-
-struct ListOfIPAddrs 
-{
-	u32 ip_addr;
-	struct list_head ip_addr_list;
-};
-//Custom code: end
 struct aa_profile {
 	struct aa_policy base;
 	struct kref count;

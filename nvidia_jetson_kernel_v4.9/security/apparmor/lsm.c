@@ -36,6 +36,7 @@
 #include "include/policy.h"
 #include "include/procattr.h"
 
+#define SK_CTX(X) ((X)->sk_security)
 /* Flag indicating whether initialization completed */
 int apparmor_initialized __initdata;
 
@@ -584,6 +585,172 @@ static int apparmor_task_setrlimit(struct task_struct *task,
 	return error;
 }
 
+
+
+
+/**
+ * apparmor_socket_post_create - setup the per-socket security struct
+ *
+ * Note:
+ * -   kernel sockets currently labeled unconfined but we may want to
+ *     move to a special kernel label
+ * -   socket may not have sk here if created with sock_create_lite or
+ *     sock_alloc. These should be accept cases which will be handled in
+ *     sock_graft.
+ */
+static int apparmor_socket_post_create(struct socket *sock, int family,
+				       int type, int protocol, int kern)
+{
+	struct aa_profile *profile = __aa_current_profile();
+	// if (kern) {
+	// 	struct aa_ns *ns = aa_get_current_ns();
+
+	// 	label = aa_get_label(ns_unconfined(ns));
+	// 	aa_put_ns(ns);
+	// } else
+	// 	label = aa_get_current_label();
+
+	if (sock->sk) {
+		SK_CTX(sock->sk) = profile;
+		
+	}
+	return 0;
+}
+
+/**
+ * apparmor_socket_sendmsg - check perms before sending msg to another socket
+ */
+static int apparmor_socket_sendmsg(struct socket *sock,
+				   struct msghdr *msg, int size)
+{
+	struct aa_profile *profile = __aa_current_profile();
+	if (!unconfined(profile))
+	{
+		if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+			printk (KERN_INFO "sendmsg: current profile %s\n", profile->current_domain->domain);
+		
+		struct aa_profile *sock_profile = (struct aa_profile *)SK_CTX(sock->sk);
+		if (!unconfined(sock_profile))
+		{
+			if (sock_profile->current_domain != NULL && sock_profile->current_domain->domain != NULL)
+				printk (KERN_INFO "sendmsg: current sock_profile %s\n", sock_profile->current_domain->domain);
+		
+		}
+	
+	}
+	return 0;
+	// struct sock *sk = sock->sk;
+    // // struct aa_label *curr_label, *curr_sock_label;
+	// bool allow = false;
+	// u32 daddr = 0;
+	// // struct aa_sk_ctx *ctx = SK_CTX(sk);
+	// char *curr_domain = NULL;
+	// int error = 1;
+
+	// struct aa_profile *profile = __aa_current_profile();
+	
+	// if (!unconfined(profile))
+
+	// curr_label = __begin_current_label_crit_section();	
+	// if(!unconfined(curr_label) && ctx != NULL && ctx->label != NULL && curr_label != NULL)
+	// {
+	// 	curr_sock_label = aa_get_label(ctx->label);
+		
+	// 	//reset the recv_pid
+	// 	if (curr_sock_label->pid != current->pid)
+	// 	{
+	// 		curr_sock_label->recv_pid = 0;
+	// 	}
+	// 	curr_sock_label->pid = current->pid;
+
+	// 	//get the domain from current process label and not from socket's label, coz socket's can be passed
+	// 	fn_for_each (curr_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+		
+	// 	if (curr_domain != NULL)
+	// 	{
+	// 		int ret = apparmor_tsk_container_add(curr_label, current->pid);
+	// 		// printk (KERN_INFO "apparmor_socket_sendmsg (%s): current_pid = %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
+	// 		if(sk->sk_family == AF_INET)
+	// 		{   
+	// 			int ret_val = 0;
+			
+	// 			int tmp = apparmor_extract_daddr(msg, sk);
+	// 			if (tmp > 0)
+	// 				daddr = tmp;
+	// 			else
+	// 			{
+	// 				// printk (KERN_INFO "apparmor_socket_sendmsg: unable to get destination address\n");
+	// 				goto sendmsg_out;
+	// 			}
+				
+	// 			// 1. Check if packet destination is localhost
+	// 			if(localhost_address(daddr))
+	// 			{
+	// 				ret_val = 1;
+	// 				// printk(KERN_INFO "apparmor_socket_sendmsg (%s): Packet from localhost to localhost allowed, current_pid = %d\n", current->comm, current->pid);
+	// 			}
+				
+
+	// 			// 2. Check if packet destination is DDS multicast address
+	// 			else if(ntohs(daddr) == 61439)
+	// 			{
+	// 				ret_val = 1;
+	// 				// printk(KERN_INFO "apparmor_socket_sendmsg (%s): DDS Multicast allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
+	// 			}
+
+	// 			// 3. Check if destination address is multicast address
+	// 			else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
+	// 			{
+	// 				ret_val = 1;
+	// 				// printk(KERN_INFO "apparmor_socket_sendmsg (%s): Multicast address allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
+	// 			}
+				
+	// 			/* 
+	// 			* 4. Otherwise, the packet's destination is outside the machine
+	// 			* Perform domain declassification by obtaining the list of allowed domains
+	// 			* for the sending process
+	// 			*/
+	// 			else
+	// 			{
+	// 				// printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);					
+
+	// 				fn_for_each (curr_label, profile, apparmor_domain_declassify(profile, daddr, &allow));
+	// 				if(allow)
+	// 				{
+	// 					ret_val = 1;
+	// 					printk (KERN_INFO "[GRAPH_GEN] Process %s, network, %pi4\n", curr_label->hname, &daddr);
+	// 				}
+	// 				// printk(KERN_INFO "apparmor_socket_sendmsg (%s): Domain declassification for message from process %s(pid = %d) to address %pi4, flow is %d\n", current->comm, current->comm, current->pid, &daddr, allow);
+	// 			}
+	// 			if (ret_val == 0)
+	// 				error = 0;
+				
+				
+	// 		}//end of if(sk->sk_family == AF_INET)
+		
+	// 	}//end if (curr_domain != NULL)
+
+	// 	sendmsg_out:
+	// 	aa_put_label(curr_sock_label);
+		
+	// }
+
+	// __end_current_label_crit_section(curr_label);
+	// if (error == 0)
+	// {
+	// 	// printk (KERN_INFO "apparmor_socket_sendmsg (%s): return is -13\n", current->comm);
+	// 	return -EACCES;
+	// }
+	// else
+	// 	return aa_sock_msg_perm(OP_SENDMSG, AA_MAY_SEND, sock, msg, size);
+}
+
+
+
+
+
+
+
 static struct security_hook_list apparmor_hooks[] = {
 	LSM_HOOK_INIT(ptrace_access_check, apparmor_ptrace_access_check),
 	LSM_HOOK_INIT(ptrace_traceme, apparmor_ptrace_traceme),
@@ -624,6 +791,11 @@ static struct security_hook_list apparmor_hooks[] = {
 	LSM_HOOK_INIT(bprm_secureexec, apparmor_bprm_secureexec),
 
 	LSM_HOOK_INIT(task_setrlimit, apparmor_task_setrlimit),
+
+	
+	LSM_HOOK_INIT(socket_post_create, apparmor_socket_post_create),
+	LSM_HOOK_INIT(socket_sendmsg, apparmor_socket_sendmsg),
+
 };
 
 /*
