@@ -41,9 +41,240 @@
 #include <linux/skbuff.h>
 #include <net/inet_sock.h>
 #include <linux/inetdevice.h>
-#define SK_CTX(X) ((X)->sk_security)
+#include <linux/tcp.h>
+#include <uapi/linux/tcp.h>
+
+
 /* Flag indicating whether initialization completed */
 int apparmor_initialized __initdata;
+
+
+
+#define MAX_LABEL_CACHE_SIZE 20
+struct profile_cache
+{
+	pid_t pid;
+	struct aa_profile *cur_profile;
+
+}profile_cache_arr[MAX_LABEL_CACHE_SIZE];
+
+static int apparmor_tsk_container_add(struct aa_profile *profile, pid_t pid)
+{
+	int ret = 0, i;
+	static int remove_idx = 0;
+	for(i = 0; i < MAX_LABEL_CACHE_SIZE; i++)
+	{
+		if(profile_cache_arr[i].pid == pid)
+		{
+			ret = 1;
+			break;
+		}
+		else if (profile_cache_arr[i].pid == 0)
+		{
+			profile_cache_arr[i].pid = pid;
+			profile_cache_arr[i].cur_profile = aa_get_profile(profile);
+			ret = 1;
+			break;
+		}
+	}
+	if (ret == 0)
+	{
+		// printk (KERN_INFO "apparmor_tsk_container_add: adding data at idx %d, pid %d, profile %s\n", remove_idx, pid, profile->hname);
+		
+		profile_cache_arr[remove_idx].pid = pid;
+		profile_cache_arr[remove_idx].cur_profile = aa_get_profile(profile);
+		remove_idx += 1;
+		remove_idx %= MAX_LABEL_CACHE_SIZE;
+	}
+	else
+	{
+		// printk (KERN_INFO "apparmor_tsk_container_add: adding data at idx %d, pid %d, profile %s\n", i, pid, profile->hname);
+	}
+	
+	return ret;	
+}
+
+static struct aa_profile *apparmor_tsk_container_get(pid_t pid)
+{
+	struct aa_profile *ret = NULL;
+	int i;
+	for(i = 0; i < MAX_LABEL_CACHE_SIZE; i++)
+	{
+		if (profile_cache_arr[i].pid == pid && profile_cache_arr[i].cur_profile != NULL)
+		{
+			ret = aa_get_profile(profile_cache_arr[i].cur_profile);
+			break;
+		}
+	}
+	if (ret != NULL)
+	{
+		printk (KERN_INFO "apparmor_tsk_container_get: data found at idx %d, pid %d, profile %s\n", i, pid, ret->base.hname);
+	}
+	else
+	{
+		printk (KERN_INFO "apparmor_tsk_container_get: data not found for pid %d\n", pid);
+	}
+	return ret;
+}
+
+static int apparmor_tsk_container_remove(pid_t pid)
+{
+	int ret = 0, i;
+	for(i = 0; i < MAX_LABEL_CACHE_SIZE; i++)
+	{
+		if(profile_cache_arr[i].pid == pid)
+		{
+			// printk (KERN_INFO "apparmor_tsk_container_get: data removed at idx %d, pid %d, profile %s\n", i, pid, profile_cache_arr[i].cur_profile->base.hname);
+			profile_cache_arr[i].pid = 0;
+			aa_put_profile(profile_cache_arr[i].cur_profile);
+
+			profile_cache_arr[i].cur_profile = NULL;
+			ret = 1;
+		}
+	}
+	return ret;	
+}
+static int apparmor_extract_daddr(struct msghdr *msg, struct sock *sk)
+{
+	struct inet_sock *inet;
+	u32 daddr = 0;
+	DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
+	inet = inet_sk(sk);
+		
+	if (usin) 
+	{
+		if (msg->msg_namelen < sizeof(*usin))
+			return -EINVAL;
+		if (usin->sin_family != AF_INET) 
+		{
+			if (usin->sin_family != AF_UNSPEC)
+				return -EAFNOSUPPORT;
+		}
+
+		daddr = usin->sin_addr.s_addr;
+	} 
+	else 
+	{
+		if (sk->sk_state != TCP_ESTABLISHED)
+			return -EDESTADDRREQ;
+		daddr = inet->inet_daddr;
+	}
+	return daddr;
+}
+
+int localhost_address(u32 ip_addr)
+{
+	struct net_device *dev;
+	u32 dev_addr;
+	if((ip_addr & 0x000000FF) == 127)
+	{
+		// printk(KERN_INFO "localhost_address: Packet from localhost: %pi4\n", &ip_addr);
+		return 1;
+	}
+
+	read_lock(&dev_base_lock);
+	dev = first_net_device(&init_net);
+	while (dev) 
+	{
+		dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
+		if(dev_addr == ip_addr)
+		{
+			// printk(KERN_INFO "localhost_address: IP address %pi4 equals device IP addr %pi4\n", &ip_addr, &dev_addr);
+			read_unlock(&dev_base_lock);
+			return 1;
+		}
+		dev = next_net_device(dev);
+	}
+	read_unlock(&dev_base_lock);
+
+	return 0;
+	
+}
+
+static bool apparmor_check_for_flow (struct aa_profile *profile, char *checking_domain)
+{
+	struct ListOfDomains *iterator;
+	if (profile->allow_net_domains)
+	{
+		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+		{
+			printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
+			if ((strcmp(iterator->domain, checking_domain) == 0) || strcmp(iterator->domain, "*") == 0)
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+static struct aa_profile *apparmor_socket_label_compare_helper(__u32 pid)
+{
+	struct task_struct *task_data;
+	struct aa_profile *ret = NULL;
+	task_data = get_pid_task(find_get_pid(pid), PIDTYPE_PID);
+	if (task_data == NULL)
+	{
+		ret = apparmor_tsk_container_get(pid);
+	}
+	else
+	{
+		ret = aa_cred_profile(__task_cred(task_data));
+	}
+	return ret;
+}
+static bool apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
+{
+	bool allow = false;		
+	struct aa_profile *sender_profile, *receiver_profile;
+	char *receiver_domain = NULL;
+	
+	if (sender_pid != receiver_pid && sender_pid != 0 && receiver_pid != 0)
+	{
+		sender_profile = apparmor_socket_label_compare_helper(sender_pid);
+		receiver_profile = apparmor_socket_label_compare_helper(receiver_pid);
+		
+		if (sender_profile != NULL && receiver_profile != NULL)
+		{
+			if (receiver_profile->current_domain != NULL && receiver_profile->current_domain->domain != NULL)
+			{
+				receiver_domain = receiver_profile->current_domain->domain;
+			}
+			if (receiver_domain != NULL)
+			{
+				allow = apparmor_check_for_flow(sender_profile, receiver_domain);
+				if (allow)
+				{
+					printk (KERN_INFO "[GRAPH_GEN] Process %s, socket_ipc, %s\n", sender_profile->base.hname, receiver_profile->base.hname);
+				}
+				
+			}
+			
+			printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_profile->base.hname, receiver_pid, sender_profile->base.hname, sender_pid, allow);
+		
+		}
+		
+	}
+	return allow;
+}
+
+static bool apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip_addr)
+{
+	struct ListOfIPAddrs *iterator;
+	if (profile->allowed_ip_addrs)
+	{
+		list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
+		{
+			// printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
+			if (iterator->ip_addr == 0 || iterator->ip_addr == check_ip_addr)
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 
 /*
  * LSM hook functions
@@ -591,7 +822,36 @@ static int apparmor_task_setrlimit(struct task_struct *task,
 }
 
 
+static int apparmor_sk_alloc_security(struct sock *sk, int family, gfp_t priority)
+{
+	struct aa_sk_ctx *ctx;
 
+	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
+	if (!ctx)
+		return -ENOMEM;
+
+	SK_CTX(sk) = ctx;
+
+	return 0;
+}
+
+static void apparmor_sk_free_security(struct sock *sk)
+{
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+
+	SK_CTX(sk) = NULL;
+	aa_put_profile(ctx->profile);
+	kfree(ctx);	
+}
+
+
+static void apparmor_sk_clone_security(const struct sock *sk, struct sock *newsk)
+{
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	struct aa_sk_ctx *new = SK_CTX(newsk);
+
+	new->profile = aa_get_profile(ctx->profile);
+}
 
 /**
  * apparmor_socket_post_create - setup the per-socket security struct
@@ -606,94 +866,33 @@ static int apparmor_task_setrlimit(struct task_struct *task,
 static int apparmor_socket_post_create(struct socket *sock, int family,
 				       int type, int protocol, int kern)
 {
-	struct aa_profile *profile = __aa_current_profile();
-	// if (kern) {
-	// 	struct aa_ns *ns = aa_get_current_ns();
+	struct aa_profile *profile;
 
-	// 	label = aa_get_label(ns_unconfined(ns));
-	// 	aa_put_ns(ns);
-	// } else
-	// 	label = aa_get_current_label();
+	if (kern) {
+		// struct aa_ns *ns = aa_get_current_ns();
+
+		// label = aa_get_label(ns_unconfined(ns));
+		// aa_put_ns(ns);
+
+		struct aa_namespace *ns = aa_get_namespace((aa_current_profile())->ns);
+		profile = aa_get_profile(ns->unconfined);
+		aa_put_namespace(ns);
+
+	} else
+		profile = aa_get_task_profile(current);
 
 	if (sock->sk) {
-		SK_CTX(sock->sk) = profile;
-		
-	}
-	return 0;
-}
+		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 
-static int apparmor_extract_daddr(struct msghdr *msg, struct sock *sk)
-{
-	struct inet_sock *inet;
-	inet = inet_sk(sk);
-				
-	u32 daddr = 0;
-	DECLARE_SOCKADDR(struct sockaddr_in *, usin, msg->msg_name);
-	if (usin) 
-	{
-		if (msg->msg_namelen < sizeof(*usin))
-			return -EINVAL;
-		if (usin->sin_family != AF_INET) 
-		{
-			if (usin->sin_family != AF_UNSPEC)
-				return -EAFNOSUPPORT;
-		}
-
-		daddr = usin->sin_addr.s_addr;
-	} 
-	else 
-	{
-		if (sk->sk_state != TCP_ESTABLISHED)
-			return -EDESTADDRREQ;
-		daddr = inet->inet_daddr;
+		aa_put_profile(ctx->profile);
+		ctx->profile = aa_get_profile(profile);
 	}
-	return daddr;
-}
-int localhost_address(u32 ip_addr)
-{
-	struct net_device *dev;
-	u32 dev_addr;
-	if((ip_addr & 0x000000FF) == 127)
-	{
-		// printk(KERN_INFO "localhost_address: Packet from localhost: %pi4\n", &ip_addr);
-		return 1;
-	}
-
-	read_lock(&dev_base_lock);
-	dev = first_net_device(&init_net);
-	while (dev) 
-	{
-		dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
-		if(dev_addr == ip_addr)
-		{
-			// printk(KERN_INFO "localhost_address: IP address %pi4 equals device IP addr %pi4\n", &ip_addr, &dev_addr);
-			read_unlock(&dev_base_lock);
-			return 1;
-		}
-		dev = next_net_device(dev);
-	}
-	read_unlock(&dev_base_lock);
+	aa_put_profile(profile);
 
 	return 0;
-	
 }
 
-static bool apparmor_check_for_flow (struct aa_profile *profile, char *checking_domain)
-{
-	struct ListOfDomains *iterator;
-	if (profile->allow_net_domains)
-	{
-		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
-		{
-			// printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
-			if ((strcmp(iterator->domain, checking_domain) == 0) || strcmp(iterator->domain, "*") == 0)
-			{
-				return true;
-			}
-		}
-	}
-	return false;
-}
+
 
 /**
  * apparmor_socket_sendmsg - check perms before sending msg to another socket
@@ -702,74 +901,67 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				   struct msghdr *msg, int size)
 {
 	struct sock *sk = sock->sk;
+    struct aa_profile *curr_profile;
+    struct aa_profile *curr_sock_profile;
+    struct aa_sk_ctx *ctx = SK_CTX(sk);
+    char *curr_domain = NULL;
 	bool allow = false;
-	u32 daddr = 0;
-	char *curr_domain = NULL, *sock_domain = NULL;
-	int error = 1;
-
-	struct aa_profile *profile = __aa_current_profile();
-	if ( profile != NULL && !unconfined(profile))
+    u32 daddr = 0;
+	
+	curr_profile = aa_get_task_profile(current);	
+	if(curr_profile != NULL && !unconfined(curr_profile) && ctx != NULL && ctx->profile != NULL)
 	{
-		if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
-		{
-			printk (KERN_INFO "apparmor_socket_sendmsg: current profile %s\n", profile->current_domain->domain);
-			curr_domain = profile->current_domain->domain;
-		}
-		struct aa_profile *sock_profile = (struct aa_profile *)SK_CTX(sock->sk);
-		if (sock_profile != NULL && !unconfined(sock_profile))
-		{
-			if (sock_profile->current_domain != NULL && sock_profile->current_domain->domain != NULL)
-			{
-				printk (KERN_INFO "apparmor_socket_sendmsg: current sock_profile %s\n", sock_profile->current_domain->domain);
-				sock_domain = sock_profile->current_domain->domain;
-				
-				//reset the recv_pid
-				if (sock_profile->pid != current->pid)
-				{
-					sock_profile->recv_pid = 0;
-				}
-				sock_profile->pid = current->pid;
-			}
+		printk(KERN_INFO "sendmsg: process %s, label: %s\n", current->comm, curr_profile->base.hname);
+		curr_sock_profile = aa_get_profile(ctx->profile);
 		
-		}
-		
-
-
-		if (curr_domain != NULL && sock_domain != NULL)
+		//reset the recv_pid
+		if (curr_sock_profile->pid != current->pid)
 		{
+			curr_sock_profile->recv_pid = 0;
+		}
+		curr_sock_profile->pid = current->pid;
+
+		//get the domain from current process profile and not from socket's profile, coz socket's can be passed
+		if(curr_profile->current_domain != NULL && curr_profile->current_domain->domain != NULL)
+        {
+            curr_domain = curr_profile->current_domain->domain;
+        }
+		
+		if (curr_domain != NULL)
+		{
+			apparmor_tsk_container_add(curr_profile, current->pid);
+			// printk (KERN_INFO "apparmor_socket_sendmsg (%s): current_pid = %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
 			if(sk->sk_family == AF_INET)
 			{   
-				int ret_val = 0;
-			
 				int tmp = apparmor_extract_daddr(msg, sk);
 				if (tmp > 0)
 					daddr = tmp;
 				else
 				{
-					printk (KERN_INFO "apparmor_socket_sendmsg: unable to get destination address\n");
+					// printk (KERN_INFO "apparmor_socket_sendmsg: unable to get destination address\n");
 					goto sendmsg_out;
 				}
 				
 				// 1. Check if packet destination is localhost
 				if(localhost_address(daddr))
 				{
-					ret_val = 1;
-					printk(KERN_INFO "apparmor_socket_sendmsg (%s): Packet from localhost to localhost allowed, current_pid = %d\n", current->comm, current->pid);
+					allow = true;
+					// printk(KERN_INFO "apparmor_socket_sendmsg (%s): Packet from localhost to localhost allowed, current_pid = %d\n", current->comm, current->pid);
 				}
 				
 
 				// 2. Check if packet destination is DDS multicast address
 				else if(ntohs(daddr) == 61439)
 				{
-					ret_val = 1;
-					printk(KERN_INFO "apparmor_socket_sendmsg (%s): DDS Multicast allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
+					allow = true;
+					// printk(KERN_INFO "apparmor_socket_sendmsg (%s): DDS Multicast allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
 				}
 
 				// 3. Check if destination address is multicast address
 				else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
 				{
-					ret_val = 1;
-					printk(KERN_INFO "apparmor_socket_sendmsg (%s): Multicast address allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
+					allow = true;
+					// printk(KERN_INFO "apparmor_socket_sendmsg (%s): Multicast address allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
 				}
 				
 				/* 
@@ -779,43 +971,42 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				*/
 				else
 				{
-					printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);					
+					// printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);					
 
-					if (profile->allowed_ip_addrs)
-					{
-						struct ListOfIPAddrs *iterator;
-						list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
-						{
-							printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, daddr);
-							if (iterator->ip_addr == 0 || iterator->ip_addr == daddr)
-							{
-								allow = true;
-								break;
-							}
-						}
-					}
+                    allow = apparmor_domain_declassify(curr_profile, daddr);
 					if(allow)
 					{
-						ret_val = 1;
-						printk (KERN_INFO "[GRAPH_GEN] Process %s, network, %pi4\n", current->comm, &daddr);
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, network, %pi4\n", curr_profile->base.hname, &daddr);
 					}
 					// printk(KERN_INFO "apparmor_socket_sendmsg (%s): Domain declassification for message from process %s(pid = %d) to address %pi4, flow is %d\n", current->comm, current->comm, current->pid, &daddr, allow);
-				}
-				if (ret_val == 0)
-					error = 0;
-				
+				}				
 				
 			}//end of if(sk->sk_family == AF_INET)
-		} //end of if (curr_domain != NULL && sock_domain != NULL)
-	}//enf of it(!unconfined())
-
-	sendmsg_out:
-	if (error == 0)
+		
+		}//end if (curr_domain != NULL)
+		else
+		{
+			allow = true;
+		}
+		
+		sendmsg_out:
+		aa_put_profile(curr_sock_profile);
+		
+	}
+	else
 	{
-		// printk (KERN_INFO "apparmor_socket_sendmsg (%s): return is -13\n", current->comm);
+		allow = true;
+	}
+	
+
+	aa_put_profile(curr_profile);
+	if (!allow)
+	{
+		printk (KERN_INFO "sendmsg (%s): return is -13\n", current->comm);
 		return -EACCES;
 	}
-	return 0;
+	
+    return 0;
 }
 
 
@@ -826,92 +1017,63 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 static int apparmor_socket_recvmsg(struct socket *sock,
 				   struct msghdr *msg, int size, int flags)
 {
-	struct sock *sk = sock->sk;		
-	__u32 sender_pid;
+	struct aa_profile *curr_profile;
+    struct aa_profile *curr_sock_profile;
+	struct aa_profile *sender_profile;
 	struct task_struct *sender;
-	const struct cred *sender_cred = NULL;
-	struct aa_profile *sender_profile = NULL;
-	char *curr_domain = NULL, *sock_domain = NULL;
-	struct aa_profile *curr_profile = __aa_current_profile();
-	bool flow_allowed = false;
+	bool allow = true;		
+	__u32 sender_pid;
+	struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
+	char *curr_domain = NULL;
 
+	curr_profile = aa_get_task_profile(current);
 
-	if ( curr_profile != NULL && !unconfined(curr_profile))
+	if(curr_profile != NULL && !unconfined(curr_profile) && ctx != NULL && ctx->profile != NULL)
 	{
-		if (curr_profile->current_domain != NULL && curr_profile->current_domain->domain != NULL)
-		{
-			printk (KERN_INFO "apparmor_socket_recvmsg: current profile %s\n", curr_profile->current_domain->domain);
-			curr_domain = curr_profile->current_domain->domain;
-		}
-		struct aa_profile *sock_profile = (struct aa_profile *)SK_CTX(sock->sk);
-		if (sock_profile != NULL && !unconfined(sock_profile))
-		{
-			if (sock_profile->current_domain != NULL && sock_profile->current_domain->domain != NULL)
-			{
-				printk (KERN_INFO "apparmor_socket_recvmsg: current sock_profile %s\n", sock_profile->current_domain->domain);
-				sock_domain = sock_profile->current_domain->domain;
-				sock_profile->recv_pid = current->pid;
-			}
-		}
-		
+		curr_sock_profile = aa_get_profile(ctx->profile);
 
+		//get the domain from current process profile and not from socket's profile, coz socket's can be passed
+		if(curr_profile->current_domain != NULL && curr_profile->current_domain->domain != NULL)
+        {
+            curr_domain = curr_profile->current_domain->domain;
+        }
 
-		if (curr_domain != NULL && sock_domain != NULL && sock_profile->pid != 0)
+		curr_sock_profile->recv_pid = current->pid;
+
+		if (curr_domain != NULL && curr_sock_profile->pid != 0)
 		{
+			// printk (KERN_INFO "apparmor_socket_recvmsg (%s): current_pid %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
+			
 			if(sock->sk->sk_family == AF_INET)
 			{
-				sender_pid = sock_profile->pid;
+				sender_pid = curr_sock_profile->pid;
 				// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 				sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
 				if (sender == NULL)
 				{
-					// sender_label = apparmor_tsk_container_get(sender_pid);
-					// if (sender_label != NULL)
-					// {
-					// 	sender_label = aa_get_label(sender_label);
-					// }
-					printk(KERN_INFO "apparmor_socket_recvmsg: sender's task_struct is null for pid %d\n", sender_pid);
+					sender_profile = apparmor_tsk_container_get(sender_pid);
 				}
 				else
 				{
-					sender_cred = __task_cred(sender);
-					sender_profile = aa_cred_profile(sender_cred);
+					sender_profile = aa_get_task_profile(sender);
 				}
 
 				if (sender_profile != NULL)
 				{
 					if (sender_pid != current->pid )
 					{
-						//add sender & receiver label to cache
-						// int ret = apparmor_tsk_container_add(curr_label, current->pid);
+						//add sender & receiver profile to cache
+						apparmor_tsk_container_add(curr_profile, current->pid);
 
-						flow_allowed = apparmor_check_for_flow(sender_profile, curr_domain);
-						if(flow_allowed)
-						{
+                        allow = apparmor_check_for_flow(sender_profile, curr_domain);
+
+						if (allow)
 							printk (KERN_INFO "[GRAPH_GEN] Process %s, socket_ipc, %s\n", sender_profile->base.hname, curr_profile->base.hname);
-						}
-						else
-						{
-							bool drop_flag = false;
-							if (sock && sock->sk)
-							{
-								struct sk_buff_head *list = &sock->sk->sk_receive_queue;
-								struct sk_buff *skb;
-								while ((skb = __skb_dequeue(list)) != NULL)
-								{
-									//instead use sk_eat_skb() from sock.h
-									kfree_skb(skb);
-									drop_flag = true;
-								}
-							}
-							// printk (KERN_INFO "apparmor_socket_recvmsg (%s): return is -13, status of drop_flag = %d\n", current->comm, drop_flag);
-							return -EACCES;
-						}
-						
 						
 						// printk (KERN_INFO "apparmor_socket_recvmsg (%s): Match is %d for flow from %s(pid = %d) to %s(pid = %d)\n", current->comm, allow, sender_label->hname, sender_pid, current->comm, current->pid);
 					}
 					
+					aa_put_profile(sender_profile);	
 				}
 				else
 				{
@@ -922,13 +1084,125 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				
 				
 			}//end of if(sock->sk->sk_family == AF_INET )
-		}
-	} //end of if (!unconfined(profile))
+			else if(sock->sk->sk_family == AF_UNIX)
+			{
+				// printk (KERN_INFO "apparmor_socket_recvmsg: UNIX DOMAIN SOCKET \n");
+				// printk (KERN_INFO "apparmor_socket_recvmsg: address pair = %lld, port_pair = %d \n", sock->sk->sk_addrpair, sock->sk->sk_portpair);
+				// printk (KERN_INFO "apparmor_socket_recvmsg: desti addr = %d, desti port = %d,  sk_rcv_saddr = %d, sk_num = %d \n", sock->sk->sk_daddr, 														sock->sk->sk_dport, sock->sk->sk_rcv_saddr, sock->sk->sk_num);
+			}
+		} // end for if (curr_domain != NULL)	
+		
+		aa_put_profile(curr_sock_profile);
+	}
 
+	aa_put_profile(curr_profile);
+	if (!allow)
+	{
+		bool drop_flag = false;
+		if (sock && sock->sk)
+		{
+			struct sk_buff_head *list = &sock->sk->sk_receive_queue;
+			struct sk_buff *skb;
+			while ((skb = __skb_dequeue(list)) != NULL)
+			{
+				//instead use sk_eat_skb() from sock.h
+				kfree_skb(skb);
+				drop_flag = true;
+			}
+		}
+		printk (KERN_INFO "recvmsg (%s): return is -13, status of drop_flag = %d\n", current->comm, drop_flag);
+		return -EACCES;
+	}
 	return 0;
 }
 
 
+
+/**
+ * apparmor_socket_sock_recv_skb - check perms before associating skb to sk
+ *
+ * Note: can not sleep may be called with locks held
+ *
+ * dont want protocol specific in __skb_recv_datagram()
+ * to deny an incoming connection  socket_sock_rcv_skb()
+ */
+static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
+{
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	struct aa_profile *profile;
+    char *curr_domain = NULL;
+    const struct tcphdr *tcpheader;
+    bool allow = true;
+
+	if (ctx != NULL && ctx->profile != NULL)
+	{
+		profile = aa_get_profile(ctx->profile);
+
+		if(profile->current_domain != NULL && profile->current_domain->domain != NULL)
+        {
+            curr_domain = profile->current_domain->domain;
+        }
+
+		if(curr_domain != NULL && (sk->sk_type == SOCK_STREAM))
+		{
+			tcpheader = tcp_hdr(skb);
+			if (skb->secmark != profile->pid && skb->secmark != 0)
+			{
+				profile->pid = skb->secmark;
+				allow = apparmor_socket_label_compare(profile->pid, profile->recv_pid);
+				printk (KERN_INFO "socket_sock_rcv_skb: TCP socket label_name: %s, profile->pid %d, profile->recv_pid %d, skb->pid %d, skb->data_len %d, syn = %d, ack = %d, fin = %d, allow = %d\n", profile->base.hname, profile->pid, profile->recv_pid, skb->secmark, skb->data_len, tcpheader->syn, tcpheader->ack, tcpheader->fin, allow);
+			}
+		}
+
+		// if (curr_domain != NULL && (sk->sk_type == SOCK_DGRAM || 
+			// (sk->sk_type == SOCK_STREAM && tcpheader->fin != 1 && tcpheader->syn != 1 && tcpheader->ack != 1  )))
+
+		else if (curr_domain != NULL && (sk->sk_type == SOCK_DGRAM))
+		{
+			// printk (KERN_INFO "apparmor_socket_sock_rcv_skb: UDP socket label_name: %s, profile->pid %d, profile->recv_pid %d, skb->pid %d, skb->data_len %d\n", profile->hname, profile->pid, profile->recv_pid, skb->secmark, skb->data_len);
+			// printk (KERN_INFO "skb len %d skb data_len %d\n", skb->len, skb->data_len);
+			allow = apparmor_socket_label_compare(profile->pid, profile->recv_pid);
+		}
+		
+		aa_put_profile(ctx->profile);	
+
+        if (!allow)
+        {
+            // printk (KERN_INFO "apparmor_socket_sock_rcv_skb: dropping packet at label_name: %s\n", label->hname);
+            
+            // if(sk->sk_type == SOCK_STREAM )
+            // {
+            // 	struct sk_buff *tmp = skb;
+            // 	while (tmp != NULL)
+            // 	{
+            // 		printk (KERN_INFO "apparmor_socket_sock_rcv_skb skb data_len %d\n", tmp->data_len);
+            // 		tmp = tmp->next;
+            // 	}
+            // 	//make data 0, but prob here is we dont know length of 
+            // 	//data received
+            // 	// void *tmp = skb_put(skb, skb->data_len);
+            // 	// memset(tmp, 0, skb->data_len);
+            // 	// printk (KERN_INFO "apparmor_socket_sock_rcv_skb: packet set to 0\n");
+            
+            // 	return 0;
+            // }
+            // else		
+			printk(KERN_INFO "socket_sock_rcv_skb: returning -EACCES\n");
+            return -EACCES;
+        }	
+	}
+	return 0;
+}
+
+static int apparmor_inet_conn_request(struct sock *sk, struct sk_buff *skb,
+				      struct request_sock *req)
+{
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	struct aa_profile *profile = aa_get_profile(ctx->profile);
+	printk(KERN_INFO "inet_conn_request: sock_profile: %s\n", profile->base.hname);
+	aa_put_profile(profile);
+	return 0;
+}
 
 
 
@@ -974,12 +1248,19 @@ static struct security_hook_list apparmor_hooks[] = {
 
 	LSM_HOOK_INIT(task_setrlimit, apparmor_task_setrlimit),
 
-	
+	LSM_HOOK_INIT(sk_alloc_security, apparmor_sk_alloc_security),
+	LSM_HOOK_INIT(sk_free_security, apparmor_sk_free_security),
+	LSM_HOOK_INIT(sk_clone_security, apparmor_sk_clone_security),	
 	LSM_HOOK_INIT(socket_post_create, apparmor_socket_post_create),
 	LSM_HOOK_INIT(socket_sendmsg, apparmor_socket_sendmsg),
 	LSM_HOOK_INIT(socket_recvmsg, apparmor_socket_recvmsg),
-
+	LSM_HOOK_INIT(inet_conn_request, apparmor_inet_conn_request),
+	#ifdef CONFIG_NETWORK_SECMARK
+	LSM_HOOK_INIT(socket_sock_rcv_skb, apparmor_socket_sock_rcv_skb),
+	#endif
 };
+
+
 
 /*
  * AppArmor sysfs module parameters
