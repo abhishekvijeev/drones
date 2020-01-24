@@ -1148,10 +1148,10 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 			tcpheader = tcp_hdr(skb);
 			if (skb->secmark != profile->pid && skb->secmark != 0)
 			{
-				profile->pid = skb->secmark;
-				allow = apparmor_socket_label_compare(profile->pid, profile->recv_pid);
-				printk (KERN_INFO "socket_sock_rcv_skb: TCP socket label_name: %s, profile->pid %d, profile->recv_pid %d, skb->pid %d, skb->data_len %d, syn = %d, ack = %d, fin = %d, allow = %d\n", profile->base.hname, profile->pid, profile->recv_pid, skb->secmark, skb->data_len, tcpheader->syn, tcpheader->ack, tcpheader->fin, allow);
+				// profile->pid = skb->secmark;
+				allow = apparmor_socket_label_compare(skb->secmark, profile->recv_pid);
 			}
+			printk (KERN_INFO "socket_sock_rcv_skb: TCP socket label_name: %s, profile->pid %d, profile->recv_pid %d, skb->pid %d, skb->data_len %d, syn = %d, ack = %d, fin = %d, allow = %d\n", profile->base.hname, profile->pid, profile->recv_pid, skb->secmark, skb->data_len, tcpheader->syn, tcpheader->ack, tcpheader->fin, allow);
 		}
 
 		// if (curr_domain != NULL && (sk->sk_type == SOCK_DGRAM || 
