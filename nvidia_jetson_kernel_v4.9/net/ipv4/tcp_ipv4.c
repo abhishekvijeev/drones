@@ -88,11 +88,16 @@
 #include "../../security/apparmor/include/apparmorfs.h"
 #include "../../security/apparmor/include/audit.h"
 #include "../../security/apparmor/include/capability.h"
+#include "../../security/apparmor/include/context.h"
+#include "../../security/apparmor/include/domain.h"
 #include "../../security/apparmor/include/file.h"
 #include "../../security/apparmor/include/ipc.h"
+#include "../../security/apparmor/include/match.h"
 #include "../../security/apparmor/include/path.h"
 #include "../../security/apparmor/include/policy.h"
 #include "../../security/apparmor/include/procattr.h"
+#include "../../security/apparmor/include/resource.h"
+#include "../../security/apparmor/include/sid.h"
 
 int sysctl_tcp_tw_reuse __read_mostly;
 int sysctl_tcp_low_latency __read_mostly;
@@ -1412,20 +1417,40 @@ int tcp_v4_do_rcv(struct sock *sk, struct sk_buff *skb)
 	struct sock *rsk;
 
 	//Custom code: start
-	struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	// if(sk->sk_security)
+	// {
+	// 	struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	// 	if (profile != NULL)
+	// 	{
+	// 		profile->pid = skb->secmark;
+	// 		printk(KERN_INFO "tcp_v4_do_rcv: skb->secmark = %d, profile->pid = %d, label_name = %s\n", skb->secmark, profile->pid, profile->base.hname);
+	// 	}
+		
+	// }
+	//Custom code: end
+
+	//Custom code: start
 	char *curr_domain = NULL;
+	struct aa_profile *profile;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	profile = aa_get_profile(ctx->profile);
+	const struct tcphdr *tcpheader;
+	
 	if (profile != NULL && !unconfined(profile))
 	{
-		if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
-		{
-			curr_domain = profile->current_domain->domain;
-		}
+		if(profile->current_domain != NULL && profile->current_domain->domain != NULL)
+        {
+            curr_domain = profile->current_domain->domain;
+        }
 		if (curr_domain != NULL)
 		{
+			tcpheader = tcp_hdr(skb);
 			profile->pid = skb->secmark;
-			printk (KERN_INFO "tcp_v4_do_rcv: pid %d added to skb\n", profile->pid);
+			// printk (KERN_INFO "tcp_v4_do_rcv: pid %d restored from skb\n", profile->pid );
+			printk (KERN_INFO "tcp_v4_do_rcv: TCP socket label_name: %s, profile->pid %d, profile->recv_pid %d, skb->pid %d, skb->data_len %d, syn = %d, ack = %d, fin = %d\n", profile->base.hname, profile->pid, profile->recv_pid, skb->secmark, skb->data_len, tcpheader->syn, tcpheader->ack, tcpheader->fin);
 		}
 	}
+	aa_put_profile(ctx->profile);
 	//Custom code: end
 
 	if (sk->sk_state == TCP_ESTABLISHED) { /* Fast path */

@@ -46,11 +46,16 @@
 #include "../../security/apparmor/include/apparmorfs.h"
 #include "../../security/apparmor/include/audit.h"
 #include "../../security/apparmor/include/capability.h"
+#include "../../security/apparmor/include/context.h"
+#include "../../security/apparmor/include/domain.h"
 #include "../../security/apparmor/include/file.h"
 #include "../../security/apparmor/include/ipc.h"
+#include "../../security/apparmor/include/match.h"
 #include "../../security/apparmor/include/path.h"
 #include "../../security/apparmor/include/policy.h"
 #include "../../security/apparmor/include/procattr.h"
+#include "../../security/apparmor/include/resource.h"
+#include "../../security/apparmor/include/sid.h"
 
 /* allow Tegra qdisc to restrict tcp rx datarate */
 #ifdef CONFIG_NET_SCH_TEGRA
@@ -950,6 +955,16 @@ static int __tcp_transmit_skb(struct sock *sk, struct sk_buff *skb,
 	struct tcphdr *th;
 	int err;
 
+
+	//Custom code: start
+	// struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	// if (profile != NULL && !unconfined(profile) && profile->current_domain != NULL && profile->current_domain->domain != NULL && skb != NULL)
+	// {
+	// 	printk (KERN_INFO "__tcp_transmit_skb: sock_name: %s, secmark: %d\n", profile->base.hname, skb->secmark);
+	// }
+	
+	//Custom code: end
+
 	BUG_ON(!skb || !tcp_skb_pcount(skb));
 	tp = tcp_sk(sk);
 
@@ -1074,25 +1089,44 @@ static int __tcp_transmit_skb(struct sock *sk, struct sk_buff *skb,
 	/* Cleanup our debris for IP stacks */
 	memset(skb->cb, 0, max(sizeof(struct inet_skb_parm),
 			       sizeof(struct inet6_skb_parm)));
-
 	
+	// Custom code: start
+	// if(sk->sk_security)
+	// {
+	// 	struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	// 	// skb->secmark = 100;
+	// 	if (profile != NULL)
+	// 	{
+	// 		skb->secmark = profile->pid;
+	// 		printk(KERN_INFO "__tcp_transmit_skb: skb->secmark = %d, profile->pid = %d, label_name = %s\n", skb->secmark, profile->pid, profile->base.hname);
+	// 	}
+	// }
+	// skb->secmark = 100;
+	// Custom code: end
+
 	//Custom code: start
-	struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
 	char *curr_domain = NULL;
+	struct aa_profile *profile;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	profile = aa_get_profile(ctx->profile);
+	const struct tcphdr *tcpheader;
+
 	if (profile != NULL && !unconfined(profile))
 	{
-		if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
-		{
-			curr_domain = profile->current_domain->domain;
-		}
+		if(profile->current_domain != NULL && profile->current_domain->domain != NULL)
+        {
+            curr_domain = profile->current_domain->domain;
+        }
 		if (curr_domain != NULL)
 		{
+			tcpheader = tcp_hdr(skb);
 			skb->secmark = profile->pid;
-			printk (KERN_INFO "__tcp_transmit_skb: pid %d added to skb\n", profile->pid);
+			// printk (KERN_INFO "__tcp_transmit_skb: pid %d added to skb\n", profile->pid);
+			printk (KERN_INFO "__tcp_transmit_skb: TCP socket label_name: %s, profile->pid %d, profile->recv_pid %d, skb->pid %d, skb->data_len %d, syn = %d, ack = %d, fin = %d\n", profile->base.hname, profile->pid, profile->recv_pid, skb->secmark, skb->data_len, tcpheader->syn, tcpheader->ack, tcpheader->fin);
 		}
 	}
+	aa_put_profile(ctx->profile);
 	//Custom code: end
-
 
 	err = icsk->icsk_af_ops->queue_xmit(sk, skb, &inet->cork.fl);
 

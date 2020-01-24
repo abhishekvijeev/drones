@@ -120,11 +120,16 @@
 #include "../../security/apparmor/include/apparmorfs.h"
 #include "../../security/apparmor/include/audit.h"
 #include "../../security/apparmor/include/capability.h"
+#include "../../security/apparmor/include/context.h"
+#include "../../security/apparmor/include/domain.h"
 #include "../../security/apparmor/include/file.h"
 #include "../../security/apparmor/include/ipc.h"
+#include "../../security/apparmor/include/match.h"
 #include "../../security/apparmor/include/path.h"
 #include "../../security/apparmor/include/policy.h"
 #include "../../security/apparmor/include/procattr.h"
+#include "../../security/apparmor/include/resource.h"
+#include "../../security/apparmor/include/sid.h"
 
 struct udp_table udp_table __read_mostly;
 EXPORT_SYMBOL(udp_table);
@@ -809,20 +814,40 @@ static int udp_send_skb(struct sk_buff *skb, struct flowi4 *fl4)
 	__wsum csum = 0;
 
 	//Custom code: start
-	struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	// struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	// char *curr_domain = NULL;
+	// if (profile != NULL && !unconfined(profile))
+	// {
+	// 	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	// 	{
+	// 		curr_domain = profile->current_domain->domain;
+	// 	}
+	// 	if (curr_domain != NULL)
+	// 	{
+	// 		skb->secmark = profile->pid;
+	// 		printk (KERN_INFO "udp_send_skb: pid %d added to skb\n", profile->pid);
+	// 	}
+	// }
+	//Custom code: end
+
+	//Custom code: start
 	char *curr_domain = NULL;
+	struct aa_profile *profile;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	profile = aa_get_profile(ctx->profile);
 	if (profile != NULL && !unconfined(profile))
 	{
-		if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
-		{
-			curr_domain = profile->current_domain->domain;
-		}
+		if(profile->current_domain != NULL && profile->current_domain->domain != NULL)
+        {
+            curr_domain = profile->current_domain->domain;
+        }
 		if (curr_domain != NULL)
 		{
 			skb->secmark = profile->pid;
 			printk (KERN_INFO "udp_send_skb: pid %d added to skb\n", profile->pid);
 		}
 	}
+	aa_put_profile(ctx->profile);
 	//Custom code: end
 
 
@@ -1298,20 +1323,40 @@ try_again:
 		return err;
 
 	//Custom code: start
-	struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	// struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	// char *curr_domain = NULL;
+	// if (profile != NULL && !unconfined(profile))
+	// {
+	// 	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	// 	{
+	// 		curr_domain = profile->current_domain->domain;
+	// 	}
+	// 	if (curr_domain != NULL)
+	// 	{
+	// 		profile->pid = skb->secmark;
+	// 		printk (KERN_INFO "udp_recvmsg: secmark %d added to profile->pid\n", skb->secmark);
+	// 	}
+	// }
+	//Custom code: end
+
+	//Custom code: start
 	char *curr_domain = NULL;
+	struct aa_profile *profile;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	profile = aa_get_profile(ctx->profile);
 	if (profile != NULL && !unconfined(profile))
 	{
-		if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
-		{
-			curr_domain = profile->current_domain->domain;
-		}
+		if(profile->current_domain != NULL && profile->current_domain->domain != NULL)
+        {
+            curr_domain = profile->current_domain->domain;
+        }
 		if (curr_domain != NULL)
 		{
 			profile->pid = skb->secmark;
-			printk (KERN_INFO "udp_send_skb: pid %d added to skb\n", profile->pid);
+			printk (KERN_INFO "udp_recvmsg: pid %d restored from skb\n", profile->pid );
 		}
 	}
+	aa_put_profile(ctx->profile);
 	//Custom code: end
 
 
@@ -1553,20 +1598,40 @@ int udp_queue_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	int is_udplite = IS_UDPLITE(sk);
 
 	//Custom code: start
-	struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	// struct aa_profile *profile = (struct aa_profile *)sk->sk_security;
+	// char *curr_domain = NULL;
+	// if (profile != NULL && !unconfined(profile))
+	// {
+	// 	if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
+	// 	{
+	// 		curr_domain = profile->current_domain->domain;
+	// 	}
+	// 	if (curr_domain != NULL)
+	// 	{
+	// 		profile->pid = skb->secmark;
+	// 		printk (KERN_INFO "udp_queue_rcv_skb: secmark %d added to profile->pid\n", skb->secmark);
+	// 	}
+	// }
+	//Custom code: end
+
+	//Custom code: start
 	char *curr_domain = NULL;
+	struct aa_profile *profile;
+	struct aa_sk_ctx *ctx = SK_CTX(sk);
+	profile = aa_get_profile(ctx->profile);
 	if (profile != NULL && !unconfined(profile))
 	{
-		if (profile->current_domain != NULL && profile->current_domain->domain != NULL)
-		{
-			curr_domain = profile->current_domain->domain;
-		}
+		if(profile->current_domain != NULL && profile->current_domain->domain != NULL)
+        {
+            curr_domain = profile->current_domain->domain;
+        }
 		if (curr_domain != NULL)
 		{
 			profile->pid = skb->secmark;
-			printk (KERN_INFO "udp_send_skb: pid %d added to skb\n", profile->pid);
+			printk (KERN_INFO "udp_queue_rcv_skb: pid %d restored from skb\n", profile->pid );
 		}
 	}
+	aa_put_profile(ctx->profile);
 	//Custom code: end
 
 
