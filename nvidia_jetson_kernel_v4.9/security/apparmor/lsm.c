@@ -72,7 +72,7 @@ static int apparmor_tsk_container_add(struct aa_profile *profile, pid_t pid)
 		else if (profile_cache_arr[i].pid == 0)
 		{
 			profile_cache_arr[i].pid = pid;
-			profile_cache_arr[i].cur_profile = aa_get_profile(profile);
+			profile_cache_arr[i].cur_profile = aa_get_newest_profile(profile);
 			ret = 1;
 			break;
 		}
@@ -82,7 +82,7 @@ static int apparmor_tsk_container_add(struct aa_profile *profile, pid_t pid)
 		// printk (KERN_INFO "apparmor_tsk_container_add: adding data at idx %d, pid %d, profile %s\n", remove_idx, pid, profile->hname);
 		
 		profile_cache_arr[remove_idx].pid = pid;
-		profile_cache_arr[remove_idx].cur_profile = aa_get_profile(profile);
+		profile_cache_arr[remove_idx].cur_profile = aa_get_newest_profile(profile);
 		remove_idx += 1;
 		remove_idx %= MAX_LABEL_CACHE_SIZE;
 	}
@@ -102,7 +102,7 @@ static struct aa_profile *apparmor_tsk_container_get(pid_t pid)
 	{
 		if (profile_cache_arr[i].pid == pid && profile_cache_arr[i].cur_profile != NULL)
 		{
-			ret = aa_get_profile(profile_cache_arr[i].cur_profile);
+			ret = aa_get_newest_profile(profile_cache_arr[i].cur_profile);
 			break;
 		}
 	}
@@ -1136,7 +1136,7 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 
 	if (ctx != NULL && ctx->profile != NULL)
 	{
-		profile = aa_get_profile(ctx->profile);
+		profile = aa_get_newest_profile(ctx->profile);
 
 		if(profile->current_domain != NULL && profile->current_domain->domain != NULL)
         {
@@ -1194,16 +1194,6 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	return 0;
 }
 
-static int apparmor_inet_conn_request(struct sock *sk, struct sk_buff *skb,
-				      struct request_sock *req)
-{
-	struct aa_sk_ctx *ctx = SK_CTX(sk);
-	struct aa_profile *profile = aa_get_profile(ctx->profile);
-	printk(KERN_INFO "inet_conn_request: sock_profile: %s\n", profile->base.hname);
-	aa_put_profile(profile);
-	return 0;
-}
-
 
 
 
@@ -1254,7 +1244,6 @@ static struct security_hook_list apparmor_hooks[] = {
 	LSM_HOOK_INIT(socket_post_create, apparmor_socket_post_create),
 	LSM_HOOK_INIT(socket_sendmsg, apparmor_socket_sendmsg),
 	LSM_HOOK_INIT(socket_recvmsg, apparmor_socket_recvmsg),
-	LSM_HOOK_INIT(inet_conn_request, apparmor_inet_conn_request),
 	#ifdef CONFIG_NETWORK_SECMARK
 	LSM_HOOK_INIT(socket_sock_rcv_skb, apparmor_socket_sock_rcv_skb),
 	#endif
