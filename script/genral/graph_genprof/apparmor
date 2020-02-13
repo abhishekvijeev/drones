@@ -1,0 +1,871 @@
+#!/bin/sh
+PREREQ=""
+prereqs()
+{
+        echo "$PREREQ"
+}
+case $1 in
+prereqs)
+        prereqs
+        exit 0
+        ;;
+esac
+
+PROFILE="profile init-systemd /** flags=(complain)
+{
+/lib/systemd/systemd rix,
+
+/lib/systemd/systemd-journald rcx -> /lib/systemd/systemd-journald,
+/lib/systemd/systemd-udevd rcx -> /lib/systemd/systemd-udevd,
+/lib/systemd/systemd-resolved rcx -> /lib/systemd/systemd-resolved,
+/lib/systemd/systemd-logind rcx -> /lib/systemd/systemd-logind,
+/usr/sbin/irqbalance rcx -> /usr/sbin/irqbalance,
+/run/wpa_supplicant rcx -> /run/wpa_supplicant,
+/usr/bin/networkd-dispatcher rcx -> /usr/bin/networkd-dispatcher,
+/usr/sbin/NetworkManager rcx -> /usr/sbin/NetworkManager,
+/usr/sbin/ModemManager rcx -> /usr/sbin/ModemManager,
+/usr/sbin/cupsd rcx -> /usr/sbin/cupsd,
+/usr/lib/udisks2/udisksd rcx -> /usr/lib/udisks2/udisksd,
+/usr/sbin/rsyslogd rcx -> /usr/sbin/rsyslogd,
+/usr/sbin/cron rcx -> /usr/sbin/cron,
+/usr/lib/accountsservice/accounts-daemon rcx -> /usr/lib/accountsservice/accounts-daemon,
+/usr/sbin/acpid rcx -> /usr/sbin/acpid,
+/usr/lib/snapd/snapd rcx -> /usr/lib/snapd/snapd,
+/usr/sbin/cups-browsed rcx -> /usr/sbin/cups-browsed,
+/usr/lib/colord/colord rcx -> /usr/lib/colord/colord,
+/usr/share/unattended-upgrades/unattended-upgrade-shutdown rcx -> /usr/share/unattended-upgrades/unattended-upgrade-shutdown,
+/usr/lib/policykit-1/polkitd rcx -> /usr/lib/policykit-1/polkitd,
+/usr/sbin/gdm3 rcx -> /usr/sbin/gdm3,
+/usr/bin/whoopsie rcx -> /usr/bin/whoopsie,
+/usr/sbin/kerneloops rcx -> /usr/sbin/kerneloops,
+/var/lib/NetworkManager/dhclient-enp0s3.conf rcx -> /var/lib/NetworkManager/dhclient-enp0s3.conf,
+/usr/lib/upower/upowerd rcx -> /usr/lib/upower/upowerd,
+/usr/lib/packagekit/packagekitd rcx -> /usr/lib/packagekit/packagekitd,
+/usr/bin/gnome-session rcx -> /usr/bin/gnome-session,
+/usr/lib/gnome-session/gnome-session-binary rcx -> /usr/lib/gnome-session/gnome-session-binary,
+/usr/lib/at-spi2-core/at-spi-bus-launcher rcx -> /usr/lib/at-spi2-core/at-spi-bus-launcher,
+/usr/lib/at-spi2-core/at-spi2-registryd rcx -> /usr/lib/at-spi2-core/at-spi2-registryd,
+/usr/bin/gnome-shell rcx -> /usr/bin/gnome-shell,
+/usr/lib/gvfs/gvfsd rcx -> /usr/lib/gvfs/gvfsd,
+/usr/lib/ibus/ibus-dconf rcx -> /usr/lib/ibus/ibus-dconf,
+/usr/lib/ibus/ibus-extension-gtk3 rcx -> /usr/lib/ibus/ibus-extension-gtk3,
+/usr/lib/ibus/ibus-x11 rcx -> /usr/lib/ibus/ibus-x11,
+/usr/lib/ibus/ibus-portal rcx -> /usr/lib/ibus/ibus-portal,
+/usr/libexec/xdg-permission-store rcx -> /usr/libexec/xdg-permission-store,
+/usr/lib/gnome-shell/gnome-shell-calendar-server rcx -> /usr/lib/gnome-shell/gnome-shell-calendar-server,
+/usr/libexec/evolution-source-registry rcx -> /usr/libexec/evolution-source-registry,
+/usr/lib/dconf/dconf-service rcx -> /usr/lib/dconf/dconf-service,
+/usr/lib/gnome-online-accounts/goa-daemon rcx -> /usr/lib/gnome-online-accounts/goa-daemon,
+/usr/lib/gvfs/gvfs-udisks2-volume-monitor rcx -> /usr/lib/gvfs/gvfs-udisks2-volume-monitor,
+/usr/lib/gvfs/gvfs-afc-volume-monitor rcx -> /usr/lib/gvfs/gvfs-afc-volume-monitor,
+/usr/lib/gvfs/gvfs-goa-volume-monitor rcx -> /usr/lib/gvfs/gvfs-goa-volume-monitor,
+/usr/lib/gnome-online-accounts/goa-identity-service rcx -> /usr/lib/gnome-online-accounts/goa-identity-service,
+/usr/lib/gvfs/gvfs-mtp-volume-monitor rcx -> /usr/lib/gvfs/gvfs-mtp-volume-monitor,
+/usr/lib/gvfs/gvfs-gphoto2-volume-monitor rcx -> /usr/lib/gvfs/gvfs-gphoto2-volume-monitor,
+/usr/lib/gnome-settings-daemon/gsd-smartcard rcx -> /usr/lib/gnome-settings-daemon/gsd-smartcard,
+/usr/lib/gnome-settings-daemon/gsd-keyboard rcx -> /usr/lib/gnome-settings-daemon/gsd-keyboard,
+/usr/lib/gnome-settings-daemon/gsd-power rcx -> /usr/lib/gnome-settings-daemon/gsd-power,
+/usr/lib/gnome-settings-daemon/gsd-a11y-settings rcx -> /usr/lib/gnome-settings-daemon/gsd-a11y-settings,
+/usr/lib/gnome-settings-daemon/gsd-sound rcx -> /usr/lib/gnome-settings-daemon/gsd-sound,
+/usr/lib/gnome-settings-daemon/gsd-media-keys rcx -> /usr/lib/gnome-settings-daemon/gsd-media-keys,
+/usr/lib/gnome-settings-daemon/gsd-print-notifications rcx -> /usr/lib/gnome-settings-daemon/gsd-print-notifications,
+/usr/lib/gnome-settings-daemon/gsd-clipboard rcx -> /usr/lib/gnome-settings-daemon/gsd-clipboard,
+/usr/lib/gnome-settings-daemon/gsd-wacom rcx -> /usr/lib/gnome-settings-daemon/gsd-wacom,
+/usr/lib/gnome-settings-daemon/gsd-mouse rcx -> /usr/lib/gnome-settings-daemon/gsd-mouse,
+/usr/lib/gnome-settings-daemon/gsd-rfkill rcx -> /usr/lib/gnome-settings-daemon/gsd-rfkill,
+/usr/lib/gnome-settings-daemon/gsd-color rcx -> /usr/lib/gnome-settings-daemon/gsd-color,
+/usr/lib/gnome-settings-daemon/gsd-xsettings rcx -> /usr/lib/gnome-settings-daemon/gsd-xsettings,
+/usr/lib/gnome-settings-daemon/gsd-screensaver-proxy rcx -> /usr/lib/gnome-settings-daemon/gsd-screensaver-proxy,
+/usr/lib/gnome-settings-daemon/gsd-datetime rcx -> /usr/lib/gnome-settings-daemon/gsd-datetime,
+/usr/lib/gnome-settings-daemon/gsd-sharing rcx -> /usr/lib/gnome-settings-daemon/gsd-sharing,
+/usr/lib/gnome-settings-daemon/gsd-housekeeping rcx -> /usr/lib/gnome-settings-daemon/gsd-housekeeping,
+/usr/lib/gnome-settings-daemon/gsd-printer rcx -> /usr/lib/gnome-settings-daemon/gsd-printer,
+/usr/libexec/evolution-calendar-factory rcx -> /usr/libexec/evolution-calendar-factory,
+/usr/lib/ibus/ibus-engine-simple rcx -> /usr/lib/ibus/ibus-engine-simple,
+/usr/libexec/evolution-addressbook-factory rcx -> /usr/libexec/evolution-addressbook-factory,
+/org/gtk/gvfs/exec_spaw/0 rcx -> /org/gtk/gvfs/exec_spaw/0,
+/usr/lib/tracker/tracker-store rcx -> /usr/lib/tracker/tracker-store,
+/org/gtk/gvfs/exec_spaw/1 rcx -> /org/gtk/gvfs/exec_spaw/1,
+/usr/lib/tracker/tracker-miner-fs rcx -> /usr/lib/tracker/tracker-miner-fs,
+/usr/libexec/evolution-data-server/evolution-alarm-notify rcx -> /usr/libexec/evolution-data-server/evolution-alarm-notify,
+/usr/lib/tracker/tracker-miner-apps rcx -> /usr/lib/tracker/tracker-miner-apps,
+/usr/lib/gnome-disk-utility/gsd-disk-utility-notify rcx -> /usr/lib/gnome-disk-utility/gsd-disk-utility-notify,
+/usr/bin/pulseaudio rcx -> /usr/bin/pulseaudio,
+/usr/bin/gnome-software rcx -> /usr/bin/gnome-software,
+/usr/lib/fwupd/fwupd rcx -> /usr/lib/fwupd/fwupd,
+/usr/lib/bolt/boltd rcx -> /usr/lib/bolt/boltd,
+/usr/lib/gnome-terminal/gnome-terminal-server rcx -> /usr/lib/gnome-terminal/gnome-terminal-server,
+/usr/lib/deja-dup/deja-dup-monitor rcx -> /usr/lib/deja-dup/deja-dup-monitor,
+
+
+
+/usr/sbin/avahi-daemon rcx -> /usr/sbin/avahi-daemon,
+/sbin/wpa_supplicant rcx -> /sbin/wpa_supplicant,
+/usr/bin/dbus-daemon rcx -> /usr/bin/dbus-daemon,
+profile avahi-daemon /usr/sbin/avahi-daemon flags=(complain)
+{
+# dte_domain avahi-daemon,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+profile sbin_wpa_supplicant /sbin/wpa_supplicant flags=(complain)
+{
+# dte_domain sbin_wpa_supplicant,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+profile dbus-daemon /usr/bin/dbus-daemon flags=(complain)
+{
+# dte_domain dbus-daemon,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+
+
+
+
+
+profile systemd-journald /lib/systemd/systemd-journald flags=(complain)
+{
+# dte_domain systemd-journald,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile systemd-udevd /lib/systemd/systemd-udevd flags=(complain)
+{
+# dte_domain systemd-udevd,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile systemd-resolved /lib/systemd/systemd-resolved flags=(complain)
+{
+# dte_domain systemd-resolved,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile systemd-logind /lib/systemd/systemd-logind flags=(complain)
+{
+# dte_domain systemd-logind,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile irqbalance /usr/sbin/irqbalance flags=(complain)
+{
+# dte_domain irqbalance,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile run_wpa_supplicant /run/wpa_supplicant flags=(complain)
+{
+# dte_domain run_wpa_supplicant,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile networkd-dispatcher /usr/bin/networkd-dispatcher flags=(complain)
+{
+# dte_domain networkd-dispatcher,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile NetworkManager /usr/sbin/NetworkManager flags=(complain)
+{
+# dte_domain NetworkManager,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile ModemManager /usr/sbin/ModemManager flags=(complain)
+{
+# dte_domain ModemManager,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile cupsd /usr/sbin/cupsd flags=(complain)
+{
+# dte_domain cupsd,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile udisksd /usr/lib/udisks2/udisksd flags=(complain)
+{
+# dte_domain udisksd,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile rsyslogd /usr/sbin/rsyslogd flags=(complain)
+{
+# dte_domain rsyslogd,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile cron /usr/sbin/cron flags=(complain)
+{
+# dte_domain cron,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile accounts-daemon /usr/lib/accountsservice/accounts-daemon flags=(complain)
+{
+# dte_domain accounts-daemon,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile acpid /usr/sbin/acpid flags=(complain)
+{
+# dte_domain acpid,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile snapd /usr/lib/snapd/snapd flags=(complain)
+{
+# dte_domain snapd,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile cups-browsed /usr/sbin/cups-browsed flags=(complain)
+{
+# dte_domain cups-browsed,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile colord /usr/lib/colord/colord flags=(complain)
+{
+# dte_domain colord,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile unattended-upgrade-shutdown /usr/share/unattended-upgrades/unattended-upgrade-shutdown flags=(complain)
+{
+# dte_domain unattended-upgrade-shutdown,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile polkitd /usr/lib/policykit-1/polkitd flags=(complain)
+{
+# dte_domain polkitd,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gdm3 /usr/sbin/gdm3 flags=(complain)
+{
+# dte_domain gdm3,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile whoopsie /usr/bin/whoopsie flags=(complain)
+{
+# dte_domain whoopsie,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile kerneloops /usr/sbin/kerneloops flags=(complain)
+{
+# dte_domain kerneloops,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile dhclient-enp0s3.conf /var/lib/NetworkManager/dhclient-enp0s3.conf flags=(complain)
+{
+# dte_domain dhclient-enp0s3.conf,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile upowerd /usr/lib/upower/upowerd flags=(complain)
+{
+# dte_domain upowerd,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile packagekitd /usr/lib/packagekit/packagekitd flags=(complain)
+{
+# dte_domain packagekitd,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+profile gnome-session /usr/bin/gnome-session flags=(complain)
+{
+# dte_domain gnome-session,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gnome-session-binary /usr/lib/gnome-session/gnome-session-binary flags=(complain)
+{
+# dte_domain gnome-session-binary,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile at-spi-bus-launcher /usr/lib/at-spi2-core/at-spi-bus-launcher flags=(complain)
+{
+# dte_domain at-spi-bus-launcher,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile at-spi2-registryd /usr/lib/at-spi2-core/at-spi2-registryd flags=(complain)
+{
+# dte_domain at-spi2-registryd,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gnome-shell /usr/bin/gnome-shell flags=(complain)
+{
+# dte_domain gnome-shell,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gvfsd /usr/lib/gvfs/gvfsd flags=(complain)
+{
+# dte_domain gvfsd,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile ibus-dconf /usr/lib/ibus/ibus-dconf flags=(complain)
+{
+# dte_domain ibus-dconf,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile ibus-extension-gtk3 /usr/lib/ibus/ibus-extension-gtk3 flags=(complain)
+{
+# dte_domain ibus-extension-gtk3,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile ibus-x11 /usr/lib/ibus/ibus-x11 flags=(complain)
+{
+# dte_domain ibus-x11,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile ibus-portal /usr/lib/ibus/ibus-portal flags=(complain)
+{
+# dte_domain ibus-portal,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile xdg-permission-store /usr/libexec/xdg-permission-store flags=(complain)
+{
+# dte_domain xdg-permission-store,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gnome-shell-calendar-server /usr/lib/gnome-shell/gnome-shell-calendar-server flags=(complain)
+{
+# dte_domain gnome-shell-calendar-server,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile evolution-source-registry /usr/libexec/evolution-source-registry flags=(complain)
+{
+# dte_domain evolution-source-registry,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile dconf-service /usr/lib/dconf/dconf-service flags=(complain)
+{
+# dte_domain dconf-service,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile goa-daemon /usr/lib/gnome-online-accounts/goa-daemon flags=(complain)
+{
+# dte_domain goa-daemon,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gvfs-udisks2-volume-monitor /usr/lib/gvfs/gvfs-udisks2-volume-monitor flags=(complain)
+{
+# dte_domain gvfs-udisks2-volume-monitor,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gvfs-afc-volume-monitor /usr/lib/gvfs/gvfs-afc-volume-monitor flags=(complain)
+{
+# dte_domain gvfs-afc-volume-monitor,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gvfs-goa-volume-monitor /usr/lib/gvfs/gvfs-goa-volume-monitor flags=(complain)
+{
+# dte_domain gvfs-goa-volume-monitor,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile goa-identity-service /usr/lib/gnome-online-accounts/goa-identity-service flags=(complain)
+{
+# dte_domain goa-identity-service,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gvfs-mtp-volume-monitor /usr/lib/gvfs/gvfs-mtp-volume-monitor flags=(complain)
+{
+# dte_domain gvfs-mtp-volume-monitor,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gvfs-gphoto2-volume-monitor /usr/lib/gvfs/gvfs-gphoto2-volume-monitor flags=(complain)
+{
+# dte_domain gvfs-gphoto2-volume-monitor,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-smartcard /usr/lib/gnome-settings-daemon/gsd-smartcard flags=(complain)
+{
+# dte_domain gsd-smartcard,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-keyboard /usr/lib/gnome-settings-daemon/gsd-keyboard flags=(complain)
+{
+# dte_domain gsd-keyboard,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-power /usr/lib/gnome-settings-daemon/gsd-power flags=(complain)
+{
+# dte_domain gsd-power,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-a11y-settings /usr/lib/gnome-settings-daemon/gsd-a11y-settings flags=(complain)
+{
+# dte_domain gsd-a11y-settings,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-sound /usr/lib/gnome-settings-daemon/gsd-sound flags=(complain)
+{
+# dte_domain gsd-sound,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-media-keys /usr/lib/gnome-settings-daemon/gsd-media-keys flags=(complain)
+{
+# dte_domain gsd-media-keys,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-print-notifications /usr/lib/gnome-settings-daemon/gsd-print-notifications flags=(complain)
+{
+# dte_domain gsd-print-notifications,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-clipboard /usr/lib/gnome-settings-daemon/gsd-clipboard flags=(complain)
+{
+# dte_domain gsd-clipboard,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-wacom /usr/lib/gnome-settings-daemon/gsd-wacom flags=(complain)
+{
+# dte_domain gsd-wacom,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-mouse /usr/lib/gnome-settings-daemon/gsd-mouse flags=(complain)
+{
+# dte_domain gsd-mouse,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-rfkill /usr/lib/gnome-settings-daemon/gsd-rfkill flags=(complain)
+{
+# dte_domain gsd-rfkill,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-color /usr/lib/gnome-settings-daemon/gsd-color flags=(complain)
+{
+# dte_domain gsd-color,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-xsettings /usr/lib/gnome-settings-daemon/gsd-xsettings flags=(complain)
+{
+# dte_domain gsd-xsettings,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-screensaver-proxy /usr/lib/gnome-settings-daemon/gsd-screensaver-proxy flags=(complain)
+{
+# dte_domain gsd-screensaver-proxy,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-datetime /usr/lib/gnome-settings-daemon/gsd-datetime flags=(complain)
+{
+# dte_domain gsd-datetime,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-sharing /usr/lib/gnome-settings-daemon/gsd-sharing flags=(complain)
+{
+# dte_domain gsd-sharing,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-housekeeping /usr/lib/gnome-settings-daemon/gsd-housekeeping flags=(complain)
+{
+# dte_domain gsd-housekeeping,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-printer /usr/lib/gnome-settings-daemon/gsd-printer flags=(complain)
+{
+# dte_domain gsd-printer,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile evolution-calendar-factory /usr/libexec/evolution-calendar-factory flags=(complain)
+{
+# dte_domain evolution-calendar-factory,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile ibus-engine-simple /usr/lib/ibus/ibus-engine-simple flags=(complain)
+{
+# dte_domain ibus-engine-simple,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile evolution-addressbook-factory /usr/libexec/evolution-addressbook-factory flags=(complain)
+{
+# dte_domain evolution-addressbook-factory,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile 0 /org/gtk/gvfs/exec_spaw/0 flags=(complain)
+{
+# dte_domain 0,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile tracker-store /usr/lib/tracker/tracker-store flags=(complain)
+{
+# dte_domain tracker-store,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile 1 /org/gtk/gvfs/exec_spaw/1 flags=(complain)
+{
+# dte_domain 1,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile tracker-miner-fs /usr/lib/tracker/tracker-miner-fs flags=(complain)
+{
+# dte_domain tracker-miner-fs,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile evolution-alarm-notify /usr/libexec/evolution-data-server/evolution-alarm-notify flags=(complain)
+{
+# dte_domain evolution-alarm-notify,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile tracker-miner-apps /usr/lib/tracker/tracker-miner-apps flags=(complain)
+{
+# dte_domain tracker-miner-apps,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gsd-disk-utility-notify /usr/lib/gnome-disk-utility/gsd-disk-utility-notify flags=(complain)
+{
+# dte_domain gsd-disk-utility-notify,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile pulseaudio /usr/bin/pulseaudio flags=(complain)
+{
+# dte_domain pulseaudio,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gnome-software /usr/bin/gnome-software flags=(complain)
+{
+# dte_domain gnome-software,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile fwupd /usr/lib/fwupd/fwupd flags=(complain)
+{
+# dte_domain fwupd,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile boltd /usr/lib/bolt/boltd flags=(complain)
+{
+# dte_domain boltd,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile gnome-terminal-server /usr/lib/gnome-terminal/gnome-terminal-server flags=(complain)
+{
+# dte_domain gnome-terminal-server,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+
+profile deja-dup-monitor /usr/lib/deja-dup/deja-dup-monitor flags=(complain)
+{
+# dte_domain deja-dup-monitor,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+}"
+
+mount -t securityfs none /sys/kernel/security
+#echo "profile init-systemd /lib/systemd/** flags=(complain) {/lib/systemd/* ix, /{,usr/}{,s}bin/* pix, /opt/** Px,}" | /sbin/apparmor_parser -a
+#echo "profile init-upstart /sbin/upstart flags=(complain) {}" | /sbin/apparmor_parser -a
+
+echo "$PROFILE" | /sbin/apparmor_parser -a
+#echo "profile init-upstart /sbin/upstart flags=(complain) {}" | /sbin/apparmor_parser -a
+
+read -p "Enter a name: " name
+echo "Hi, $name"
+
