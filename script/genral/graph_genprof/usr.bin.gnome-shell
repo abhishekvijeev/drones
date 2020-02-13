@@ -1,0 +1,8 @@
+profile gnome-shell /usr/bin/gnome-shell flags=(complain)
+{
+# dte_domain gnome-shell,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklpix,
+}
+

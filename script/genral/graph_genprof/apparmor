@@ -19,6 +19,7 @@ PROFILE="profile init-systemd /** flags=(complain)
 /usr/lib/gdm3/gdm-x-session rix,
 /etc/gdm3/Xsession rix,
 /usr/lib/gnome-session/gnome-session-binary rix,
+/usr/bin/gnome-shell rix,
 
 
 /lib/systemd/systemd-journald rcx -> /lib/systemd/systemd-journald,
@@ -59,7 +60,6 @@ PROFILE="profile init-systemd /** flags=(complain)
 
 /usr/lib/at-spi2-core/at-spi-bus-launcher rcx -> /usr/lib/at-spi2-core/at-spi-bus-launcher,
 /usr/lib/at-spi2-core/at-spi2-registryd rcx -> /usr/lib/at-spi2-core/at-spi2-registryd,
-/usr/bin/gnome-shell rcx -> /usr/bin/gnome-shell,
 /usr/lib/gvfs/gvfsd rcx -> /usr/lib/gvfs/gvfsd,
 /usr/lib/ibus/ibus-dconf rcx -> /usr/lib/ibus/ibus-dconf,
 /usr/lib/ibus/ibus-extension-gtk3 rcx -> /usr/lib/ibus/ibus-extension-gtk3,
@@ -397,16 +397,6 @@ profile at-spi2-registryd /usr/lib/at-spi2-core/at-spi2-registryd flags=(complai
 # allowip 0.0.0.0,
 /** rwmklix,
 }
-
-
-profile gnome-shell /usr/bin/gnome-shell flags=(complain)
-{
-# dte_domain gnome-shell,
-# dte_net_domain *,
-# allowip 0.0.0.0,
-/** rwmklix,
-}
-
 
 profile gvfsd /usr/lib/gvfs/gvfsd flags=(complain)
 {
@@ -857,16 +847,17 @@ profile deja-dup-monitor /usr/lib/deja-dup/deja-dup-monitor flags=(complain)
 /** rwmklix,
 }
 
-/lib/systemd/* rix,
-/{,usr/}{,s}bin/* rcx -> default_profile,
-/opt/** rPx,
+# /lib/systemd/* rix,
+# /{,usr/}{,s}bin/* rcx -> default_profile,
+# /opt/** rPx,
+/** rwmklcx -> default_profile,
 
 profile default_profile flags=(complain)
 {
 # dte_domain default_profile,
 # dte_net_domain *,
 # allowip 0.0.0.0,
-/** rwmklix,
+/** rwmklpix,
 }
 
 profile gdm3 /usr/sbin/gdm3 flags=(complain)
@@ -874,17 +865,6 @@ profile gdm3 /usr/sbin/gdm3 flags=(complain)
 # dte_domain gdm3,
 # dte_net_domain *,
 # allowip 0.0.0.0,
-#/usr/lib/gdm3/** rix ,
-#/usr/bin/gnome-keyring-daemon rix ,
-#/usr/bin/Xorg rix ,
-#/etc/gdm3/** rix ,
-#/usr/sbin/gdm3 rix ,
-
-#/{,usr/}{,s}bin/* rpx -> default_profile,
-#/opt/** rPx,
-
-#/** rwmklpx -> default_profile,
-
 /** rwmklix,
 
 }
