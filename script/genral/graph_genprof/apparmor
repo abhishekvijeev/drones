@@ -14,6 +14,12 @@ esac
 PROFILE="profile init-systemd /** flags=(complain)
 {
 /lib/systemd/systemd rix,
+/usr/sbin/gdm3 rix,
+/usr/lib/gdm3/gdm-session-worker rix,
+/usr/lib/gdm3/gdm-x-session rix,
+/etc/gdm3/Xsession rix,
+/usr/lib/gnome-session/gnome-session-binary rix,
+
 
 /lib/systemd/systemd-journald rcx -> /lib/systemd/systemd-journald,
 /lib/systemd/systemd-udevd rcx -> /lib/systemd/systemd-udevd,
@@ -35,14 +41,22 @@ PROFILE="profile init-systemd /** flags=(complain)
 /usr/lib/colord/colord rcx -> /usr/lib/colord/colord,
 /usr/share/unattended-upgrades/unattended-upgrade-shutdown rcx -> /usr/share/unattended-upgrades/unattended-upgrade-shutdown,
 /usr/lib/policykit-1/polkitd rcx -> /usr/lib/policykit-1/polkitd,
-/usr/sbin/gdm3 rcx -> /usr/sbin/gdm3,
+
+# /usr/sbin/gdm3 rcx -> /usr/sbin/gdm3,
+# /usr/lib/gdm3/** rcx -> /usr/sbin/gdm3,
+# /usr/bin/gnome-keyring-daemon rcx -> /usr/sbin/gdm3,
+# /usr/bin/Xorg rcx -> /usr/sbin/gdm3,
+# /etc/gdm3/** rcx -> /usr/sbin/gdm3,
+# /usr/sbin/gdm3 rcx -> /usr/sbin/gdm3,
+
+
 /usr/bin/whoopsie rcx -> /usr/bin/whoopsie,
 /usr/sbin/kerneloops rcx -> /usr/sbin/kerneloops,
 /var/lib/NetworkManager/dhclient-enp0s3.conf rcx -> /var/lib/NetworkManager/dhclient-enp0s3.conf,
 /usr/lib/upower/upowerd rcx -> /usr/lib/upower/upowerd,
 /usr/lib/packagekit/packagekitd rcx -> /usr/lib/packagekit/packagekitd,
 /usr/bin/gnome-session rcx -> /usr/bin/gnome-session,
-/usr/lib/gnome-session/gnome-session-binary rcx -> /usr/lib/gnome-session/gnome-session-binary,
+
 /usr/lib/at-spi2-core/at-spi-bus-launcher rcx -> /usr/lib/at-spi2-core/at-spi-bus-launcher,
 /usr/lib/at-spi2-core/at-spi2-registryd rcx -> /usr/lib/at-spi2-core/at-spi2-registryd,
 /usr/bin/gnome-shell rcx -> /usr/bin/gnome-shell,
@@ -310,13 +324,7 @@ profile polkitd /usr/lib/policykit-1/polkitd flags=(complain)
 }
 
 
-profile gdm3 /usr/sbin/gdm3 flags=(complain)
-{
-# dte_domain gdm3,
-# dte_net_domain *,
-# allowip 0.0.0.0,
-/** rwmklix,
-}
+
 
 
 profile whoopsie /usr/bin/whoopsie flags=(complain)
@@ -371,14 +379,6 @@ profile gnome-session /usr/bin/gnome-session flags=(complain)
 /** rwmklix,
 }
 
-
-profile gnome-session-binary /usr/lib/gnome-session/gnome-session-binary flags=(complain)
-{
-# dte_domain gnome-session-binary,
-# dte_net_domain *,
-# allowip 0.0.0.0,
-/** rwmklix,
-}
 
 
 profile at-spi-bus-launcher /usr/lib/at-spi2-core/at-spi-bus-launcher flags=(complain)
@@ -857,14 +857,43 @@ profile deja-dup-monitor /usr/lib/deja-dup/deja-dup-monitor flags=(complain)
 /** rwmklix,
 }
 
+/lib/systemd/* rix,
+/{,usr/}{,s}bin/* rcx -> default_profile,
+/opt/** rPx,
+
+profile default_profile flags=(complain)
+{
+# dte_domain default_profile,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+/** rwmklix,
+}
+
+profile gdm3 /usr/sbin/gdm3 flags=(complain)
+{
+# dte_domain gdm3,
+# dte_net_domain *,
+# allowip 0.0.0.0,
+#/usr/lib/gdm3/** rix ,
+#/usr/bin/gnome-keyring-daemon rix ,
+#/usr/bin/Xorg rix ,
+#/etc/gdm3/** rix ,
+#/usr/sbin/gdm3 rix ,
+
+#/{,usr/}{,s}bin/* rpx -> default_profile,
+#/opt/** rPx,
+
+#/** rwmklpx -> default_profile,
+
+/** rwmklix,
+
+}
+
 }"
 
 mount -t securityfs none /sys/kernel/security
-#echo "profile init-systemd /lib/systemd/** flags=(complain) {/lib/systemd/* ix, /{,usr/}{,s}bin/* pix, /opt/** Px,}" | /sbin/apparmor_parser -a
-#echo "profile init-upstart /sbin/upstart flags=(complain) {}" | /sbin/apparmor_parser -a
 
 echo "$PROFILE" | /sbin/apparmor_parser -a
-#echo "profile init-upstart /sbin/upstart flags=(complain) {}" | /sbin/apparmor_parser -a
 
 read -p "Enter a name: " name
 echo "Hi, $name"
