@@ -533,11 +533,11 @@ static struct aa_profile *unpack_profile(struct aa_ext *e)
 		
 
 
-		printk(KERN_INFO "\t\tDomainName=%s\n, allow=%d, deny=%d", profile->current_domain->domain, profile->current_domain->allow_cnt, profile->current_domain->deny_cnt);
+		// printk(KERN_INFO "\t\tDomainName=%s\n, allow=%d, deny=%d", profile->current_domain->domain, profile->current_domain->allow_cnt, profile->current_domain->deny_cnt);
 	
 		if (unpack_nameX(e, AA_STRUCT, "AllowedDomains")) 
 		{
-			printk(KERN_INFO "\t\tAllowedDomains:\n");
+			// printk(KERN_INFO "\t\tAllowedDomains:\n");
 			profile->allow_net_domains = kzalloc(sizeof(struct ListOfDomains), GFP_KERNEL);
 			if (!profile->allow_net_domains)
 				goto fail;
@@ -557,25 +557,25 @@ static struct aa_profile *unpack_profile(struct aa_ext *e)
 			if (!unpack_nameX(e, AA_STRUCTEND, NULL))
 				goto fail;
 			
-			struct ListOfDomains *iterator;
-			list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
-			{
-					printk_deferred(KERN_INFO "%s\n", iterator->domain);
-			}
-			printk(KERN_INFO "\t\tAllowedDomains:\n");
-			iterator = list_first_entry(&(profile->allow_net_domains->domain_list), typeof(*iterator), domain_list);
-			while( (&iterator->domain_list) != &(profile->allow_net_domains->domain_list))
-			{
-				printk(KERN_INFO "%s\n", iterator->domain);
+			// struct ListOfDomains *iterator;
+			// list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+			// {
+			// 		printk_deferred(KERN_INFO "%s\n", iterator->domain);
+			// }
+			// printk(KERN_INFO "\t\tAllowedDomains:\n");
+			// iterator = list_first_entry(&(profile->allow_net_domains->domain_list), typeof(*iterator), domain_list);
+			// while( (&iterator->domain_list) != &(profile->allow_net_domains->domain_list))
+			// {
+			// 	printk(KERN_INFO "%s\n", iterator->domain);
 				
-				iterator = list_next_entry (iterator, domain_list);
-			}
+			// 	iterator = list_next_entry (iterator, domain_list);
+			// }
 
 		}		
 
 		if (unpack_nameX(e, AA_STRUCT, "AllowedIPAddrs")) 
 		{
-			printk(KERN_INFO "\t\tAllowedIPAddrs:\n");
+			// printk(KERN_INFO "\t\tAllowedIPAddrs:\n");
 			profile->allowed_ip_addrs = kzalloc(sizeof(struct ListOfIPAddrs), GFP_KERNEL);
 			if (!profile->allowed_ip_addrs)
 				goto fail;
@@ -596,11 +596,11 @@ static struct aa_profile *unpack_profile(struct aa_ext *e)
 			if (!unpack_nameX(e, AA_STRUCTEND, NULL))
 				goto fail;
 			
-			struct ListOfIPAddrs *iterator;
-			list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
-			{
-				printk(KERN_INFO "%pi4\n", &(iterator->ip_addr));
-			}
+			// struct ListOfIPAddrs *iterator;
+			// list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
+			// {
+			// 	printk(KERN_INFO "%pi4\n", &(iterator->ip_addr));
+			// }
 
 		}		
 

@@ -20,6 +20,45 @@
 
 #include "match.h"
 
+
+// Custom code: start
+// Headers for ioctl() interface
+#include <linux/module.h>	
+#include <linux/kernel.h>	
+#include <linux/init.h>		
+#include <linux/ioctl.h>
+#include <linux/miscdevice.h>
+#include <linux/fs.h>
+#include <linux/uaccess.h>
+#include <linux/string.h>
+#include <linux/slab.h>
+#include <linux/types.h>
+
+typedef s64 tag_t;
+
+struct flag_struct
+{
+    int flag;
+};
+
+#define TASKCTXIO 'r'
+
+#define SET_NETWORK_FLAG _IO(TASKCTXIO, 0)
+#define CLEAR_NETWORK_FLAG _IO(TASKCTXIO, 1)
+#define SET_FILE_FLAG _IO(TASKCTXIO, 2)
+#define CLEAR_FILE_FLAG _IO(TASKCTXIO, 3)
+#define SET_MSGQ_FLAG _IO(TASKCTXIO, 4)
+#define CLEAR_MSGQ_FLAG _IO(TASKCTXIO, 5)
+#define SET_SHM_FLAG _IO(TASKCTXIO, 6)
+#define CLEAR_SHM_FLAG _IO(TASKCTXIO, 7)
+#define SET_GRAPHGEN_FLAG _IO(TASKCTXIO, 8)
+#define CLEAR_GRAPHGEN_FLAG _IO(TASKCTXIO, 9)
+
+// Custom code: end
+
+
+
+
 /*
  * Class of mediation types in the AppArmor policy db
  */
@@ -62,6 +101,7 @@ extern unsigned int aa_g_path_max;
 
 /* Flag indicating whether initialization completed */
 extern int apparmor_initialized __initdata;
+extern int apparmor_ioctl_debug;
 
 /* fn's in lib */
 char *aa_split_fqname(char *args, char **ns_name);

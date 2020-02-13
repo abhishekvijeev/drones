@@ -29,6 +29,20 @@ struct aa_sk_ctx {
 	struct aa_profile *profile;
 };
 
+struct aa_msg_queue_ctx {
+	struct aa_profile *profile;
+};
+
+struct aa_inode_ctx {
+	struct aa_profile *profile;
+};
+
+
+struct aa_shm_ctx {
+	struct aa_profile *profile;
+	struct list_head proc_attach_list;
+};
+
 /* struct aa_file_cxt - the AppArmor context the file was opened in
  * @perms: the permission the file was opened with
  *

@@ -25,6 +25,12 @@ struct path;
  * We use MAY_EXEC, MAY_WRITE, MAY_READ, MAY_APPEND and the following flags
  * for profile permissions
  */
+
+#define AA_MAY_EXEC		MAY_EXEC
+#define AA_MAY_WRITE		MAY_WRITE
+#define AA_MAY_READ		MAY_READ
+#define AA_MAY_APPEND		MAY_APPEND
+
 #define AA_MAY_CREATE                  0x0010
 #define AA_MAY_DELETE                  0x0020
 #define AA_MAY_META_WRITE              0x0040

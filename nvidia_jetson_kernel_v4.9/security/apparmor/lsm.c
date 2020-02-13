@@ -43,10 +43,14 @@
 #include <linux/inetdevice.h>
 #include <linux/tcp.h>
 #include <uapi/linux/tcp.h>
-
+#include <linux/xattr.h>
+#include <uapi/linux/xattr.h>
+#include <linux/msg.h>
+#include <linux/stat.h>
 
 /* Flag indicating whether initialization completed */
 int apparmor_initialized __initdata;
+int apparmor_ioctl_debug;
 
 
 
@@ -108,11 +112,11 @@ static struct aa_profile *apparmor_tsk_container_get(pid_t pid)
 	}
 	if (ret != NULL)
 	{
-		printk (KERN_INFO "apparmor_tsk_container_get: data found at idx %d, pid %d, profile %s\n", i, pid, ret->base.hname);
+		// printk (KERN_INFO "apparmor_tsk_container_get: data found at idx %d, pid %d, profile %s\n", i, pid, ret->base.hname);
 	}
 	else
 	{
-		printk (KERN_INFO "apparmor_tsk_container_get: data not found for pid %d\n", pid);
+		// printk (KERN_INFO "apparmor_tsk_container_get: data not found for pid %d\n", pid);
 	}
 	return ret;
 }
@@ -168,7 +172,8 @@ int localhost_address(u32 ip_addr)
 	u32 dev_addr;
 	if((ip_addr & 0x000000FF) == 127)
 	{
-		// printk(KERN_INFO "localhost_address: Packet from localhost: %pi4\n", &ip_addr);
+		if(apparmor_ioctl_debug == 0)
+			printk(KERN_INFO "localhost_address: Packet from localhost: %pi4\n", &ip_addr);
 		return 1;
 	}
 
@@ -179,7 +184,8 @@ int localhost_address(u32 ip_addr)
 		dev_addr = inet_select_addr(dev, 0, RT_SCOPE_UNIVERSE);
 		if(dev_addr == ip_addr)
 		{
-			// printk(KERN_INFO "localhost_address: IP address %pi4 equals device IP addr %pi4\n", &ip_addr, &dev_addr);
+			if(apparmor_ioctl_debug == 0)
+				printk(KERN_INFO "localhost_address: IP address %pi4 equals device IP addr %pi4\n", &ip_addr, &dev_addr);
 			read_unlock(&dev_base_lock);
 			return 1;
 		}
@@ -198,7 +204,8 @@ static bool apparmor_check_for_flow (struct aa_profile *profile, char *checking_
 	{
 		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
 		{
-			printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
+			if(apparmor_ioctl_debug % 2 == 0)
+				printk (KERN_INFO "apparmor_check_for_flow: Matching between %s, %s\n", iterator->domain, checking_domain);
 			if ((strcmp(iterator->domain, checking_domain) == 0) || strcmp(iterator->domain, "*") == 0)
 			{
 				return true;
@@ -219,18 +226,19 @@ static struct aa_profile *apparmor_socket_label_compare_helper(__u32 pid)
 	}
 	else
 	{
-		ret = aa_cred_profile(__task_cred(task_data));
+		ret = aa_get_newest_profile(aa_cred_profile(__task_cred(task_data)));
 	}
 	return ret;
 }
 static bool apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 {
-	bool allow = false;		
+	bool allow = true;		
 	struct aa_profile *sender_profile, *receiver_profile;
 	char *receiver_domain = NULL;
 	
 	if (sender_pid != receiver_pid && sender_pid != 0 && receiver_pid != 0)
 	{
+		allow = false;
 		sender_profile = apparmor_socket_label_compare_helper(sender_pid);
 		receiver_profile = apparmor_socket_label_compare_helper(receiver_pid);
 		
@@ -245,12 +253,13 @@ static bool apparmor_socket_label_compare(__u32 sender_pid, __u32 receiver_pid)
 				allow = apparmor_check_for_flow(sender_profile, receiver_domain);
 				if (allow)
 				{
-					printk (KERN_INFO "[GRAPH_GEN] Process %s, socket_ipc, %s\n", sender_profile->base.hname, receiver_profile->base.hname);
+					if(apparmor_ioctl_debug == 8)
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, socket_ipc, %s\n", sender_profile->base.hname, receiver_profile->base.hname);
 				}
 				
 			}
-			
-			printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_profile->base.hname, receiver_pid, sender_profile->base.hname, sender_pid, allow);
+			if(apparmor_ioctl_debug == 0)
+				printk (KERN_INFO "apparmor_socket_label_compare: receiver process = %s, pid = %d, sent from process %s, pid = %d, Match is %d\n", receiver_profile->base.hname, receiver_pid, sender_profile->base.hname, sender_pid, allow);
 		
 		}
 		
@@ -265,7 +274,8 @@ static bool apparmor_domain_declassify (struct aa_profile *profile, u32 check_ip
 	{
 		list_for_each_entry(iterator, &(profile->allowed_ip_addrs->ip_addr_list), ip_addr_list)
 		{
-			// printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
+			if(apparmor_ioctl_debug % 2 == 0)
+				printk (KERN_INFO "apparmor_domain_declassify: Matching between %u, %u\n", iterator->ip_addr, check_ip_addr);
 			if (iterator->ip_addr == 0 || iterator->ip_addr == check_ip_addr)
 			{
 				return true;
@@ -577,6 +587,39 @@ static int apparmor_inode_getattr(const struct path *path)
 	return common_perm_path(OP_GETATTR, path, AA_MAY_META_READ);
 }
 
+static int apparmor_inode_alloc_security(struct inode *inode)
+{
+	struct aa_inode_ctx *ctx;
+
+	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
+	if (!ctx)
+		return -ENOMEM;
+	
+	ctx->profile = aa_get_task_profile(current);
+	inode->i_security = ctx;
+
+	// printk(KERN_INFO "inode_alloc_security: process = %s, profile = %s\n", current->comm, ctx->profile->base.hname);
+
+
+	return 0;
+}
+static void apparmor_inode_free_security(struct inode *inode)
+{
+	struct aa_inode_ctx *ctx = inode->i_security;
+
+	inode->i_security = NULL;
+	aa_put_profile(ctx->profile);
+	kfree(ctx);	
+
+}
+// static int apparmor_inode_init_security(struct inode *inode, struct inode *dir,
+// 					const struct qstr *qstr,
+// 					const char **name, void **value,
+// 					size_t *len)
+// {
+// 	return -EOPNOTSUPP;
+// }
+
 static int apparmor_file_open(struct file *file, const struct cred *cred)
 {
 	struct aa_file_cxt *fcxt = file->f_security;
@@ -623,7 +666,7 @@ static int apparmor_file_alloc_security(struct file *file)
 static void apparmor_file_free_security(struct file *file)
 {
 	struct aa_file_cxt *cxt = file->f_security;
-
+	
 	aa_free_file_context(cxt);
 }
 
@@ -655,9 +698,338 @@ static int common_file_perm(int op, struct file *file, u32 mask)
 	return error;
 }
 
+bool apparmor_check_domain_in_xattrs(char *domain, char *xattr_buf)
+{
+	bool present = false;
+
+	char *found;
+
+    while( (found = strsep(&xattr_buf,",")) != NULL )
+	{
+		if(strcmp(domain, found) == 0)
+		{
+			present = true;
+			break;
+		}
+	}
+        
+	return present;
+}
+
+static int apparmor_calc_context_len(struct aa_profile *profile, int *context_len)
+{
+	struct ListOfDomains *iterator;
+	if (profile->allow_net_domains)
+	{
+		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+		{
+			*context_len += strlen(iterator->domain) + 1;
+		}
+	}
+	return 0;
+}
+
+static int apparmor_create_context(struct aa_profile *profile, char **context)
+{
+	struct ListOfDomains *iterator;
+	if (profile->allow_net_domains)
+	{
+		list_for_each_entry(iterator, &(profile->allow_net_domains->domain_list), domain_list)
+		{
+			*context = strcat(*context, iterator->domain);
+			*context = strcat(*context, ",");
+		}
+	}
+	return 0;
+}
+
+static void apparmor_setxattr(struct file *file, char *curr_domain)
+{
+	struct dentry *dentry = file->f_path.dentry;
+	struct aa_profile *curr_profile;
+	char *context = NULL;
+	int context_len = 0;
+
+	context_len += strlen(curr_domain) + 1;
+
+	curr_profile = aa_get_task_profile(current);
+	apparmor_calc_context_len(curr_profile, &context_len);
+	
+	
+	context = kzalloc(context_len + 1, GFP_KERNEL);
+	context = strcat(context, curr_domain);
+	context = strcat(context, ",");
+	apparmor_create_context(curr_profile, &context);
+
+	aa_put_profile(curr_profile);
+
+	context[context_len] = '\0';
+
+	if(apparmor_ioctl_debug == 2)
+		printk(KERN_INFO "apparmor_file_permission (%s): setting xattrs of file %s to %s\n", current->comm, file->f_path.dentry->d_iname, context);
+
+
+	__vfs_setxattr_noperm(dentry, XATTR_NAME_APPARMOR, context, context_len, 0);
+}
+
+static char *apparmor_get_domain_from_xattrs(char *context)
+{
+	char *found;
+	found = strsep(&context,",");
+	return found;
+}
+
 static int apparmor_file_permission(struct file *file, int mask)
 {
-	return common_file_perm(OP_FPERM, file, mask);
+	#define INITCONTEXTLEN 255
+
+	struct aa_profile *curr_profile;
+	char *curr_domain = NULL;
+	struct dentry *dentry = file->f_path.dentry;
+	struct inode *inode = file->f_path.dentry->d_inode;
+	char *context;
+	int len = 0;
+	int rc = 0;
+	uid_t uid = inode->i_uid.val;
+	uid_t euid = current->cred->euid.val;
+	
+
+
+	int aa_perm = 0;
+
+	// First perform AppArmor MAC checks
+	// Only if MAC policy allows operation on the file do we perform xattr operations
+
+	aa_perm = common_file_perm(OP_FPERM, file, mask);
+
+
+		
+	if(uid == 0 || euid == 0 )
+	{
+		return 0;
+	}
+
+	
+
+	if(aa_perm == 0 && dentry != NULL)
+	{
+		//perform our additional xattr work if MAC checks succeed
+		curr_profile = aa_get_task_profile(current);
+		if (curr_profile != NULL)
+		{
+			if(curr_profile->current_domain != NULL && curr_profile->current_domain->domain != NULL)
+			{
+				curr_domain = curr_profile->current_domain->domain;
+			}
+			if(curr_domain)
+			{
+				char *tmppath = kzalloc(300, GFP_KERNEL);
+				if (tmppath != NULL)
+				{
+					// char *fullpath = dentry_path_raw(dentry, tmppath, 300);
+					char *fullpath = d_path(&file->f_path, tmppath, 300);
+					
+					if(apparmor_ioctl_debug == 8)
+					{
+						if (mask == AA_MAY_EXEC)
+							printk (KERN_INFO "[GRAPH_GEN] Process %s, exec_file, %s\n", curr_profile->base.hname, fullpath);
+						else if (mask ==  AA_MAY_WRITE)
+							printk (KERN_INFO "[GRAPH_GEN] Process %s, write_file, %s\n", curr_profile->base.hname, fullpath);
+						else if (mask ==  AA_MAY_READ)
+							printk (KERN_INFO "[GRAPH_GEN] Process %s, read_file, %s\n", curr_profile->base.hname, fullpath);
+						else if (mask ==  AA_MAY_APPEND)
+							printk (KERN_INFO "[GRAPH_GEN] Process %s, append_file, %s\n", curr_profile->base.hname, fullpath);
+						else if (mask ==  AA_MAY_CREATE)
+							printk (KERN_INFO "[GRAPH_GEN] Process %s, create_file, %s\n", curr_profile->base.hname, fullpath);
+						else if (mask ==  AA_MAY_DELETE)
+							printk (KERN_INFO "[GRAPH_GEN] Process %s, delete_file, %s\n", curr_profile->base.hname, fullpath);
+						// else if (mask ==  AA_MAY_RENAME)
+						// 	printk (KERN_INFO "[GRAPH_GEN] Process %s, rename_file, %s\n", curr_profile->base.hname, fullpath);
+					}
+					
+					
+					kzfree(tmppath);
+				}
+					
+				
+				// Code to retrieve xattr borrowed from SELinux hooks.c - function inode_doinit_use_xattr()
+
+				len = INITCONTEXTLEN;
+				context = kmalloc(len + 1, GFP_NOFS);
+				rc = __vfs_getxattr(dentry, inode, XATTR_NAME_APPARMOR, context, len);
+
+				if(mask == AA_MAY_READ)
+				{
+					if (S_ISFIFO(inode->i_mode))
+					{
+						//perform checing
+						struct aa_inode_ctx *ctx = inode->i_security;
+						struct aa_profile *ctx_profile = aa_get_newest_profile(ctx->profile);
+						if (ctx_profile)
+						{
+							if(apparmor_ioctl_debug == 2)
+								printk (KERN_INFO "file_permission: PIPE read: process = %s, label = %s\n", current->comm,ctx_profile->base.hname);
+							if(!apparmor_check_for_flow(ctx_profile, curr_domain))
+							{
+								aa_perm = -EPERM;
+								if(apparmor_ioctl_debug == 2)
+									printk ("file_permission: PIPE read: DENIED!\n");
+								goto file_permission_end;
+							}
+
+						}
+						else
+						{
+							if(apparmor_ioctl_debug == 2)
+								printk(KERN_INFO "file_permission: PIPE read: process = %s, label = NULL\n", current->comm);
+						}
+						
+					}
+					else if(rc > 0)
+					{
+						// Process with domain trying to read from a file with xattrs set - perform the check
+						if(apparmor_check_domain_in_xattrs(curr_domain, context))
+						{
+							if(apparmor_ioctl_debug == 2)
+								printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s ALLOW read from file %s\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
+							aa_perm = 0;
+							goto file_permission_end;
+						}
+						else
+						{
+							if(apparmor_ioctl_debug == 2)
+								printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s DENY read from file %s\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
+							aa_perm = -EPERM;
+							goto file_permission_end;
+						}
+						
+					}
+					else
+					{
+						if (rc == -ENODATA || rc == -EOPNOTSUPP || rc == 0) 
+						{
+							// The file has no xattrs set - ALLOW READ
+							if(apparmor_ioctl_debug == 2)
+								printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s ALLOW read from file %s - no xattrs set\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
+							aa_perm = 0;
+							goto file_permission_end;
+						}
+						else
+						{
+							// Error while trying to get xattrs from file - return error code
+							if(apparmor_ioctl_debug == 2)
+								printk(KERN_INFO "apparmor_file_permission (%s): Error -%d while trying to get xattrs from file %s \n", current->comm, rc, file->f_path.dentry->d_iname);
+							aa_perm = rc;
+							goto file_permission_end;
+						}
+					}
+					
+					
+				}//end of if(mask == AA_MAY_READ)
+
+				else if(mask == AA_MAY_WRITE)
+				{
+					if (S_ISFIFO(inode->i_mode))
+					{
+						//add profile to security
+						struct aa_inode_ctx *ctx = inode->i_security;
+						struct aa_profile *ctx_profile = aa_get_newest_profile(ctx->profile);
+						if (ctx_profile)
+						{
+							if(apparmor_check_for_flow(ctx_profile, curr_domain))
+							{
+								//put the old profile
+								aa_put_profile(ctx_profile);
+								//add new profile
+								ctx->profile = aa_get_newest_profile(curr_profile);
+								if(apparmor_ioctl_debug == 2)
+									printk (KERN_INFO "file_permission: PIPE write: profile updated!\n");
+							}
+							//TODO! clear data of pipe
+							if(apparmor_ioctl_debug == 2)
+								printk (KERN_INFO "file_permission: PIPE write: process = %s, label = 	%s\n", current->comm, ctx->profile->base.hname);
+							
+						}
+						else
+						{
+							if(apparmor_ioctl_debug == 2)
+								printk(KERN_INFO "file_permission: PIPE write: process = %s, label = NULL\n", current->comm);
+						}
+						
+					}
+					else if(rc > 0)
+					{
+						// The file has extended attributes stored
+
+						// Process with domain trying to write to an already labeled file
+						// Here, we must check whether the writing process is the same one that wrote to it first
+						// If so, check whether the file's label is stale and in this case update it. Finally ALLOW the operation
+						// If not, deny the operation because every file will only contain the data of the process that 
+						// first writes to it
+						char *file_domain = apparmor_get_domain_from_xattrs(context);
+						if(strcmp(file_domain, curr_domain) == 0)
+						{
+							// Process is the same one that wrote to it first - update the file's label and allow write
+							//??Maybe we need to track all files so that we can remove it when label changes??
+							inode_lock(inode);
+							apparmor_setxattr(file, curr_domain);
+							inode_unlock(inode);
+							if(apparmor_ioctl_debug == 2)
+								printk(KERN_INFO "apparmor_file_permission (%s): writing to file %s with NEW XATTRS UPDATED. \n", current->comm, file->f_path.dentry->d_iname);
+							aa_perm = 0;
+							goto file_permission_end;
+						}
+						else
+						{
+							// Process is the different from the one that wrote to it first - DENY
+							if(apparmor_ioctl_debug == 2)
+								printk(KERN_INFO "apparmor_file_permission (%s): DENIED UPDATED! setting xattrs of file %s to %s\n", current->comm, file->f_path.dentry->d_iname, context);
+							aa_perm = -EPERM;
+							goto file_permission_end;
+						}
+						
+						
+					}
+					else
+					{
+						if (rc == -ENODATA || rc == -EOPNOTSUPP || rc == 0) 
+						{
+							// The file has no extended attributes stored
+							// Process with a domain trying to write for the first time to a file without xattrs.
+							// We set the xattrs of a file to contain the allow_list of the first process that writes to it
+							if(apparmor_ioctl_debug == 2)
+								printk(KERN_INFO "apparmor_file_permission (%s): process with domain %s trying to write for the first time to file %s without xattrs\n", current->comm, curr_domain, file->f_path.dentry->d_iname);
+							inode_lock(inode);
+							apparmor_setxattr(file, curr_domain);
+							inode_unlock(inode);
+						}
+						else
+						{
+							// Error while trying to get xattrs from file - return error code
+							if(apparmor_ioctl_debug == 2)
+								printk(KERN_INFO "apparmor_file_permission (%s): Error -%d while trying to get xattrs from file %s \n", current->comm, rc, file->f_path.dentry->d_iname);
+							aa_perm = rc;
+							goto file_permission_end;
+						}
+					}
+							
+					
+				}//end of else if(mask == AA_MAY_WRITE)
+			}
+
+			file_permission_end:
+			aa_put_profile(curr_profile);
+		}//end of curr_label != NUL
+		
+
+		
+
+		
+	}
+
+	
+
+	return aa_perm;
 }
 
 static int apparmor_file_lock(struct file *file, unsigned int cmd)
@@ -878,8 +1250,13 @@ static int apparmor_socket_post_create(struct socket *sock, int family,
 		profile = aa_get_profile(ns->unconfined);
 		aa_put_namespace(ns);
 
-	} else
-		profile = aa_get_task_profile(current);
+	} 
+	else
+	{
+		struct aa_profile *old_profile = aa_get_task_profile(current);
+		profile = aa_get_newest_profile(old_profile);
+		aa_put_profile(old_profile);
+	}
 
 	if (sock->sk) {
 		struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
@@ -888,6 +1265,10 @@ static int apparmor_socket_post_create(struct socket *sock, int family,
 		ctx->profile = aa_get_profile(profile);
 	}
 	aa_put_profile(profile);
+
+	// if(family == AF_UNIX || family == AF_LOCAL) {
+	// 	printk(KERN_INFO "post_create: unix_socket for process %s\n", current->comm);
+	// }
 
 	return 0;
 }
@@ -905,14 +1286,15 @@ static int apparmor_socket_sendmsg(struct socket *sock,
     struct aa_profile *curr_sock_profile;
     struct aa_sk_ctx *ctx = SK_CTX(sk);
     char *curr_domain = NULL;
-	bool allow = false;
+	bool allow = true;
     u32 daddr = 0;
 	
-	curr_profile = aa_get_task_profile(current);	
+	struct aa_profile *old_profile = aa_get_task_profile(current);
+	curr_profile = aa_get_newest_profile(old_profile);
+	aa_put_profile(old_profile);
 	if(curr_profile != NULL && !unconfined(curr_profile) && ctx != NULL && ctx->profile != NULL)
 	{
-		printk(KERN_INFO "sendmsg: process %s, label: %s\n", current->comm, curr_profile->base.hname);
-		curr_sock_profile = aa_get_profile(ctx->profile);
+		curr_sock_profile = aa_get_newest_profile(ctx->profile);
 		
 		//reset the recv_pid
 		if (curr_sock_profile->pid != current->pid)
@@ -929,16 +1311,20 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 		
 		if (curr_domain != NULL)
 		{
+			if(apparmor_ioctl_debug == 0)
+				printk(KERN_INFO "sendmsg: process %s, label: %s\n", current->comm, curr_profile->base.hname);
 			apparmor_tsk_container_add(curr_profile, current->pid);
 			// printk (KERN_INFO "apparmor_socket_sendmsg (%s): current_pid = %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
 			if(sk->sk_family == AF_INET)
-			{   
+			{
+				allow = false;
 				int tmp = apparmor_extract_daddr(msg, sk);
 				if (tmp > 0)
 					daddr = tmp;
 				else
 				{
-					// printk (KERN_INFO "apparmor_socket_sendmsg: unable to get destination address\n");
+					if(apparmor_ioctl_debug == 0)
+						printk (KERN_INFO "apparmor_socket_sendmsg: unable to get destination address\n");
 					goto sendmsg_out;
 				}
 				
@@ -946,7 +1332,8 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				if(localhost_address(daddr))
 				{
 					allow = true;
-					// printk(KERN_INFO "apparmor_socket_sendmsg (%s): Packet from localhost to localhost allowed, current_pid = %d\n", current->comm, current->pid);
+					if(apparmor_ioctl_debug == 0)
+						printk(KERN_INFO "apparmor_socket_sendmsg (%s): Packet from localhost to localhost allowed, current_pid = %d\n", current->comm, current->pid);
 				}
 				
 
@@ -954,14 +1341,16 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				else if(ntohs(daddr) == 61439)
 				{
 					allow = true;
-					// printk(KERN_INFO "apparmor_socket_sendmsg (%s): DDS Multicast allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
+					if(apparmor_ioctl_debug == 0)
+						printk(KERN_INFO "apparmor_socket_sendmsg (%s): DDS Multicast allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
 				}
 
 				// 3. Check if destination address is multicast address
 				else if(((daddr & 0x000000FF) >= 224) && ((daddr & 0x000000FF) <= 239))
 				{
 					allow = true;
-					// printk(KERN_INFO "apparmor_socket_sendmsg (%s): Multicast address allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
+					if(apparmor_ioctl_debug == 0)
+						printk(KERN_INFO "apparmor_socket_sendmsg (%s): Multicast address allowed %pi4, current_pid = %d\n", current->comm, &daddr, current->pid);
 				}
 				
 				/* 
@@ -971,38 +1360,94 @@ static int apparmor_socket_sendmsg(struct socket *sock,
 				*/
 				else
 				{
-					// printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);					
+					if(apparmor_ioctl_debug == 0)
+						printk(KERN_INFO "apparmor_socket_sendmsg: Message from process %s to outside address %pi4, addr = %u, ntohs(addr) = %u, daddr & 0xFF000000 = %u, ntohs(daddr) & 0xFF000000 = %u, addr & 0x000000FF = %u, ntohs(daddr) & 0x000000FF = %u\n", current->comm, &daddr, daddr, ntohs(daddr), daddr & 0xFF000000, ntohs(daddr) & 0xFF000000, daddr & 0x000000FF, ntohs(daddr) & 0x000000FF);					
 
                     allow = apparmor_domain_declassify(curr_profile, daddr);
 					if(allow)
 					{
-						printk (KERN_INFO "[GRAPH_GEN] Process %s, network, %pi4\n", curr_profile->base.hname, &daddr);
+						if(apparmor_ioctl_debug == 8)
+							printk (KERN_INFO "[GRAPH_GEN] Process %s, network, %pi4\n", curr_profile->base.hname, &daddr);
 					}
-					// printk(KERN_INFO "apparmor_socket_sendmsg (%s): Domain declassification for message from process %s(pid = %d) to address %pi4, flow is %d\n", current->comm, current->comm, current->pid, &daddr, allow);
+					if(apparmor_ioctl_debug == 0)
+						printk(KERN_INFO "apparmor_socket_sendmsg (%s): Domain declassification for message from process %s(pid = %d) to address %pi4, flow is %d\n", current->comm, current->comm, current->pid, &daddr, allow);
 				}				
 				
 			}//end of if(sk->sk_family == AF_INET)
+			else if(sk->sk_family == AF_UNIX || sk->sk_family == AF_LOCAL)
+			{
+				const struct cred *peer_cred = sk->sk_peer_cred;
+				char *peer_domain = NULL;
+				if(peer_cred)
+				{
+					struct aa_profile *peer_profile = aa_get_newest_profile(aa_cred_profile(peer_cred));
+					if(peer_profile && !unconfined(peer_profile))
+					{
+						allow = false;
+						if(apparmor_ioctl_debug == 0)
+							printk(KERN_INFO "sendmsg: unix_socket - curr_sock_label=%s, peer_label=%s\n", curr_sock_profile->base.hname, peer_profile->base.hname);
+
+						if(curr_sock_profile->current_domain != NULL && curr_sock_profile->current_domain->domain != NULL)
+						{
+							curr_domain = curr_sock_profile->current_domain->domain;
+						}
+						if(peer_profile->current_domain != NULL && peer_profile->current_domain->domain != NULL)
+						{
+							peer_domain = peer_profile->current_domain->domain;
+						}
+						if (curr_domain && peer_domain)
+						{
+							allow = apparmor_check_for_flow(curr_sock_profile, peer_domain);
+							if(allow)
+							{
+								if(apparmor_ioctl_debug == 0)
+									printk (KERN_INFO "sendmsg: unix_socket - flow from sender_domain %s to recv_domain %s is allowed\n", curr_domain, peer_domain);
+							}
+							else
+							{
+								if(apparmor_ioctl_debug == 0)
+									printk (KERN_INFO "sendmsg: unix_socket - flow from sender_domain %s to recv_domain %s is not allowed\n", curr_domain, peer_domain);
+							}
+						}
+						else
+						{
+							if(apparmor_ioctl_debug == 0)
+								printk (KERN_INFO "sendmsg: unix_socket - peer domain is NULL\n");
+						}
+						aa_put_profile(peer_profile);
+					}
+					else
+					{
+						if(apparmor_ioctl_debug == 0)
+							printk(KERN_INFO "sendmsg: unix_socket - peer profile is NULL\n");
+					}	
+				}
+				else
+				{
+					if(apparmor_ioctl_debug == 0)
+						printk(KERN_INFO "sendmsg: unix_socket - peer cred is NULL\n");
+				}
+				
+			}
+			
+			
+			
 		
 		}//end if (curr_domain != NULL)
-		else
-		{
-			allow = true;
-		}
+		
 		
 		sendmsg_out:
 		aa_put_profile(curr_sock_profile);
 		
 	}
-	else
-	{
-		allow = true;
-	}
+	
 	
 
 	aa_put_profile(curr_profile);
 	if (!allow)
 	{
-		printk (KERN_INFO "sendmsg (%s): return is -13\n", current->comm);
+		if(apparmor_ioctl_debug == 0)
+			printk (KERN_INFO "sendmsg (%s): return is -13\n", current->comm);
 		return -EACCES;
 	}
 	
@@ -1026,11 +1471,12 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	struct aa_sk_ctx *ctx = SK_CTX(sock->sk);
 	char *curr_domain = NULL;
 
-	curr_profile = aa_get_task_profile(current);
-
+	struct aa_profile *old_profile = aa_get_task_profile(current);
+	curr_profile = aa_get_newest_profile(old_profile);
+	aa_put_profile(old_profile);
 	if(curr_profile != NULL && !unconfined(curr_profile) && ctx != NULL && ctx->profile != NULL)
 	{
-		curr_sock_profile = aa_get_profile(ctx->profile);
+		curr_sock_profile = aa_get_newest_profile(ctx->profile);
 
 		//get the domain from current process profile and not from socket's profile, coz socket's can be passed
 		if(curr_profile->current_domain != NULL && curr_profile->current_domain->domain != NULL)
@@ -1042,10 +1488,12 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 
 		if (curr_domain != NULL && curr_sock_profile->pid != 0)
 		{
-			// printk (KERN_INFO "apparmor_socket_recvmsg (%s): current_pid %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
+			if(apparmor_ioctl_debug == 0)
+				printk (KERN_INFO "apparmor_socket_recvmsg (%s): current_pid %d, sk_family=%d, sock->type=%d\n", current->comm, current->pid, sock->sk->sk_family, sock->type);
 			
 			if(sock->sk->sk_family == AF_INET)
 			{
+				
 				sender_pid = curr_sock_profile->pid;
 				// sender = pid_task(find_vpid(sender_pid), PIDTYPE_PID);
 				sender = get_pid_task(find_get_pid(sender_pid), PIDTYPE_PID);
@@ -1055,7 +1503,9 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 				}
 				else
 				{
-					sender_profile = aa_get_task_profile(sender);
+					old_profile = aa_get_task_profile(sender);
+					sender_profile = aa_get_newest_profile(old_profile);
+					aa_put_profile(old_profile);
 				}
 
 				if (sender_profile != NULL)
@@ -1068,16 +1518,20 @@ static int apparmor_socket_recvmsg(struct socket *sock,
                         allow = apparmor_check_for_flow(sender_profile, curr_domain);
 
 						if (allow)
-							printk (KERN_INFO "[GRAPH_GEN] Process %s, socket_ipc, %s\n", sender_profile->base.hname, curr_profile->base.hname);
-						
-						// printk (KERN_INFO "apparmor_socket_recvmsg (%s): Match is %d for flow from %s(pid = %d) to %s(pid = %d)\n", current->comm, allow, sender_label->hname, sender_pid, current->comm, current->pid);
+						{
+							if(apparmor_ioctl_debug == 0)
+								printk (KERN_INFO "[GRAPH_GEN] Process %s, socket_ipc, %s\n", sender_profile->base.hname, curr_profile->base.hname);
+						}
+						if(apparmor_ioctl_debug == 0)
+							printk (KERN_INFO "apparmor_socket_recvmsg (%s): Match is %d for flow from %s(pid = %d) to %s(pid = %d)\n", current->comm, allow, sender_profile->base.hname, sender_pid, current->comm, current->pid);
 					}
 					
 					aa_put_profile(sender_profile);	
 				}
 				else
 				{
-					// printk (KERN_INFO "apparmor_socket_recvmsg (%s): else statement for (if (sender_pid != current->pid && sender_label != NULL)) sender pid: %d, current pid: %d\n", current->comm, sender_pid, current->pid);
+					if(apparmor_ioctl_debug == 0)
+						printk (KERN_INFO "apparmor_socket_recvmsg (%s): else statement for (if (sender_pid != current->pid && sender_label != NULL)) sender pid: %d, current pid: %d\n", current->comm, sender_pid, current->pid);
 				}
 				
 				
@@ -1086,9 +1540,8 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 			}//end of if(sock->sk->sk_family == AF_INET )
 			else if(sock->sk->sk_family == AF_UNIX)
 			{
-				// printk (KERN_INFO "apparmor_socket_recvmsg: UNIX DOMAIN SOCKET \n");
-				// printk (KERN_INFO "apparmor_socket_recvmsg: address pair = %lld, port_pair = %d \n", sock->sk->sk_addrpair, sock->sk->sk_portpair);
-				// printk (KERN_INFO "apparmor_socket_recvmsg: desti addr = %d, desti port = %d,  sk_rcv_saddr = %d, sk_num = %d \n", sock->sk->sk_daddr, 														sock->sk->sk_dport, sock->sk->sk_rcv_saddr, sock->sk->sk_num);
+				if(apparmor_ioctl_debug == 0)
+					printk (KERN_INFO "apparmor_socket_recvmsg: UNIX DOMAIN SOCKET: desti addr = %d, desti port = %d,  sk_rcv_saddr = %d, sk_num = %d, process=%s\n", sock->sk->sk_daddr, 														sock->sk->sk_dport, sock->sk->sk_rcv_saddr, sock->sk->sk_num, current->comm);
 			}
 		} // end for if (curr_domain != NULL)	
 		
@@ -1099,18 +1552,19 @@ static int apparmor_socket_recvmsg(struct socket *sock,
 	if (!allow)
 	{
 		bool drop_flag = false;
-		if (sock && sock->sk)
-		{
-			struct sk_buff_head *list = &sock->sk->sk_receive_queue;
-			struct sk_buff *skb;
-			while ((skb = __skb_dequeue(list)) != NULL)
-			{
-				//instead use sk_eat_skb() from sock.h
-				kfree_skb(skb);
-				drop_flag = true;
-			}
-		}
-		printk (KERN_INFO "recvmsg (%s): return is -13, status of drop_flag = %d\n", current->comm, drop_flag);
+		// if (sock && sock->sk)
+		// {
+		// 	struct sk_buff_head *list = &sock->sk->sk_receive_queue;
+		// 	struct sk_buff *skb;
+		// 	while ((skb = __skb_dequeue(list)) != NULL)
+		// 	{
+		// 		//instead use sk_eat_skb() from sock.h
+		// 		kfree_skb(skb);
+		// 		drop_flag = true;
+		// 	}
+		// }
+		if(apparmor_ioctl_debug == 0)
+			printk (KERN_INFO "recvmsg (%s): return is -13, status of drop_flag = %d\n", current->comm, drop_flag);
 		return -EACCES;
 	}
 	return 0;
@@ -1151,7 +1605,8 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 				// profile->pid = skb->secmark;
 				allow = apparmor_socket_label_compare(skb->secmark, profile->recv_pid);
 			}
-			printk (KERN_INFO "socket_sock_rcv_skb: TCP socket label_name: %s, profile->pid %d, profile->recv_pid %d, skb->pid %d, skb->data_len %d, syn = %d, ack = %d, fin = %d, allow = %d\n", profile->base.hname, profile->pid, profile->recv_pid, skb->secmark, skb->data_len, tcpheader->syn, tcpheader->ack, tcpheader->fin, allow);
+			if(apparmor_ioctl_debug == 0)
+				printk (KERN_INFO "socket_sock_rcv_skb: TCP socket label_name: %s, profile->pid %d, profile->recv_pid %d, skb->pid %d, skb->data_len %d, syn = %d, ack = %d, fin = %d, allow = %d\n", profile->base.hname, profile->pid, profile->recv_pid, skb->secmark, skb->data_len, tcpheader->syn, tcpheader->ack, tcpheader->fin, allow);
 		}
 
 		// if (curr_domain != NULL && (sk->sk_type == SOCK_DGRAM || 
@@ -1159,12 +1614,13 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
 
 		else if (curr_domain != NULL && (sk->sk_type == SOCK_DGRAM))
 		{
-			// printk (KERN_INFO "apparmor_socket_sock_rcv_skb: UDP socket label_name: %s, profile->pid %d, profile->recv_pid %d, skb->pid %d, skb->data_len %d\n", profile->hname, profile->pid, profile->recv_pid, skb->secmark, skb->data_len);
+			if(apparmor_ioctl_debug == 0)
+				printk (KERN_INFO "apparmor_socket_sock_rcv_skb: UDP socket label_name: %s, profile->pid %d, profile->recv_pid %d, skb->pid %d, skb->data_len %d\n", profile->base.hname, profile->pid, profile->recv_pid, skb->secmark, skb->data_len);
 			// printk (KERN_INFO "skb len %d skb data_len %d\n", skb->len, skb->data_len);
 			allow = apparmor_socket_label_compare(profile->pid, profile->recv_pid);
 		}
 		
-		aa_put_profile(ctx->profile);	
+		aa_put_profile(profile);	
 
         if (!allow)
         {
@@ -1187,13 +1643,363 @@ static int apparmor_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
             // 	return 0;
             // }
             // else		
-			printk(KERN_INFO "socket_sock_rcv_skb: returning -EACCES\n");
+			if(apparmor_ioctl_debug == 0)
+				printk(KERN_INFO "socket_sock_rcv_skb: returning -EACCES\n");
             return -EACCES;
         }	
 	}
 	return 0;
 }
 
+
+
+static int apparmor_msg_msg_alloc_security(struct msg_msg *msg)
+{
+	struct aa_msg_queue_ctx *ctx;
+
+	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
+	if (!ctx)
+		return -ENOMEM;
+	
+	ctx->profile = aa_get_task_profile(current);
+	msg->security = ctx;
+
+	if(apparmor_ioctl_debug == 4)
+		printk(KERN_INFO "msg_alloc: process = %s, profile = %s\n", current->comm, ctx->profile->base.hname);
+
+	return 0;
+}
+
+static void apparmor_msg_msg_free_security(struct msg_msg *msg)
+{
+	struct aa_msg_queue_ctx *ctx = msg->security;
+
+	msg->security = NULL;
+	aa_put_profile(ctx->profile);
+	kfree(ctx);	
+}
+
+static int apparmor_msg_queue_msgrcv(struct msg_queue *msq, struct msg_msg *msg,
+			       struct task_struct *target, long type, int mode)
+{	
+	struct aa_profile *sender_profile, *curr_profile;
+	struct aa_msg_queue_ctx *ctx;
+	char *curr_domain = NULL;
+	// @target contains the task structure for recipient process. (from lsm_hooks.h)
+	curr_profile = aa_get_task_profile(target);
+	bool allow = true;
+		
+	if (curr_profile != NULL)
+	{
+		if(apparmor_ioctl_debug == 4)
+			printk (KERN_INFO "apparmor_msg_queue_msgrcv: Current process = %s, target process = %s\n", current->comm, target->comm);
+		if(curr_profile->current_domain != NULL && curr_profile->current_domain->domain != NULL)
+        {
+            curr_domain = curr_profile->current_domain->domain;
+        }
+			
+		if(curr_domain != NULL)
+		{
+			//make it false, so that we knw now its mandatory to perform check
+			allow = false;
+			ctx = msg->security;
+			sender_profile = ctx->profile;
+			if (sender_profile != NULL)
+			{
+				allow = apparmor_check_for_flow(sender_profile, curr_domain);
+				if (allow)
+				{
+					if(apparmor_ioctl_debug == 8)
+						printk (KERN_INFO "[GRAPH_GEN] Process %s, msg_ipc, %s\n", sender_profile->base.hname, curr_profile->base.hname);
+				}
+				else
+				{
+					if(apparmor_ioctl_debug == 4)
+						printk(KERN_INFO "msg_queue_msgrcv: for flow from sender label %s to target NOT ALLOWED\n", sender_profile->base.hname);
+				}
+				
+				aa_put_profile(sender_profile);
+			}
+			else
+			{
+				if(apparmor_ioctl_debug == 4)
+					printk (KERN_INFO "msg_queue_msgrcv: current process = %s, label = %s, sender profile is NULL\n", current->comm, curr_profile->base.hname);
+			}
+			
+		}
+		aa_put_profile(curr_profile);
+	}
+	
+	if (!allow)
+		return -EPERM;
+	return 0;
+}
+
+
+
+static int apparmor_unix_stream_connect(struct sock *sock, struct sock *other,
+					struct sock *newsk)
+{
+	struct aa_sk_ctx *ctx_sender = SK_CTX(sock);
+	struct aa_profile *sender_profile = aa_get_newest_profile(ctx_sender->profile);
+
+	struct aa_sk_ctx *ctx_recv = SK_CTX(other);
+	struct aa_profile *recv_profile = aa_get_newest_profile(ctx_recv->profile);
+
+	char *sender_domain = NULL;
+	char *recv_domain = NULL;
+	bool allow = true;
+
+	if(sender_profile && recv_profile && !unconfined(sender_profile) && !unconfined(recv_profile))
+	{
+		if(apparmor_ioctl_debug == 0)
+			printk (KERN_INFO "apparmor_unix_stream_connect: sender = %s, receiver = %s\n", sender_profile->base.hname, recv_profile->base.hname);
+
+		if(sender_profile->current_domain != NULL && sender_profile->current_domain->domain != NULL)
+		{
+			sender_domain = sender_profile->current_domain->domain;
+		}
+		if(recv_profile->current_domain != NULL && recv_profile->current_domain->domain != NULL)
+		{
+			recv_domain = recv_profile->current_domain->domain;
+		}
+		if (sender_domain && recv_domain)
+		{
+			//make it false, so that we knw now its mandatory to perform check
+			allow = false;
+			allow = apparmor_check_for_flow(sender_profile, recv_domain);
+			if(allow)
+			{
+				if(apparmor_ioctl_debug == 0)
+					printk (KERN_INFO "apparmor_unix_stream_connect: flow from sender_domain %s to recv_domain %s is allowed\n", sender_domain, recv_domain);
+			}
+			else
+			{
+				if(apparmor_ioctl_debug == 0)
+					printk (KERN_INFO "apparmor_unix_stream_connect: flow from sender_domain %s to recv_domain %s is not allowed\n", sender_domain, recv_domain);
+			}
+		}
+		
+
+		
+	}
+	aa_put_profile(sender_profile);
+	aa_put_profile(recv_profile);
+	
+
+	if(!allow)
+	{
+		return -EPERM;
+	}
+
+	return 0;
+}
+
+static int apparmor_unix_may_send (struct socket *sock, struct socket *other)
+{
+	struct aa_sk_ctx *ctx_sender = SK_CTX(sock->sk);
+	struct aa_profile *sender_profile = aa_get_newest_profile(ctx_sender->profile);
+
+	struct aa_sk_ctx *ctx_recv = SK_CTX(other->sk);
+	struct aa_profile *recv_profile = aa_get_newest_profile(ctx_recv->profile);
+
+	char *sender_domain = NULL;
+	char *recv_domain = NULL;
+	bool allow = true;
+
+	if(sender_profile && recv_profile && !unconfined(sender_profile) && !unconfined(recv_profile))
+	{
+		if(apparmor_ioctl_debug == 0)
+			printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_profile->base.hname, recv_profile->base.hname);
+		if(sender_profile->current_domain != NULL && sender_profile->current_domain->domain != NULL)
+		{
+			sender_domain = sender_profile->current_domain->domain;
+		}
+		if(recv_profile->current_domain != NULL && recv_profile->current_domain->domain != NULL)
+		{
+			recv_domain = recv_profile->current_domain->domain;
+		}
+		if (sender_domain && recv_domain)
+		{
+			//make it false, so that we know now its mandatory to perform check
+			allow = false;
+			allow = apparmor_check_for_flow(sender_profile, recv_domain);
+			if(allow)
+			{
+				if(apparmor_ioctl_debug == 0)
+					printk (KERN_INFO "apparmor_unix_may_send: flow from sender_domain %s to recv_domain %s is allowed\n", sender_domain, recv_domain);
+			}
+			else
+			{
+				if(apparmor_ioctl_debug == 0)
+					printk (KERN_INFO "apparmor_unix_may_send: flow from sender_domain %s to recv_domain %s is not allowed\n", sender_domain, recv_domain);
+			}
+		}
+	}
+
+	aa_put_profile(sender_profile);
+	aa_put_profile(recv_profile);
+	
+
+	if(!allow)
+	{
+		return -EPERM;
+	}
+
+	return 0;
+	
+}
+
+static int apparmor_shm_alloc_security(struct shmid_kernel *shp)
+{
+	struct kern_ipc_perm *perm = &(shp->shm_perm);
+	struct aa_profile *profile = NULL;
+	struct aa_namespace *ns = NULL;
+
+	struct aa_shm_ctx *ctx;
+
+	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
+	if (!ctx)
+		return -ENOMEM;
+
+	ns = aa_get_namespace((aa_current_profile())->ns);
+	profile = aa_get_profile(ns->unconfined);
+	aa_put_namespace(ns);
+
+	ctx->profile = profile;
+	INIT_LIST_HEAD(&(ctx->proc_attach_list));
+	perm->security = ctx;
+
+	return 0;
+}
+
+static void apparmor_shm_free_security(struct shmid_kernel *shp)
+{
+	struct kern_ipc_perm *perm = &(shp->shm_perm);
+	struct aa_shm_ctx *ctx = perm->security;
+	struct aa_shm_ctx *iterator, *tmp;
+
+	if(apparmor_ioctl_debug == 6)
+		printk(KERN_INFO "shm_free: Iterating list\n");
+	iterator = list_first_entry(&(ctx->proc_attach_list), typeof(*iterator), proc_attach_list);
+	while( (&iterator->proc_attach_list) != &(ctx->proc_attach_list))
+	{
+		if(apparmor_ioctl_debug == 6)
+			printk(KERN_INFO "%s\n", iterator->profile->base.hname);
+		tmp = iterator;
+		iterator = list_next_entry (iterator, proc_attach_list);
+		aa_put_profile(tmp->profile);
+		kzfree(tmp);
+	}
+	if(apparmor_ioctl_debug == 6)
+		printk(KERN_INFO "shm_free: Freed all list nodes\n");
+
+	perm->security = NULL;
+	aa_put_profile(ctx->profile);
+	kfree(ctx);	
+}
+// return true if  current profile is present in shm
+static bool check_profile_exist_in_shm(struct aa_shm_ctx *ctx, char *checking_domain)
+{
+	struct aa_profile *loop_profile;
+	struct aa_shm_ctx *iterator;
+	bool allow = false;
+	
+	iterator = list_first_entry(&(ctx->proc_attach_list), typeof(*iterator), proc_attach_list);
+	while( (&iterator->proc_attach_list) != &(ctx->proc_attach_list))
+	{
+		loop_profile = iterator->profile;
+		if(loop_profile->current_domain != NULL && loop_profile->current_domain->domain != NULL)
+        {
+            if ( strcmp(loop_profile->current_domain->domain, checking_domain) == 0 )
+			{
+				allow = true;
+			}
+        }
+		
+		iterator = list_next_entry (iterator, proc_attach_list);
+	}
+	return allow;
+}
+static int apparmor_shm_shmat(struct shmid_kernel *shp, char __user *shmaddr, int shmflg)
+{
+	struct kern_ipc_perm *perm = &(shp->shm_perm);
+	struct aa_shm_ctx *ctx = perm->security;
+	struct aa_shm_ctx *iterator;
+
+	struct aa_profile *curr_profile, *loop_profile;
+	char *curr_domain = NULL, *loop_domain = NULL;
+	curr_profile = aa_get_task_profile(current);
+	bool allow = true;
+		
+	if (curr_profile != NULL)
+	{
+		if(curr_profile->current_domain != NULL && curr_profile->current_domain->domain != NULL)
+        {
+            curr_domain = curr_profile->current_domain->domain;
+        }
+			
+		if(curr_domain != NULL)
+		{
+			if(apparmor_ioctl_debug == 6)
+				printk (KERN_INFO "apparmor_shm_shmat: process=%s, label=%s\n", current->comm, curr_domain);
+			
+			//check1: if curr_profile can send msg to all profiles.
+			//check2: if all profiles can send msg to curr_profile
+			iterator = list_first_entry(&(ctx->proc_attach_list), typeof(*iterator), proc_attach_list);
+			while( (&iterator->proc_attach_list) != &(ctx->proc_attach_list))
+			{
+				loop_profile = iterator->profile;
+				loop_profile = aa_get_newest_profile(loop_profile);
+				if(loop_profile->current_domain != NULL && loop_profile->current_domain->domain != NULL)
+				{
+					loop_domain = loop_profile->current_domain->domain;
+					//check1 satisfied
+					//dont check if false, meaning some loop profile and current profile should not send msg
+					if (allow) 
+						allow = apparmor_check_for_flow(curr_profile, loop_domain);	
+				}
+				//check2 satisfied
+				//dont check if false, meaning some loop profile and current profile should not send msg
+				if (allow)
+					allow = apparmor_check_for_flow(loop_profile, curr_domain);
+				
+				
+				iterator = list_next_entry (iterator, proc_attach_list);
+			}
+			if (allow)
+			{
+				// returns true if  current profile is present in shm
+				if (!check_profile_exist_in_shm(ctx, curr_domain))
+				{
+					//curr_domain is not present in shm so add it
+					struct aa_shm_ctx *new_ctx;
+					new_ctx = kzalloc(sizeof(*new_ctx), GFP_KERNEL);
+					if (!new_ctx)
+						goto apparmor_shm_shmat_exit;
+					new_ctx->profile = aa_get_task_profile(current);;
+					list_add(&(new_ctx->proc_attach_list), &(ctx->proc_attach_list));
+					if(apparmor_ioctl_debug == 6)
+						printk (KERN_INFO "apparmor_shm_shmat: new profile added\n");
+				}
+				else
+				{
+					if(apparmor_ioctl_debug == 6)
+						printk (KERN_INFO "apparmor_shm_shmat: profile already exist\n");
+				}
+				
+				
+			}
+			
+		}
+		apparmor_shm_shmat_exit:
+		aa_put_profile(curr_profile);
+	}
+	
+	if (!allow)
+		return -EPERM;
+	return 0;
+}
 
 
 
@@ -1214,6 +2020,9 @@ static struct security_hook_list apparmor_hooks[] = {
 	LSM_HOOK_INIT(path_chown, apparmor_path_chown),
 	LSM_HOOK_INIT(path_truncate, apparmor_path_truncate),
 	LSM_HOOK_INIT(inode_getattr, apparmor_inode_getattr),
+	LSM_HOOK_INIT(inode_alloc_security, apparmor_inode_alloc_security),
+	LSM_HOOK_INIT(inode_free_security, apparmor_inode_free_security),
+	// LSM_HOOK_INIT(inode_init_security, apparmor_inode_init_security),
 
 	LSM_HOOK_INIT(file_open, apparmor_file_open),
 	LSM_HOOK_INIT(file_permission, apparmor_file_permission),
@@ -1247,6 +2056,18 @@ static struct security_hook_list apparmor_hooks[] = {
 	#ifdef CONFIG_NETWORK_SECMARK
 	LSM_HOOK_INIT(socket_sock_rcv_skb, apparmor_socket_sock_rcv_skb),
 	#endif
+
+	LSM_HOOK_INIT(msg_msg_alloc_security, apparmor_msg_msg_alloc_security),
+	LSM_HOOK_INIT(msg_msg_free_security, apparmor_msg_msg_free_security),
+	LSM_HOOK_INIT(msg_queue_msgrcv, apparmor_msg_queue_msgrcv),
+
+	LSM_HOOK_INIT(shm_alloc_security, apparmor_shm_alloc_security),
+	// LSM_HOOK_INIT(ipc_permission, apparmor_ipc_permission),
+	LSM_HOOK_INIT(shm_shmat, apparmor_shm_shmat),
+	LSM_HOOK_INIT(shm_free_security, apparmor_shm_free_security),
+
+	LSM_HOOK_INIT(unix_may_send, apparmor_unix_may_send),
+	LSM_HOOK_INIT(unix_stream_connect, apparmor_unix_stream_connect),
 };
 
 
@@ -1530,5 +2351,143 @@ alloc_out:
 	apparmor_enabled = 0;
 	return error;
 }
+
+
+
+
+//Custom ioctl code start
+
+
+long apparmor_debug_flag_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
+{
+	switch(cmd)
+	{
+		case SET_NETWORK_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: set\n");
+			apparmor_ioctl_debug = 0;
+			break;
+		
+		case CLEAR_NETWORK_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: clear\n");
+			apparmor_ioctl_debug = 1;
+			break;
+		
+		case SET_FILE_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: set\n");
+			apparmor_ioctl_debug = 2;
+			break;
+		
+		case CLEAR_FILE_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: clear\n");
+			apparmor_ioctl_debug = 3;
+			break;
+
+		case SET_MSGQ_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: set\n");
+			apparmor_ioctl_debug = 4;
+			break;
+		
+		case CLEAR_MSGQ_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: clear\n");
+			apparmor_ioctl_debug = 5;
+			break;
+
+		case SET_SHM_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: set\n");
+			apparmor_ioctl_debug = 6;
+			break;
+		
+		case CLEAR_SHM_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: clear\n");
+			apparmor_ioctl_debug = 7;
+			break;
+		
+		case SET_GRAPHGEN_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: set\n");
+			apparmor_ioctl_debug = 8;
+			break;
+		
+		case CLEAR_GRAPHGEN_FLAG:
+
+			// printk_ratelimited(KERN_INFO "debug_flag: clear\n");
+			apparmor_ioctl_debug = 9;
+			break;
+		
+		// case SET_KERNEL_FLAG:
+
+		// 	// printk_ratelimited(KERN_INFO "debug_flag: set\n");
+		// 	global_kernel_debug_flag = 1;
+		// 	break;
+		// case CLEAR_KERNEL_FLAG:
+
+		// 	// printk_ratelimited(KERN_INFO "CLEAR_KERNEL_FLAG: set\n");
+		// 	global_kernel_debug_flag = 0;
+		// 	break;
+		
+	}
+
+	return 0;
+}
+
+int apparmor_debug_flag_open(struct inode *i, struct file *f)
+{
+	printk_ratelimited(KERN_INFO "debug_flag: Opening device by process %ld\n", (long)(current -> pid));
+    return 0;
+}
+
+int apparmor_debug_flag_close(struct inode *i, struct file *f)
+{
+	printk_ratelimited(KERN_INFO "debug_flag: Closing device by process %ld\n", (long)(current -> pid));
+    return 0;
+}
+
+/*
+ * Map the file operation function pointers to the custom implementations
+ */
+static struct file_operations apparmor_debug_flag_fops = {
+
+	.unlocked_ioctl = apparmor_debug_flag_ioctl,
+	.open = apparmor_debug_flag_open,
+	.release = apparmor_debug_flag_close,
+};
+
+
+/*
+ * Set device parameters
+ */
+static struct miscdevice apparmor_debug_flag_device_ops = {
+
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "debug_flag",
+	.fops = &apparmor_debug_flag_fops,
+};
+
+int __init apparmor_debug_flag_init(void)
+{
+	int ret;
+    ret = misc_register(&apparmor_debug_flag_device_ops);
+	if(ret < 0)
+	{
+		printk_ratelimited(KERN_INFO "debug_flag device registration failed with %d\n", ret);
+	}
+	else
+	{
+		printk_ratelimited(KERN_INFO "debug_flag device successfully registered\n");
+	}
+    return ret;
+}
+
+device_initcall(apparmor_debug_flag_init);
+
+//Custom ioctl code end
 
 security_initcall(apparmor_init);
