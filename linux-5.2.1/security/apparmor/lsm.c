@@ -67,11 +67,11 @@ static int print_all_domain(struct aa_profile *profile)
 	{
 		if (profile->current_domain)
 		{
-			printk (KERN_INFO "print_all_domain: current domain is %s set for process %s with pid %d\n", profile->current_domain->domain, current->comm, current->pid);
+			// printk (KERN_INFO "print_all_domain: current domain is %s set for process %s with pid %d\n", profile->current_domain->domain, current->comm, current->pid);
 		}
 		else
 		{
-			printk (KERN_INFO "print_all_domain: current domain is NOT set for process %s with pid %d\n", current->comm, current->pid);
+			// printk (KERN_INFO "print_all_domain: current domain is NOT set for process %s with pid %d\n", current->comm, current->pid);
 		}
 	}
 	return 0;
@@ -1449,18 +1449,47 @@ static int apparmor_unix_may_send (struct socket *sock, struct socket *other)
 
 	if (sender_label != NULL && recv_label != NULL)
 	{
-		fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
-		if(curr_domain != NULL)
-		{
-			printk (KERN_INFO "apparmor_unix_may_send: Current process %s\n", current->comm);
-			printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
-		}
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, unix, %s\n", sender_label->hname, recv_label->hname);
+		
+		// fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+		// if(curr_domain != NULL)
+		// {
+		// 	printk (KERN_INFO "apparmor_unix_may_send: Current process %s\n", current->comm);
+		// 	printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+		// }
 		aa_put_label(sender_label);
 		aa_put_label(recv_label);
 	}
 	return 0;
 	
 }
+
+static int apparmor_unix_stream_connect(struct sock *sock, struct sock *other, struct sock *newsk)
+{
+	struct aa_sk_ctx *ctx_sender = SK_CTX(sock->sk);
+	struct aa_label *sender_label = aa_get_label(ctx_sender->label);
+
+	struct aa_sk_ctx *ctx_recv = SK_CTX(other->sk);
+	struct aa_label *recv_label = aa_get_label(ctx_recv->label);
+	
+	struct aa_profile *profile;
+	char *curr_domain = NULL;
+
+	if (sender_label != NULL && recv_label != NULL)
+	{
+		printk (KERN_INFO "[GRAPH_GEN] Process %s, unix, %s\n", sender_label->hname, recv_label->hname);
+		// fn_for_each (sender_label, profile, apparmor_getlabel_domain(profile, &curr_domain));
+		// if(curr_domain != NULL)
+		// {
+		// 	printk (KERN_INFO "apparmor_unix_may_send: Current process %s\n", current->comm);
+		// 	printk (KERN_INFO "apparmor_unix_may_send: sender = %s, receiver = %s\n", sender_label->hname, recv_label->hname);
+		// }
+		aa_put_label(sender_label);
+		aa_put_label(recv_label);
+	}
+	return 0;
+}
+
 
 /**
  * apparmor_socket_create - check perms before creating a new socket
@@ -2463,6 +2492,8 @@ static struct security_hook_list apparmor_hooks[] __lsm_ro_after_init = {
 
 
 	LSM_HOOK_INIT(unix_may_send, apparmor_unix_may_send),
+	LSM_HOOK_INIT(unix_stream_connect, apparmor_unix_stream_connect),
+
 	LSM_HOOK_INIT(socket_create, apparmor_socket_create),
 	LSM_HOOK_INIT(socket_post_create, apparmor_socket_post_create),
 	LSM_HOOK_INIT(socket_bind, apparmor_socket_bind),

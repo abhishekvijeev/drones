@@ -871,7 +871,7 @@ static int udp_send_skb(struct sk_buff *skb, struct flowi4 *fl4,
 		if (curr_domain != NULL)
 		{
 			skb->secmark = label->pid;
-			printk (KERN_INFO "udp_send_skb: pid %d added to skb\n", label->pid);
+			// printk (KERN_INFO "udp_send_skb: pid %d added to skb\n", label->pid);
 		}
 	}
 	aa_put_label(ctx->label);
@@ -1796,7 +1796,7 @@ try_again:
 		if (curr_domain != NULL)
 		{
 			label->pid = skb->secmark;
-			printk (KERN_INFO "udp_recvmsg: pid %d restored from skb\n", label->pid );
+			// printk (KERN_INFO "udp_recvmsg: pid %d restored from skb\n", label->pid );
 		}
 	}
 	aa_put_label(ctx->label);
@@ -2172,7 +2172,7 @@ static int udp_queue_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		if (curr_domain != NULL)
 		{
 			label->pid = skb->secmark;
-			printk (KERN_INFO "udp_queue_rcv_skb: pid %d restored from skb\n", label->pid );
+			// printk (KERN_INFO "udp_queue_rcv_skb: pid %d restored from skb\n", label->pid );
 		}
 	}
 	aa_put_label(ctx->label);
