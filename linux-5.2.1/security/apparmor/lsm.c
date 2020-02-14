@@ -1466,10 +1466,10 @@ static int apparmor_unix_may_send (struct socket *sock, struct socket *other)
 
 static int apparmor_unix_stream_connect(struct sock *sock, struct sock *other, struct sock *newsk)
 {
-	struct aa_sk_ctx *ctx_sender = SK_CTX(sock->sk);
+	struct aa_sk_ctx *ctx_sender = SK_CTX(sock);
 	struct aa_label *sender_label = aa_get_label(ctx_sender->label);
 
-	struct aa_sk_ctx *ctx_recv = SK_CTX(other->sk);
+	struct aa_sk_ctx *ctx_recv = SK_CTX(other);
 	struct aa_label *recv_label = aa_get_label(ctx_recv->label);
 	
 	struct aa_profile *profile;
