@@ -450,7 +450,7 @@ void sd_serialize_profile(std::ostringstream &buf, Profile *profile,
 		if(profile->is_trusted_var != NULL)
 		{
 			sd_write_struct(buf, "ISTrusted");
-			sd_write_uint32(buf, profile->is_trusted_var->flag);
+			sd_write_string(buf, profile->is_trusted_var->flag);
 			sd_write_structend(buf);
 		}
 		

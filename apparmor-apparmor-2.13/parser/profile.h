@@ -126,7 +126,7 @@ struct DomainMetaData
 };
 struct Is_Trusted_t
 {
-	int flag;
+	char *flag;
 };
 
 class Profile {
