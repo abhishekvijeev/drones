@@ -410,8 +410,7 @@ int post_process_profile(Profile *profile, int debug_only)
 	}
 	else
 	{
-		printf("is_trusted: NULL\n");
-		printf("is_trusted: %s\n", profile->is_trusted_var->flag);
+		printf("is_trusted: false\n");
 	}
 	
 	int error = 0;

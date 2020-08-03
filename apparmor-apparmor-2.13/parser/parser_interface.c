@@ -460,34 +460,7 @@ void sd_serialize_profile(std::ostringstream &buf, Profile *profile,
 			sd_write_structend(buf);
 		}
 		
-		
-		
-		
 	}
-	// else
-	// {
-	// 	char *tmp = "Null/Empty";
-	// 	sd_write_struct(buf, "DomainMetaData");
-	// 	sd_write_string(buf, tmp, NULL);
-	// 	sd_write_uint32(buf,  0);
-	// 	sd_write_uint32(buf,  0);
-	// 	sd_write_structend(buf);
-		
-	// }
-	
-	
-	// else
-	// {
-	// 	sd_write_struct(buf, "AllowedDomains");
-	// 	sd_write_structend(buf);
-	// }
-	
-	
-	// else
-	// {
-	// 	sd_write_struct(buf, "DenyedDomains");
-	// 	sd_write_structend(buf);
-	// }
 
 
 
