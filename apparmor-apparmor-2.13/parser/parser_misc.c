@@ -72,6 +72,7 @@ static struct keyword_table keyword_table[] = {
 	{"dte_domain",		TOK_DOMAIN_NAME},
 	{"dte_net_domain",		TOK_NET_DOMAIN},
 	{"allowip",	TOK_ALLOWIP},
+	{"is_trusted",		TOK_IS_TRUSTED},
 	{"unix",		TOK_UNIX},
 	/* misc keywords */
 	{"capability",		TOK_CAPABILITY},

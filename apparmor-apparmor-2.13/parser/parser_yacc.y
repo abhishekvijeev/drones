@@ -225,6 +225,7 @@ void add_local_entry(Profile *prof);
 	struct DomainMetaData *domain_meta_data;
 	struct ListOfDomains *list_of_domains;
 	struct ListOfIPAddrs *list_of_allowed_ip_addrs;
+	struct Is_Trusted_t *is_trusted_meta_data;
 
 }
 
@@ -299,6 +300,8 @@ void add_local_entry(Profile *prof);
 %type <domain_meta_data> set_domain_rule
 %type <list_of_domains> net_domain_rule
 %type <list_of_allowed_ip_addrs> allow_ip_rule
+%type <is_trusted_meta_data> set_is_trusted_rule
+
 
 
 
@@ -1264,6 +1267,28 @@ rules: rules set_domain_rule
 		$$ = $1;
 	}
 
+rules: rules set_is_trusted_rule
+	{
+		if ($1->current_domain == NULL)
+		{
+			struct DomainMetaData *new_entry;
+			new_entry = (struct DomainMetaData *) calloc(1, sizeof(struct DomainMetaData));
+			if (!new_entry)
+				yyerror(_("Memory allocation error."));
+			new_entry->domain = NULL;
+			new_entry->allow_cnt = 0;
+			new_entry->deny_cnt = 0;
+			$1->is_trusted_var = $2
+		}
+		else
+		{
+			$1->is_trusted_var->flag = $2
+			
+		}
+		
+		
+		$$ = $1;
+	}
 
 set_domain_rule: TOK_DOMAIN_NAME TOK_ID TOK_END_OF_RULE
 	{
@@ -1274,6 +1299,15 @@ set_domain_rule: TOK_DOMAIN_NAME TOK_ID TOK_END_OF_RULE
 		new_entry->domain = $2;
 		new_entry->allow_cnt = 0;
 		new_entry->deny_cnt = 0;
+		$$ = new_entry;
+	}
+set_is_trusted_rule: TOK_IS_TRUSTED TOK_ID TOK_END_OF_RULE
+	{
+		struct Is_Trusted_t *new_entry;
+		new_entry = (struct Is_Trusted_t *) calloc(1, sizeof(struct Is_Trusted_t));
+		if (!new_entry)
+			yyerror(_("Memory allocation error."));
+		new_entry->flag = $2;
 		$$ = new_entry;
 	}
 

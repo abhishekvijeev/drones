@@ -124,6 +124,10 @@ struct DomainMetaData
 	int deny_cnt;
 	int ip_allow_cnt;
 };
+struct Is_Trusted_t
+{
+	int flag;
+};
 
 class Profile {
 public:
@@ -183,6 +187,7 @@ public:
 	struct ListOfDomains *allow_net_domains;
 	struct ListOfDomains *deny_net_domains;
 	struct ListOfIPAddrs *allowed_ip_addrs;
+	struct Is_Trusted_t *is_trusted_var;
 
 	Profile(void)
 	{
