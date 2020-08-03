@@ -1281,15 +1281,12 @@ rules: rules set_is_trusted_rule
 			new_entry->domain = NULL;
 			new_entry->allow_cnt = 0;
 			new_entry->deny_cnt = 0;
-			$1->is_trusted_var = $2
+			$1->is_trusted_var = $2;
 		}
 		else
 		{
-			$1->is_trusted_var->flag = $2
-			
+			$1->is_trusted_var = $2;
 		}
-		
-		
 		$$ = $1;
 	}
 
