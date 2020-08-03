@@ -453,6 +453,13 @@ void sd_serialize_profile(std::ostringstream &buf, Profile *profile,
 			sd_write_string(buf, profile->is_trusted_var->flag, NULL);
 			sd_write_structend(buf);
 		}
+		else
+		{
+			sd_write_struct(buf, "ISTrusted");
+			sd_write_string(buf, "false", NULL);
+			sd_write_structend(buf);
+		}
+		
 		
 		
 		
