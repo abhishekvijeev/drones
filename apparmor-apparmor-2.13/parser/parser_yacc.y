@@ -157,6 +157,8 @@ void add_local_entry(Profile *prof);
 %token TOK_DOMAIN_NAME
 %token TOK_NET_DOMAIN
 %token TOK_ALLOWIP
+%token TOK_IS_TRUSTED
+
 
  /* rlimits */
 %token TOK_RLIMIT
@@ -296,6 +298,7 @@ void add_local_entry(Profile *prof);
 
 %type <id>	TOK_DOMAIN_NAME
 %type <id>	TOK_NET_DOMAIN
+%type <id>	TOK_IS_TRUSTED
 
 %type <domain_meta_data> set_domain_rule
 %type <list_of_domains> net_domain_rule
